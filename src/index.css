@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@variant dark (.dark &);
+
+@theme {
+  --color-primary: #0B3D2E;
+  --color-accent: #8C7853;
+  --color-surface: #F2E9DF;
+  --color-alert: #84344E;
+  --color-badge: #DFBDB5;
+  --color-muted: #BBBCBC;
+
+  --color-enchanted-green: #0B3D2E;
+  --color-elevated-gold: #8C7853;
+  --color-light-ivory: #F2E9DF;
+  --color-cranberry: #84344E;
+  --color-rose-linen: #DFBDB5;
+  --color-rocky-gray: #BBBCBC;
+
+  --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+}
+
+/* Custom Scrollbar styled elegantly to match the aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-rocky-gray);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-elevated-gold);
+}
+
+/* Base reset to handle general fonts and rendering */
+html, body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background-color: #F2E9DF;
+  transition: background-color 0.3s ease;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark, html.dark body {
+  background-color: #051A14;
+}
+
+h1, h2, h3, h4, h5, h6, .font-serif-editorial {
+  font-family: var(--font-serif);
+}
+
