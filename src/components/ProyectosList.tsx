@@ -22,10 +22,11 @@ import {
   AlertTriangle,
   FileCheck,
   Award,
-  Zap
+  Zap,
+  UsersRound
 } from 'lucide-react';
-import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar } from '../types';
-import { calculateProjectBillingStatus, formatCurrency } from '../utils';
+import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment } from '../types';
+import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
 import { generarReporteProyecto } from '../utils/reports';
 
@@ -37,6 +38,7 @@ interface ProyectosListProps {
   providerPayments?: ProviderPayment[];
   profitDistributions?: ProfitDistribution[];
   porImpactar?: PorImpactar[];
+  thirdPartyPayments?: ThirdPartyPayment[];
   onAddClick: () => void;
   onEditClick: (project: Project) => void;
   onDeleteClick: (id: string) => void;
@@ -53,6 +55,7 @@ export default function ProyectosList({
   providerPayments = [],
   profitDistributions = [],
   porImpactar = [],
+  thirdPartyPayments = [],
   onAddClick,
   onEditClick,
   onDeleteClick
@@ -554,24 +557,47 @@ export default function ProyectosList({
                           </p>
                         </div>
                         <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectProviderPayments.map(pay => (
-                            <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
-                              <div className="space-y-0.5">
-                                <span className="font-semibold text-enchanted-green dark:text-light-ivory">{pay.proveedor}</span>
-                                <span className="text-[10px] text-rocky-gray block">{pay.fecha}</span>
+                          {projectProviderPayments.map(pay => {
+                            const indicator = getDueDateIndicator(pay.estatus, pay.fecha_vencimiento);
+                            return (
+                              <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
+                                <div className="space-y-0.5">
+                                  <span className="font-semibold text-enchanted-green dark:text-light-ivory block">{pay.proveedor}</span>
+                                  <div className="flex flex-col gap-0.5 text-[10px] text-rocky-gray">
+                                    <span>{pay.fecha}</span>
+                                    {pay.fecha_vencimiento && pay.estatus === 'Pendiente' && (
+                                      <span className="font-mono">Vence: {pay.fecha_vencimiento}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
+                                    {formatCurrency(pay.total)}
+                                  </span>
+                                  <div className="flex flex-col items-end gap-1 mt-0.5">
+                                    {pay.estatus === 'Pagado' ? (
+                                      <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
+                                    ) : (
+                                      <>
+                                        <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
+                                        {indicator && (
+                                          <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${
+                                            indicator.type === 'future'
+                                              ? 'text-rocky-gray dark:text-rose-linen/50'
+                                              : indicator.type === 'today'
+                                                ? 'text-cranberry dark:text-rose-linen bg-cranberry/10 border border-cranberry/20'
+                                                : 'text-white bg-cranberry shadow-sm'
+                                          }`}>
+                                            {indicator.text}
+                                          </span>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                  {formatCurrency(pay.total)}
-                                </span>
-                                {pay.estatus === 'Pagado' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
-                                ) : (
-                                  <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -615,6 +641,61 @@ export default function ProyectosList({
                                   {formatCurrency(pay.monto)}
                                 </span>
                                 <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Resuelto</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Pagos a Terceros vinculados */}
+                  {(() => {
+                    const projectThirdPartyPayments = (thirdPartyPayments || []).filter(
+                      pay => pay.proyectoId === selectedProject.id
+                    );
+                    if (projectThirdPartyPayments.length === 0) {
+                      return (
+                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
+                          <div className="flex items-start space-x-2.5">
+                            <UsersRound size={16} className="text-rocky-gray mt-0.5" />
+                            <div>
+                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Pagos a Terceros vinculados</p>
+                              <p className="text-[10px] text-rocky-gray mt-1">Sin registros vinculados a este proyecto.</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
+                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
+                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
+                            <UsersRound size={14} className="text-elevated-gold" />
+                            <span>Pagos a Terceros ({projectThirdPartyPayments.length})</span>
+                          </p>
+                        </div>
+                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                          {projectThirdPartyPayments.map(pay => (
+                            <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
+                              <div className="space-y-0.5">
+                                <span className="font-semibold text-enchanted-green dark:text-light-ivory">{pay.concepto}</span>
+                                <div className="text-[10px] text-rocky-gray space-y-0.5">
+                                  <span>{pay.fecha}</span>
+                                  <div className="flex items-center space-x-1.5">
+                                    <span>Saldo Orig: {formatCurrency(pay.saldoOriginal)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
+                                  {formatCurrency(pay.montoADepositar)}
+                                </span>
+                                {pay.estatusPago === 'Pagado' ? (
+                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
+                                ) : (
+                                  <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
+                                )}
                               </div>
                             </div>
                           ))}

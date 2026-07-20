@@ -53,6 +53,14 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+input[type="date"] {
+  color-scheme: light;
+}
+
+html.dark input[type="date"] {
+  color-scheme: dark;
+}
+
 html.dark, html.dark body {
   background-color: #051A14;
 }

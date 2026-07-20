@@ -1,5 +1,5 @@
-# Guía de Diseño y Arquitectura — IX Capital Group
-Este documento detalla la arquitectura de interfaz, los principios estéticos y las especificaciones operativas del sistema de gestión modular **IX Capital Group**.
+# Guía de Diseño y Arquitectura — IX Control Financiero
+Este documento detalla la arquitectura de interfaz, los principios estéticos y las especificaciones operativas del sistema de gestión modular **IX Control Financiero**.
 
 ---
 
@@ -34,7 +34,40 @@ El sistema está diseñado para ofrecer una experiencia fluida que se siente com
 Diseñado para la administración unificada de contactos corporativos:
 *   **Campos**: Nombre Comercial, Razón Social, RFC (clave única), y Contacto (Teléfono/Email).
 *   **Estado Vacío**: Ilustrado de manera sofisticada invitando al usuario a registrar su primer cliente. No contiene botones demo de autoinyección para mantener la pureza de los datos desde el nacimiento.
-*   **Integridad de Datos**: Al eliminar un cliente, todos los proyectos asignados a ese cliente se eliminan en cas## 5. Módulo 3: Facturación y CFDIs (Fase 3)
+*   **Integridad de Datos**: Al eliminar un cliente, todos los proyectos asignados a ese cliente se eliminan en cascada para mantener la integridad de las relaciones en la base de datos.
+
+---
+
+## 4. Módulo 2: Proyectos (Fase 2)
+El módulo de Proyectos permite la creación, asignación y monitoreo de los códigos operativos que estructuran toda la contabilidad del sistema. Actúa como el pivote central de relación para Clientes, Facturación, Gastos, Pagos a Proveedores y Por Impactar.
+
+### Especificación de Datos (Modelo `Project`)
+*   `id` (Clave Única): Identificador secuencial único.
+*   `nombre` (Texto, Requerido): Título descriptivo del evento o proyecto.
+*   `codigo` (Texto, Requerido): Clave alfanumérica única (ej. "IX-2026-001") utilizada para la asignación y búsqueda de egresos e ingresos.
+*   `clienteId` (Referencia, Requerida): Llave foránea del catálogo de Clientes.
+*   `ejecutivoId` (Selector de opción, Requerido): Ejecutivo comercial asignado (`San` o `Ale`).
+*   `fechaCreacion` (Fecha, Requerida): Fecha de alta del proyecto (formato YYYY-MM-DD), pre-llenado con el día actual pero modificable.
+*   `estadoFacturacion` (Solo lectura, Calculado): Estatus de cobro consolidado, calculado de forma pura como una función del estado de todas sus facturas asociadas (`Sin facturar`, `Facturado`, `Pagado`).
+
+### Características de Interfaz y Filtros
+1.  **Tablero de Asignaciones (KPI Cards)**:
+    *   **Proyectos Totales**: Contador global de proyectos registrados.
+    *   **Asignaciones San / Ale**: Métricas individuales del número de proyectos activos a cargo de cada ejecutivo de cuenta.
+2.  **Motor de Búsqueda Integrado**: Búsqueda en tiempo real por el nombre del proyecto, el código de proyecto, o la razón social/nombre del cliente asociado.
+3.  **Ficha de Proyecto Lateral (Detail Panel)**: Al hacer clic en un proyecto, se abre un panel lateral dinámico e interactivo que extrae información de todo el sistema en tiempo real:
+    *   **Metadatos de Cliente**: Nombre, Razón Social, RFC y contacto del cliente asociado.
+    *   **Facturas vinculadas**: Folio, fechas, importes y badges de cobro correspondientes.
+    *   **Gastos vinculados**: Concepto, fecha, importe y estatus de los egresos operativos o directos vinculados.
+    *   **Pagos a Proveedores vinculados**: Desglose de pagos con su respectiva fecha de vencimiento y badges con indicadores de urgencia.
+    *   **Por Impactar resueltos**: Registros provisionales que han sido resueltos apuntando a este proyecto definitivo.
+    *   **Reparto de Utilidades**: Historial y desglose de reparto si el proyecto está pagado, o un badge indicativo de "Pendiente" que explica la regla de disparo automático.
+    *   **Rentabilidad del Proyecto**: Desglose financiero calculado puro (Costo Cliente, Costo Proveedor, Gastos Proveedor Vinculados, Ganancia Neta, % de Rentabilidad con semáforo de colores).
+    *   **Descarga de Reporte Excel**: Botón de acción integrado que permite compilar y descargar el reporte del proyecto con un solo clic.
+
+---
+
+## 5. Módulo 3: Facturación y CFDIs (Fase 3)
 El módulo de facturación administra el registro y control de comprobantes fiscales digitales (CFDI), retenciones, y la cartera de cobros vinculados a los códigos de proyecto operativos:
 
 ### Especificación de Datos (Modelo `Invoice`)
@@ -50,6 +83,7 @@ El módulo de facturación administra el registro y control de comprobantes fisc
 *   `estado`: Nace por defecto en estado `facturada` (sin cobrar).
 *   `fechaEmision` (Selector manual): Fecha real en que se timbró el CFDI (permite registrar facturas pasadas).
 *   `fechaPago` (Selector manual al cobrar): Fecha real en que el cliente depositó en bancos. Se solicita al momento de cambiar el estado de la factura de `facturada` a `pagada`, pre-llenado en la hora local de la Ciudad de México pero editable.
+*   `facturado_por` (Selección de opción, Requerida): Quién realiza la facturación, pudiendo elegir entre `IX` (por defecto) o `Juan Carlos`.
 
 ### Características de Interfaz y Filtros
 1.  **Tablero de Cuentas por Cobrar (KPI Cards)**:
@@ -61,7 +95,8 @@ El módulo de facturación administra el registro y control de comprobantes fisc
     *   **Sin facturar**: El proyecto no tiene ningún CFDI registrado.
     *   **Facturado**: El proyecto tiene al menos un CFDI registrado, pero uno o más siguen pendientes de pago.
     *   **Pagado**: El proyecto tiene al menos un CFDI y TODOS se encuentran marcados como `pagada` (liquidados al 100%).
-4.  **Integración en Ficha de Proyecto**: En el panel lateral detallado del Módulo de Proyectos, la sección anteriormente estática "Facturas vinculadas" ahora despliega en tiempo real el listado con los folios, fechas de emisión, método de pago, importes y badges de cobro correspondientes al proyecto inspeccionado.
+4.  **Regla de Confirmación Especial (Facturas Juan Carlos)**: Al marcar como pagada una factura cuyo emisor es `Juan Carlos`, se despliega una advertencia y confirmación especial para el usuario, indicando que el saldo cobrado se registrará como un saldo pendiente que Juan Carlos le debe transferir a la empresa (impactando directamente en su cuenta de conciliación).
+5.  **Integración en Ficha de Proyecto**: En el panel lateral detallado del Módulo de Proyectos, la sección anteriormente estática "Facturas vinculadas" ahora despliega en tiempo real el listado con los folios, fechas de emisión, método de pago, importes y badges de cobro correspondientes al proyecto inspeccionado.
 
 ---
 
@@ -77,7 +112,7 @@ El módulo de Gastos administra el registro de egresos generales, compras de ope
 *   `iva` (Número): 16% autocalculado, pero modificable manualmente para concordar con los centavos de la factura recibida.
 *   `isrRetenido` / `ivaRetenido` (Número, Opcional): Retenciones manuales que se deducen del total neto del egreso.
 *   `total` (Solo lectura): Calculado automáticamente en tiempo real (`subtotal + iva - isrRetenido - ivaRetenido`).
-*   `cuentaOrigen` (Selector, Requerido): Origen de los fondos (San, Ale, o Empresa).
+*   `cuentaOrigen` (Selector, Requerido): Origen de los fondos (San, Ale, Empresa o Juan Carlos).
 *   `esReembolsable` (Booleano): Toggle para clasificar si requiere un reintegro.
 *   `tieneFactura` (Booleano): Registro de si se cuenta con el XML/PDF oficial.
 *   `metodoPago` (Selector): Transferencia, Tarjeta de Débito o Efectivo.
@@ -109,12 +144,18 @@ Este módulo gestiona de forma granular los pagos de egresos directos contratado
 *   `tieneFactura` (Booleano): Casilla de verificación Sí/No sobre la disponibilidad del CFDI.
 *   `estatus` (Selector): Estado de liquidación (`Pagado` / `Pendiente`).
 *   `fecha` (Fecha, Requerida): Fecha del desembolso (por defecto la fecha local de CDMX, editable).
+*   `fecha_vencimiento` (Fecha, Opcional): Fecha límite pactada para realizar el pago al proveedor.
 
 ### Características y Filtros
 1.  **KPI Cards de Monitoreo**:
     *   **Total Pagado a Proveedores**: Suma de los montos `total` de pagos con estatus `Pagado`.
     *   **Total Pendiente de Pago**: Suma de los montos `total` de pagos comprometidos con estatus `Pendiente`.
-2.  **Filtros Interactivos**: Búsqueda por proveedor, y filtrado dinámico por Proyecto y Estatus de Pago.
+    *   **Pagos Vencidos**: Cantidad total de transacciones pendientes cuya fecha de vencimiento ya ha transcurrido.
+2.  **Indicadores de Vencimiento / Días Restantes**: Despliegue de badges dinámicos basados en la diferencia de días entre la fecha actual y la fecha de vencimiento:
+    *   **En tiempo**: Badge indicativo con los días restantes (ej. "En 5 días").
+    *   **Vence hoy**: Alerta visual destacada en color `Cranberry` (ej. "Vence hoy").
+    *   **Vencido**: Badge con fondo color de alerta `Cranberry` con el número de días transcurridos desde el límite de pago (ej. "Hace 3 días").
+3.  **Filtros Interactivos**: Búsqueda por proveedor, y filtrado dinámico por Proyecto y Estatus de Pago.
 
 ---
 
@@ -130,6 +171,8 @@ Permite el control financiero automatizado y la dispersión proporcional de ingr
 *   `montoADepositar` (Número, Solo lectura): Remanente neto neto a transferir al destinatario final (`saldoOriginal − comisionIntermediario − gananciaIxAdicional`).
 *   `estatusPago` (Selector): Estado de transferencia (`Pagado` / `Pendiente`).
 *   `fecha` (Fecha, Requerida): Fecha de registro o de depósito (CDMX local, editable).
+*   `dinero_recibido` (Booleano, Requerido): Indica si la empresa ya recibió físicamente el dinero de entrada por parte del cliente o tercero.
+*   `fecha_recibido` (Fecha, Opcional): Fecha en que se recibió el dinero de entrada.
 
 ### Fórmulas Matemáticas Centralizadas
 *   **Comisión de Intermediario**: $f_{com}(s) = s \times 0.072727$
@@ -140,55 +183,62 @@ Permite el control financiero automatizado y la dispersión proporcional de ingr
 1.  **Cálculos en Tiempo Real**: Los desgloses de retenciones se actualizan en vivo en la interfaz de registro conforme el usuario captura el Saldo Original, mostrando etiquetas informativas claras de "Calculado automáticamente".
 2.  **Panel KPI Agregado**: Muestra en tiempo real la sumatoria acumulada de Saldos de Entrada, Comisión de Intermediario, Ganancia Adicional de IX y el Neto a Depositar.
 3.  **Filtros**: Permite filtrar por concepto mediante barra de búsqueda, estatus de pago y proyectos asociados (o clasificar únicamente los operativos sin proyecto).
+4.  **Regla Estricta: "No Financiar al Cliente"**:
+    *   **Sin proyecto vinculado (Operaciones operativas o libres)**: Se puede marcar como pagado y realizar la dispersión de forma directa sin validaciones adicionales.
+    *   **Con proyecto vinculado**: No se permite marcar como pagado ni dispersar el remanente al intermediario/tercero a menos que el cliente del proyecto asociado haya liquidado la totalidad de sus facturas (el estatus de facturación del proyecto debe estar calculado en `Pagado`). Esto garantiza que la empresa jamás adelante comisiones utilizando capital de trabajo propio antes de que el cliente liquide el proyecto real.
 
 ---
 
 ## 9. Módulo 7: Reparto de Utilidades (Fase 6)
-Este módulo automatiza completamente el reparto del rendimiento económico neto de un proyecto al liquidarse las cobranzas correspondientes. No requiere de alta manual por parte del usuario, lo que previene errores operativos en la asignación de participaciones.
+Este módulo automatiza completamente el reparto del rendimiento económico neto de un proyecto al liquidarse las cobranzas correspondientes de forma incremental. No requiere de alta manual por parte del usuario, lo que previene errores operativos en la asignación de participaciones.
 
 ### Especificación de Datos y Modelo (`ProfitDistribution`)
 *   `id` (Clave Única): Identificador alfanumérico secuencial autogenerado (`pd_...`).
-*   `proyectoId` (Referencia, Requerida): Código identificador del proyecto liquidado al 100%.
-*   `gananciaTotal` (Número, Solo lectura): Utilidad neta base del proyecto.
+*   `proyectoId` (Referencia, Requerida): Código identificador del proyecto asociado.
+*   `gananciaTotal` (Número, Solo lectura): Utilidad neta de la porción distribuida en la transacción actual.
 *   `gananciaDueno` (Número, Solo lectura): Participación fija asignada al Socio/Dueño de la firma (65%).
 *   `gananciaEjecutivo` (Número, Solo lectura): Participación del Ejecutivo comercial asignado (30% o 35% según el estatus del fondo de Becas).
 *   `gananciaDiploma` (Número, Solo lectura): Porcentaje del fondo de Becas/Diploma (5% o remanente limitado).
-*   `fechaCreacion` (Fecha, Solo lectura): Estampa de tiempo en que ocurrió la liquidación del proyecto.
+*   `fechaCreacion` (Fecha, Solo lectura): Estampa de tiempo en que ocurrió la distribución.
 
 ### Algoritmo y Lógica Pura de Cálculo de Distribución
-La función pura de cálculo recibe los datos del proyecto, sus facturas registradas, los pagos liquidados de sus proveedores, y la sumatoria acumulada histórica de ganancia asignada a Diploma:
+La función pura de cálculo recibe los datos de la factura que se acaba de pagar, los pagos liquidados de los proveedores del proyecto, y la sumatoria acumulada histórica de ganancia asignada a Diploma:
 
-1.  **Cálculo de la Utilidad Operativa Base**:
-    $$\text{Ganancia Total} = \sum (\text{Subtotal de Facturas}) - \sum (\text{Subtotal de Pagos a Proveedores})$$
-    *Se omiten estrictamente los importes correspondientes al IVA, retenciones de ISR e IVA de ambos lados ya que representan flujo impositivo transitorio y no ganancia líquida corporativa.*
+1.  **Cálculo de la Utilidad Operativa Base (Incremental por Factura)**:
+    Cada vez que se marca una factura como pagada, se calcula la ganancia de utilidad incremental de forma independiente:
+    $$\text{Ganancia Total Delta} = \text{Subtotal de la Factura Pagada} - \Delta \text{ Proveedor}$$
+    *Donde los costos de Pagos a Proveedores del proyecto se absorben de forma acumulativa y secuencial:*
+    *   La **primera factura** que se marca como pagada absorbe la sumatoria total de los costos de proveedores registrados para ese proyecto hasta ese momento.
+    *   Las **facturas subsecuentes** solo absorben los costos de proveedores nuevos ($\Delta \text{ Proveedor}$) que se hayan acumulado o registrado desde el último reparto de utilidades generado para ese mismo proyecto.
+    *   *Se omiten estrictamente los importes correspondientes al IVA, retenciones de ISR e IVA de ambos lados ya que representan flujo impositivo transitorio y no ganancia líquida corporativa.*
 
 2.  **Porción Fija de Socio/Dueño**:
-    $$\text{Ganancia Dueño} = \text{Ganancia Total} \times 0.65$$
+    $$\text{Ganancia Dueño} = \text{Ganancia Total Delta} \times 0.65$$
 
 3.  **Evaluación de la Regla de Límite y Reasiganción del Fondo de Becas/Diploma (Tope: $37,800.00 MXN)**:
-    Se calcula dinámicamente el total acumulado histórico sumando las distribuciones en vivo. Se evalúa el impacto de la porción propuesta para Diploma ($P_{diploma} = \text{Ganancia Total} \times 0.05$):
+    Se calcula dinámicamente el total acumulado histórico sumando las distribuciones en vivo. Se evalúa el impacto de la porción propuesta para Diploma ($P_{diploma} = \text{Ganancia Total Delta} \times 0.05$):
 
     *   **Caso A: Fondo de Becas previamente topado**:
         Si el acumulado histórico es $\ge \$37,800.00$:
         $$\text{Ganancia Diploma} = 0.00$$
-        $$\text{Ganancia Ejecutivo} = \text{Ganancia Total} \times 0.35$$
+        $$\text{Ganancia Ejecutivo} = \text{Ganancia Total Delta} \times 0.35$$
         *(El 5% propuesto completo se suma a la porción ordinaria del 30% del Ejecutivo).*
 
     *   **Caso B: Margen de acumulación suficiente**:
         Si el acumulado histórico más la propuesta de reparto es $\le \$37,800.00$:
         $$\text{Ganancia Diploma} = P_{diploma}$$
-        $$\text{Ganancia Ejecutivo} = \text{Ganancia Total} \times 0.30$$
+        $$\text{Ganancia Ejecutivo} = \text{Ganancia Total Delta} \times 0.30$$
 
     *   **Caso C (Caso Límite - Tránsito al tope)**:
         Si el acumulado histórico está por debajo del límite, pero el $5\%$ propuesto causaría un excedente:
         $$\text{Ganancia Diploma} = \$37,800.00 - \text{Acumulado Previo}$$
         $$\text{Excedente Sobrante} = P_{diploma} - \text{Ganancia Diploma}$$
-        $$\text{Ganancia Ejecutivo} = (\text{Ganancia Total} \times 0.30) + \text{Excedente Sobrante}$$
+        $$\text{Ganancia Ejecutivo} = (\text{Ganancia Total Delta} \times 0.30) + \text{Excedente Sobrante}$$
         *(La porción de Diploma se reduce para llegar exactamente al límite y la diferencia residual se transfiere directamente a la utilidad del Ejecutivo en la misma transacción).*
 
 ### Disparador de Flujo Operativo Automatizado
 *   **Evento Gatillo**: Confirmación de cobro en la ventana emergente ("Marcar factura como pagada").
-*   **Condición**: Al actualizarse el listado de facturas, el sistema evalúa la función pura de estado de facturación del proyecto. Si el proyecto transita a estado **"Pagado"** (todas sus facturas cobradas) **Y** no existe previamente una distribución de utilidad para dicho proyecto, el sistema gatilla el algoritmo y crea de manera duradera el objeto de `ProfitDistribution` en el almacenamiento local persistente de React.
+*   **Condición**: Cada factura, al marcarse como pagada de forma individual, genera de manera automatizada su propio reparto de utilidades utilizando únicamente su propio subtotal, sin necesidad de esperar a que el proyecto complete o transite globalmente a un estado liquidado, ni a que las demás facturas del proyecto también estén pagadas. Un proyecto puede acumular de esta forma múltiples registros independientes de reparto, uno por cada factura individual cobrada con éxito.
 
 ### Consola de Monitoreo de Utilidades (UI)
 1.  **Tarjetas Métricas Integradas**:
@@ -197,7 +247,7 @@ La función pura de cálculo recibe los datos del proyecto, sus facturas registr
     *   *Acumulado Ejecutivo*: Retornos acumulados para el equipo comercial de ejecución.
     *   *Fondo Diploma (Becas 5%)*: Despliegue en tiempo real de los fondos capturados contra la meta fija de $\$37,800.00$ acompañada de una barra de progreso visual de porcentaje de avance.
 2.  **Lista Detallada con Filtro**: Visualización estructurada con búsqueda reactiva por texto libre sobre nombres de clientes o títulos de proyectos.
-3.  **Ficha de Proyecto**: Panel colapsable de detalles que muestra en tiempo real la estampa del reparto o el badge **"Pendiente"** de liquidación.
+3.  **Ficha de Proyecto**: Panel colapsable de detalles que muestra en tiempo real el desglose con la estampa de los repartos asociados acumulados.
 
 ---
 
@@ -341,3 +391,71 @@ Cada archivo descargado se nombra sistemáticamente bajo el patrón `Reporte_[c�
 
 ### 4. Nota sobre Restricción de Visibilidad de Reportes
 > **Nota de Scope (Fase 11)**: De conformidad con el PRD, las políticas de permisos para restringir la descarga de reportes contables únicamente a usuarios con rol de "Dueño" o administradores se delegan para su desarrollo integral en la **Fase 11**. Actualmente, todos los socios y gestores pueden compilar la información para sus respectivas operaciones.
+
+---
+
+## Bóveda de IVA
+
+Módulo de control de flujos y retiros de capital basados en el saldo a favor impositivo de IVA. Actúa como una capa contable de salvaguarda y conciliación interna.
+
+### 1. Fórmulas de Cálculo en Vivo
+Los indicadores de la bóveda se recalculan reactivamente ante cualquier cambio de facturas o gastos en el sistema:
+*   **Saldo a Favor Actual (Panel de IVA)**: Se obtiene directamente de la métrica en tiempo real del Panel de IVA. Toma el valor absoluto de la diferencia cuando el balance es a favor de la empresa; si actualmente está en situación "A Pagar", este valor asume un estado fijo de $\$0.00$.
+*   **Total Retirado Históricamente**: Sumatoria acumulada de todos los retiros de IVA registrados de manera formal en el módulo:
+    $$\text{Total Retiros} = \sum (\text{Monto de Retiros})$$
+*   **Disponible para Retirar**: Diferencia neta operativa que actúa como límite estricto de retiro:
+    $$\text{Disponible} = \max(0, \text{Saldo a Favor Actual} - \text{Total Retirado Históricamente})$$
+
+### 2. Especificación de Datos y Control de Formulario (`IvaWithdrawal`)
+*   `concepto` (Texto libre, Requerido): Descripción o motivo comercial del retiro de fondos.
+*   `monto` (Número decimal, Requerido): Cifra de capital que se extraerá del saldo a favor.
+*   `fecha` (Fecha, Requerida): Fecha del retiro, inicializada con la hora local de CDMX, modificable.
+
+**Reglas de Validación Críticas (Client-side)**:
+1.  **Bloqueo por Exceso**: Al intentar confirmar un retiro, el sistema rechaza la operación si el monto ingresado es superior al saldo disponible, mostrando el mensaje de error: *"El monto excede el saldo disponible ($[disponible])."*
+2.  **Deshabilitación Total**: Si el saldo disponible es igual a $0$, el botón de alta se desactiva permanentemente y se expone el aviso restrictivo: *"No hay saldo a favor disponible actualmente — no se pueden registrar retiros."*
+
+### 3. Historial de Retiros y Acciones
+*   Muestra una tabla detallada con fecha, concepto, monto y acciones de borrado.
+*   El borrado de un registro en el historial elimina de forma segura el registro aislado, provocando que el saldo disponible se restituya inmediatamente en vivo sin alterar facturas, gastos o pagos.
+
+### 4. Restricción de Visibilidad Máxima (Fase 11 - Supabase RLS)
+> **Directriz de Seguridad Crítica (Dueño Exclusivo)**: Este módulo, incluyendo su catálogo histórico completo y desgloses de retiros, debe estar protegido bajo la política de seguridad más estricta del ecosistema en la **Fase 11 (Supabase RLS)**. El acceso a la Bóveda de IVA está **restringido de manera exclusiva al rol de "Dueño"** (Socio). Ni los Ejecutivos de Cuenta ni el rol Contador tendrán visibilidad ni privilegios de lectura/escritura en esta tabla, ni siquiera de manera agregada, salvaguardando la información estratégica de tesorería.
+
+---
+
+## Módulo: Cuenta Juan Carlos
+Módulo de conciliación financiera exclusivo y de carácter calculado en tiempo real (vista calculada sin tabla de base de datos propia), diseñado para rastrear cobros cobrados y gastos financiados a nombre del socio Juan Carlos.
+
+### Fórmulas de Cálculo Puro
+*   **Juan Carlos te debe**: Sumatoria del importe `total` de todas las Facturas (`invoices`) donde `facturado_por === 'Juan Carlos'` y su estado es `'facturada'` (Pendiente de cobro). Representa dinero de CFDIs emitidos bajo su razón social que ya fueron o están por cobrarse por él, pero que debe reingresar a la cuenta bancaria de la empresa.
+*   **Le debes a Juan Carlos**: Sumatoria de todos los Gastos (`expenses`) donde `cuentaOrigen === 'Juan Carlos'` y su `estatusPago === 'Pendiente'`. Representa aquellos egresos operativos o de proyecto que fueron financiados inicialmente por Juan Carlos con su cuenta o tarjeta personal y que la empresa tiene pendiente reembolsarle.
+*   **Saldo Neto**: Fórmula de compensación directa entre ambos conceptos:
+    $$\text{Saldo Neto} = \text{Juan Carlos te debe} - \text{Le debes a Juan Carlos}$$
+    *   **A favor de la empresa (Saldo Neto > $0$)**: Juan Carlos tiene saldo pendiente por transferir a las cuentas corporativas de IX.
+    *   **A favor de Juan Carlos (Saldo Neto < $0$)**: La empresa tiene un adeudo pendiente y debe reembolsar la diferencia a Juan Carlos.
+    *   **Saldos perfectamente conciliados (Saldo Neto = $0$)**: No existen cobros ni deudas pendientes de conciliar.
+
+### Estructura de la Interfaz del Módulo
+1.  **Tarjetas KPI Superiores**:
+    *   *Juan Carlos te debe*: Tarjeta que expone el total de cobros pendientes por reingresar.
+    *   *Le debes a Juan Carlos*: Tarjeta que destaca los reembolsos pendientes por parte de la empresa.
+    *   *Saldo Neto Conciliado*: Tarjeta adaptativa con bordes e indicadores de color condicionales que detallan exactamente a favor de quién es el saldo neto actual y el curso de acción operativa requerido.
+2.  **Lista Detallada de Cobros Pendientes (Tabla Izquierda)**: Listado dinámico de facturas del emisor Juan Carlos en estado pendiente, con barra de búsqueda por folio o proyecto, mostrando importes, método de pago y fecha de emisión.
+3.  **Lista Detallada de Gastos por Reembolsar (Tabla Derecha)**: Listado de gastos financiados por él en estado pendiente, con buscador por concepto o categoría, detallando montos, categoría y proyecto vinculado.
+
+### Restricción de Visibilidad (Scope Fase 11 - Supabase RLS)
+> **Nota de Scope y Seguridad (Fase 11)**: De conformidad con el PRD, al tratarse de un módulo financiero interno altamente sensible, las políticas avanzadas de restricción de visibilidad según roles de usuario se delegarán formalmente para la **Fase 11 (Supabase RLS)**. El acceso a la Cuenta Juan Carlos estará **restringido de manera exclusiva al rol de "Dueño"** (Socio). Ni los Ejecutivos de Cuenta ni el rol Contador tendrán visibilidad ni acceso a este módulo en el sidebar o rutas del sistema.
+
+---
+
+## Mejoras de Interfaz
+Se han implementado mejoras integrales en la interfaz de usuario para incrementar la usabilidad operativa, la legibilidad y la fluidez en el flujo diario de trabajo:
+
+1.  **Botones de Acceso Rápido en el Header**:
+    *   **Gasto Rápido**: Botón de acción destacado ("Gasto Rápido") integrado directamente en la cabecera superior de navegación de la plataforma que abre instantáneamente el modal de creación de un nuevo Gasto sin requerir que el usuario navegue previamente al módulo de Gastos.
+    *   **Factura Rápida**: Botón de acción rápida en la cabecera que despliega instantáneamente el formulario de registro de un nuevo CFDI de Factura, acelerando el proceso de captura desde cualquier vista activa.
+2.  **Mejoras de Contraste en Modales**:
+    *   Se optimizó la paleta de colores y las sombras en los diálogos de formulario y modales de confirmación (marcar pagado, confirmación de eliminación) en modo claro, utilizando bordes sutiles oscuros y texturas de contraste más profundas para evitar la fatiga visual y mejorar la jerarquía en pantallas de alta luminosidad.
+3.  **Reordenamiento del Sidebar**:
+    *   El menú de navegación lateral del sidebar ha sido reorganizado de forma jerárquica para reflejar de mejor manera la frecuencia operativa diaria y la criticidad de los procesos de negocio, colocando los accesos de Catálogos (Clientes, Proyectos) y Contabilidad básica (Facturación, Gastos, Pagos a Proveedores) en la parte superior, seguidos de los módulos de Intermediación (Pagos a Terceros) y por último las consolas estratégicas de Análisis y Tesorería (Rentabilidad, IVA, Bóveda, Reportes, Cuenta Juan Carlos).

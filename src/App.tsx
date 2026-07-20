@@ -10,8 +10,10 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import ClientesList from './components/ClientesList';
 import ClienteFormModal from './components/ClienteFormModal';
+import EliminarClienteModal from './components/EliminarClienteModal';
 import ProyectosList from './components/ProyectosList';
 import ProyectoFormModal from './components/ProyectoFormModal';
+import EliminarProyectoModal from './components/EliminarProyectoModal';
 import FacturasList from './components/FacturasList';
 import FacturaFormModal from './components/FacturaFormModal';
 import MarcarPagadaModal from './components/MarcarPagadaModal';
@@ -23,6 +25,7 @@ import ProviderPaymentsList from './components/ProviderPaymentsList';
 import ProviderPaymentFormModal from './components/ProviderPaymentFormModal';
 import ThirdPartyPaymentsList from './components/ThirdPartyPaymentsList';
 import ThirdPartyPaymentFormModal from './components/ThirdPartyPaymentFormModal';
+import RecibirDineroModal from './components/RecibirDineroModal';
 import RepartoUtilidadesList from './components/RepartoUtilidadesList';
 import PorImpactarList from './components/PorImpactarList';
 import PorImpactarFormModal from './components/PorImpactarFormModal';
@@ -30,20 +33,21 @@ import PorImpactarResolverModal from './components/PorImpactarResolverModal';
 import RentabilidadList from './components/RentabilidadList';
 import IvaPanel from './components/IvaPanel';
 import ReportesPanel from './components/ReportesPanel';
-import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar } from './types';
+import CuentaJuanCarlos from './components/CuentaJuanCarlos';
+import BovedaIva from './components/BovedaIva';
+import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { getMexicoCityDate, getMexicoCityDateTimeString, calculateProjectBillingStatus } from './utils';
 import { calculateProfitDistribution, calculateProfitDistributionForAmount } from './utils/profitDistribution';
+import { useToast } from './components/Toast';
 
 export default function App() {
+  const { showToast } = useToast();
+
   // Authentication state (in memory for static phase)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('ix_auth') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Dark Mode State
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    return localStorage.getItem('ix_theme') === 'dark';
-  });
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   // Sidebar toggle for mobile responsive layouts
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -51,80 +55,46 @@ export default function App() {
   // Active module state
   const [activeModule, setActiveModule] = useState<ModuleId>('clientes');
 
-  // Clientes CRUD State (Persisted in localStorage for convenience, starts EMPTY as requested)
-  const [clients, setClients] = useState<Client[]>(() => {
-    const saved = localStorage.getItem('ix_clients');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Clientes CRUD State (Starts EMPTY as requested)
+  const [clients, setClients] = useState<Client[]>([]);
 
-  // Proyectos CRUD State (Persisted in localStorage for convenience, starts EMPTY as requested)
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem('ix_projects');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Proyectos CRUD State (Starts EMPTY as requested)
+  const [projects, setProjects] = useState<Project[]>([]);
 
-  // Facturas CRUD State (Persisted in localStorage, starts EMPTY as requested)
-  const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    const saved = localStorage.getItem('ix_invoices');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Facturas CRUD State (Starts EMPTY as requested)
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
-  // Gastos CRUD State (Persisted in localStorage, starts EMPTY as requested)
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem('ix_expenses');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Gastos CRUD State (Starts EMPTY as requested)
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
-  // Pagos a Proveedores CRUD State (starts EMPTY as requested with auto-migration from legacy "monto")
-  const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>(() => {
-    const saved = localStorage.getItem('ix_provider_payments');
-    if (!saved) return [];
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        return parsed.map((item: any) => {
-          if (item && typeof item === 'object' && !('subtotal' in item)) {
-            const sub = item.monto || 0;
-            const ivaVal = Number((sub * 0.16).toFixed(2));
-            return {
-              ...item,
-              subtotal: sub,
-              iva: ivaVal,
-              isrRetenido: 0,
-              ivaRetenido: 0,
-              total: sub + ivaVal
-            };
-          }
-          return item;
-        });
-      }
-      return [];
-    } catch (e) {
-      return [];
-    }
-  });
+  // Pagos a Proveedores CRUD State (starts EMPTY as requested)
+  const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>([]);
 
   // Pagos a Terceros CRUD State (starts EMPTY as requested)
-  const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>(() => {
-    const saved = localStorage.getItem('ix_third_party_payments');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
 
   // Reparto de Utilidades State (starts EMPTY as requested)
-  const [profitDistributions, setProfitDistributions] = useState<ProfitDistribution[]>(() => {
-    const saved = localStorage.getItem('ix_profit_distributions');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [profitDistributions, setProfitDistributions] = useState<ProfitDistribution[]>([]);
 
-  // Por Impactar CRUD State (starts EMPTY as requested, in memory & persisted)
-  const [porImpactar, setPorImpactar] = useState<PorImpactar[]>(() => {
-    const saved = localStorage.getItem('ix_por_impactar');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Por Impactar CRUD State (starts EMPTY as requested)
+  const [porImpactar, setPorImpactar] = useState<PorImpactar[]>([]);
+
+  // Bóveda de IVA Withdrawals State (starts EMPTY as requested)
+  const [ivaWithdrawals, setIvaWithdrawals] = useState<IvaWithdrawal[]>([]);
 
   // Modal controls
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isDeleteClientModalOpen, setIsDeleteClientModalOpen] = useState(false);
+  const [clientToDeleteId, setClientToDeleteId] = useState<string | null>(null);
+  const [clientDeleteCounts, setClientDeleteCounts] = useState<{
+    projects: number;
+    invoices: number;
+    expenses: number;
+    providerPayments: number;
+    thirdPartyPayments: number;
+    profitDistributions: number;
+  } | null>(null);
 
   // Por Impactar Modal controls
   const [isPorImpactarFormOpen, setIsPorImpactarFormOpen] = useState(false);
@@ -135,6 +105,15 @@ export default function App() {
   // Proyectos Modal controls
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
+  const [projectToDeleteId, setProjectToDeleteId] = useState<string | null>(null);
+  const [projectDeleteCounts, setProjectDeleteCounts] = useState<{
+    invoices: number;
+    expenses: number;
+    providerPayments: number;
+    thirdPartyPayments: number;
+    profitDistributions: number;
+  } | null>(null);
 
   // Facturas Modal controls
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -163,67 +142,27 @@ export default function App() {
   const [isDeleteInvoiceModalOpen, setIsDeleteInvoiceModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
 
+  // Marcar como Recibido (Dinero Recibido) Modal controls
+  const [isRecibirDineroOpen, setIsRecibirDineroOpen] = useState(false);
+  const [paymentToMarkAsReceived, setPaymentToMarkAsReceived] = useState<ThirdPartyPayment | null>(null);
+
   // Apply dark mode theme class
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('ix_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('ix_theme', 'light');
     }
   }, [darkMode]);
 
   // Handle local Auth persistence
   const handleLogin = () => {
     setIsAuthenticated(true);
-    localStorage.setItem('ix_auth', 'true');
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.setItem('ix_auth', 'false');
   };
-
-  // Sync clients with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_clients', JSON.stringify(clients));
-  }, [clients]);
-
-  // Sync projects with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_projects', JSON.stringify(projects));
-  }, [projects]);
-
-  // Sync invoices with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_invoices', JSON.stringify(invoices));
-  }, [invoices]);
-
-  // Sync expenses with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_expenses', JSON.stringify(expenses));
-  }, [expenses]);
-
-  // Sync providerPayments with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_provider_payments', JSON.stringify(providerPayments));
-  }, [providerPayments]);
-
-  // Sync thirdPartyPayments with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_third_party_payments', JSON.stringify(thirdPartyPayments));
-  }, [thirdPartyPayments]);
-
-  // Sync profitDistributions with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_profit_distributions', JSON.stringify(profitDistributions));
-  }, [profitDistributions]);
-
-  // Sync porImpactar with localStorage
-  useEffect(() => {
-    localStorage.setItem('ix_por_impactar', JSON.stringify(porImpactar));
-  }, [porImpactar]);
 
   // CRUD actions for Clients
   const handleAddOrEditClientSubmit = (formData: { 
@@ -239,6 +178,7 @@ export default function App() {
           ? { ...c, ...formData } 
           : c
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode
       const newClient: Client = {
@@ -250,15 +190,84 @@ export default function App() {
         createdAt: getMexicoCityDateTimeString()
       };
       setClients(prev => [newClient, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsFormModalOpen(false);
     setSelectedClient(null);
   };
 
   const handleDeleteClient = (id: string) => {
-    setClients(prev => prev.filter(c => c.id !== id));
-    // When deleting a client, we also delete projects of this client to keep data integrity
+    // Find all project ids for this client
+    const clientProjects = projects.filter(p => p.clienteId === id);
+    const clientProjectIds = clientProjects.map(p => p.id);
+
+    const countProjects = clientProjects.length;
+    const countInvoices = invoices.filter(inv => clientProjectIds.includes(inv.proyectoId)).length;
+    const countExpenses = expenses.filter(exp => exp.proyectoId && clientProjectIds.includes(exp.proyectoId)).length;
+    const countProviderPayments = providerPayments.filter(pp => clientProjectIds.includes(pp.proyectoId)).length;
+    const countThirdPartyPayments = thirdPartyPayments.filter(tp => tp.proyectoId && clientProjectIds.includes(tp.proyectoId)).length;
+    const countProfitDistributions = profitDistributions.filter(pd => clientProjectIds.includes(pd.proyectoId)).length;
+
+    setClientToDeleteId(id);
+    setClientDeleteCounts({
+      projects: countProjects,
+      invoices: countInvoices,
+      expenses: countExpenses,
+      providerPayments: countProviderPayments,
+      thirdPartyPayments: countThirdPartyPayments,
+      profitDistributions: countProfitDistributions
+    });
+    setIsDeleteClientModalOpen(true);
+  };
+
+  const handleConfirmDeleteClient = (id: string) => {
+    // Find all project ids for this client
+    const clientProjects = projects.filter(p => p.clienteId === id);
+    const clientProjectIds = clientProjects.map(p => p.id);
+
+    // 1. Delete all profit distributions of these projects
+    setProfitDistributions(prev => prev.filter(pd => !clientProjectIds.includes(pd.proyectoId)));
+
+    // 2. Delete all third party payments of these projects
+    setThirdPartyPayments(prev => prev.filter(tp => !tp.proyectoId || !clientProjectIds.includes(tp.proyectoId)));
+
+    // 3. Delete all provider payments of these projects
+    setProviderPayments(prev => prev.filter(pp => !clientProjectIds.includes(pp.proyectoId)));
+
+    // 4. Revert any porImpactar records generated by expenses of these projects
+    const clientExpenses = expenses.filter(exp => exp.proyectoId && clientProjectIds.includes(exp.proyectoId));
+    const clientExpenseIds = clientExpenses.map(exp => exp.id);
+
+    setPorImpactar(prev => prev.map(rec => {
+      if (rec.gastoIdGenerado && clientExpenseIds.includes(rec.gastoIdGenerado)) {
+        return {
+          ...rec,
+          estatus: 'pendiente',
+          proyectoDestinoId: null,
+          gastoIdGenerado: null
+        };
+      }
+      return rec;
+    }));
+
+    // 5. Delete all expenses of these projects
+    setExpenses(prev => prev.filter(exp => !exp.proyectoId || !clientProjectIds.includes(exp.proyectoId)));
+
+    // 6. Delete all invoices of these projects
+    setInvoices(prev => prev.filter(inv => !clientProjectIds.includes(inv.proyectoId)));
+
+    // 7. Delete all projects of this client
     setProjects(prev => prev.filter(p => p.clienteId !== id));
+
+    // 8. Delete the client itself
+    setClients(prev => prev.filter(c => c.id !== id));
+
+    // Close and reset states
+    setIsDeleteClientModalOpen(false);
+    setClientToDeleteId(null);
+    setClientDeleteCounts(null);
+
+    showToast('Cliente y toda su documentación eliminados');
   };
 
   const handleOpenAddModal = () => {
@@ -285,6 +294,7 @@ export default function App() {
           ? { ...p, ...formData } 
           : p
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode
       const newProject: Project = {
@@ -297,17 +307,72 @@ export default function App() {
         fechaCreacion: getMexicoCityDate()
       };
       setProjects(prev => [newProject, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsProjectModalOpen(false);
     setSelectedProject(null);
   };
 
   const handleDeleteProject = (id: string) => {
-    setProjects(prev => prev.filter(p => p.id !== id));
-    // Cascade delete invoices associated with this project
-    setInvoices(prev => prev.filter(inv => inv.proyectoId !== id));
-    // Cascade delete expenses associated with this project
+    const countInvoices = invoices.filter(inv => inv.proyectoId === id).length;
+    const countExpenses = expenses.filter(exp => exp.proyectoId === id).length;
+    const countProviderPayments = providerPayments.filter(pp => pp.proyectoId === id).length;
+    const countThirdPartyPayments = thirdPartyPayments.filter(tp => tp.proyectoId === id).length;
+    const countProfitDistributions = profitDistributions.filter(pd => pd.proyectoId === id).length;
+
+    setProjectToDeleteId(id);
+    setProjectDeleteCounts({
+      invoices: countInvoices,
+      expenses: countExpenses,
+      providerPayments: countProviderPayments,
+      thirdPartyPayments: countThirdPartyPayments,
+      profitDistributions: countProfitDistributions
+    });
+    setIsDeleteProjectModalOpen(true);
+  };
+
+  const handleConfirmDeleteProject = (id: string) => {
+    // 1. Elimina todos los Repartos de Utilidades de ese proyecto.
+    setProfitDistributions(prev => prev.filter(pd => pd.proyectoId !== id));
+
+    // 2. Elimina todos los Pagos a Terceros vinculados a ese proyecto (proyecto_id = este proyecto).
+    setThirdPartyPayments(prev => prev.filter(tp => tp.proyectoId !== id));
+
+    // 3. Elimina todos los Pagos a Proveedores de ese proyecto.
+    setProviderPayments(prev => prev.filter(pp => pp.proyectoId !== id));
+
+    // 4. Para cada Gasto de ese proyecto: si ese Gasto tiene un registro de Por Impactar que lo generó,
+    // revierte ese PorImpactar a estatus "Pendiente" y limpia su proyectoDestinoId y gastoIdGenerado.
+    const projectExpenses = expenses.filter(exp => exp.proyectoId === id);
+    const projectExpenseIds = projectExpenses.map(exp => exp.id);
+
+    setPorImpactar(prev => prev.map(rec => {
+      if (rec.gastoIdGenerado && projectExpenseIds.includes(rec.gastoIdGenerado)) {
+        return {
+          ...rec,
+          estatus: 'pendiente',
+          proyectoDestinoId: null,
+          gastoIdGenerado: null
+        };
+      }
+      return rec;
+    }));
+
+    // 5. Elimina todos los Gastos de ese proyecto.
     setExpenses(prev => prev.filter(exp => exp.proyectoId !== id));
+
+    // 6. Elimina todas las Facturas de ese proyecto.
+    setInvoices(prev => prev.filter(inv => inv.proyectoId !== id));
+
+    // 7. Elimina el Proyecto.
+    setProjects(prev => prev.filter(p => p.id !== id));
+
+    // Close and reset states
+    setIsDeleteProjectModalOpen(false);
+    setProjectToDeleteId(null);
+    setProjectDeleteCounts(null);
+
+    showToast('Eliminado con éxito');
   };
 
   const handleOpenAddProjectModal = () => {
@@ -331,6 +396,7 @@ export default function App() {
     metodoPago: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
     fechaEmision: string;
+    facturado_por?: 'IX' | 'Juan Carlos';
   }) => {
     const calculatedTotal = Number(
       (formData.subtotal + formData.iva - formData.retencionIsr - formData.retencionIva).toFixed(2)
@@ -348,6 +414,7 @@ export default function App() {
             } 
           : inv
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode - Starts as "facturada" (Unpaid)
       const newInvoice: Invoice = {
@@ -362,9 +429,11 @@ export default function App() {
         metodoPago: formData.metodoPago,
         complementoEmitido: formData.metodoPago === 'PPD' ? formData.complementoEmitido : undefined,
         estado: 'facturada',
-        fechaEmision: formData.fechaEmision
+        fechaEmision: formData.fechaEmision,
+        facturado_por: formData.facturado_por || 'IX'
       };
       setInvoices(prev => [newInvoice, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsInvoiceModalOpen(false);
     setSelectedInvoice(null);
@@ -388,6 +457,7 @@ export default function App() {
       setProjects(prevProjects => prevProjects.map(p => 
         p.id === projId ? { ...p, estadoFacturacion: newStatus } : p
       ));
+      showToast('Eliminado con éxito');
       return;
     }
 
@@ -456,57 +526,49 @@ export default function App() {
     // 4. Calculate billing status of the project after this change
     const newStatus = calculateProjectBillingStatus(projId, newInvoices);
     
-    // 5. If project is in state "Pagado", perform incremental calculation
-    if (newStatus === 'Pagado') {
-      const projectDistributions = profitDistributions.filter(pd => pd.proyectoId === projId);
-      const lastDistribution = projectDistributions[projectDistributions.length - 1];
+    // 5. Perform incremental profit distribution calculation for this invoice
+    const projectDistributions = profitDistributions.filter(pd => pd.proyectoId === projId);
+    const lastDistribution = projectDistributions[projectDistributions.length - 1];
 
-      const projectInvoices = newInvoices.filter(inv => inv.proyectoId === projId);
-      const total_facturas_actual = projectInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
+    const projectInvoices = newInvoices.filter(inv => inv.proyectoId === projId);
+    const total_facturas_actual = projectInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
 
-      const projectProviderPayments = providerPayments.filter(pay => pay.proyectoId === projId);
-      const total_proveedor_actual = projectProviderPayments.reduce((sum, pay) => sum + (pay.subtotal || 0), 0);
+    const projectProviderPayments = providerPayments.filter(pay => pay.proyectoId === projId);
+    const total_proveedor_actual = projectProviderPayments.reduce((sum, pay) => sum + (pay.subtotal || 0), 0);
 
-      const facturaIdsYaContempladas = new Set(projectDistributions.flatMap(pd => pd.facturaIdsNuevas || []));
-      const prev_facturas_acumulado = projectInvoices
-        .filter(inv => facturaIdsYaContempladas.has(inv.id))
-        .reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
+    const prev_proveedor_acumulado = lastDistribution && lastDistribution.proveedor_subtotal_acumulado !== undefined
+      ? lastDistribution.proveedor_subtotal_acumulado
+      : 0;
 
-      const prev_proveedor_acumulado = lastDistribution && lastDistribution.proveedor_subtotal_acumulado !== undefined
-        ? lastDistribution.proveedor_subtotal_acumulado
-        : 0;
+    const delta_proveedor = total_proveedor_actual - prev_proveedor_acumulado;
+    const ganancia_total_delta = Number(((invoiceToMarkAsPaid.subtotal || 0) - delta_proveedor).toFixed(2));
 
-      const delta_facturas = total_facturas_actual - prev_facturas_acumulado;
-      const delta_proveedor = total_proveedor_actual - prev_proveedor_acumulado;
-      const ganancia_total_delta = Number((delta_facturas - delta_proveedor).toFixed(2));
+    if (ganancia_total_delta > 0) {
+      // Calculate live accumulated Diploma before this operation
+      const currentDiplomaAccumulated = profitDistributions.reduce(
+        (sum, pd) => sum + (pd.gananciaDiploma || 0),
+        0
+      );
 
-      if (ganancia_total_delta > 0) {
-        // Calculate live accumulated Diploma before this operation
-        const currentDiplomaAccumulated = profitDistributions.reduce(
-          (sum, pd) => sum + (pd.gananciaDiploma || 0),
-          0
-        );
+      const calculation = calculateProfitDistributionForAmount(
+        ganancia_total_delta,
+        currentDiplomaAccumulated
+      );
 
-        const calculation = calculateProfitDistributionForAmount(
-          ganancia_total_delta,
-          currentDiplomaAccumulated
-        );
+      const newDistribution: ProfitDistribution = {
+        id: `pd_${Math.random().toString(36).substring(2, 9)}`,
+        proyectoId: projId,
+        gananciaTotal: calculation.gananciaTotal,
+        gananciaDueno: calculation.gananciaDueno,
+        gananciaEjecutivo: calculation.gananciaEjecutivo,
+        gananciaDiploma: calculation.gananciaDiploma,
+        fechaCreacion: getMexicoCityDate(),
+        facturas_subtotal_acumulado: total_facturas_actual,
+        proveedor_subtotal_acumulado: total_proveedor_actual,
+        facturaIdsNuevas: [invoiceToMarkAsPaid.id]
+      };
 
-        const newDistribution: ProfitDistribution = {
-          id: `pd_${Math.random().toString(36).substring(2, 9)}`,
-          proyectoId: projId,
-          gananciaTotal: calculation.gananciaTotal,
-          gananciaDueno: calculation.gananciaDueno,
-          gananciaEjecutivo: calculation.gananciaEjecutivo,
-          gananciaDiploma: calculation.gananciaDiploma,
-          fechaCreacion: getMexicoCityDate(),
-          facturas_subtotal_acumulado: total_facturas_actual,
-          proveedor_subtotal_acumulado: total_proveedor_actual,
-          facturaIdsNuevas: [invoiceToMarkAsPaid.id]
-        };
-
-        setProfitDistributions(prev => [...prev, newDistribution]);
-      }
+      setProfitDistributions(prev => [...prev, newDistribution]);
     }
 
     // Always update project status in state
@@ -519,6 +581,7 @@ export default function App() {
     
     setIsMarkAsPaidOpen(false);
     setInvoiceToMarkAsPaid(null);
+    showToast('Factura marcada como pagada');
   };
 
   // CRUD actions for Expenses
@@ -549,6 +612,7 @@ export default function App() {
           ? { ...exp, ...formData, total: calculatedTotal } 
           : exp
       ));
+      showToast('Cambios guardados');
     } else {
       // Add Mode
       const newExpense: Expense = {
@@ -557,6 +621,7 @@ export default function App() {
         total: calculatedTotal
       };
       setExpenses(prev => [newExpense, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsExpenseModalOpen(false);
     setSelectedExpense(null);
@@ -575,6 +640,7 @@ export default function App() {
       setIsDeleteExpenseModalOpen(true);
     } else {
       setExpenses(prev => prev.filter(exp => exp.id !== id));
+      showToast('Eliminado con éxito');
     }
   };
 
@@ -614,6 +680,7 @@ export default function App() {
           ? { ...rec, ...formData } 
           : rec
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode
       const newRecord: PorImpactar = {
@@ -628,6 +695,7 @@ export default function App() {
         gastoIdGenerado: null
       };
       setPorImpactar(prev => [newRecord, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsPorImpactarFormOpen(false);
     setSelectedPorImpactar(null);
@@ -635,6 +703,7 @@ export default function App() {
 
   const handleDeletePorImpactar = (id: string) => {
     setPorImpactar(prev => prev.filter(rec => rec.id !== id));
+    showToast('Eliminado con éxito');
   };
 
   const handleOpenAddPorImpactarModal = () => {
@@ -715,6 +784,7 @@ export default function App() {
 
     setIsPorImpactarResolverOpen(false);
     setPorImpactarToResolve(null);
+    showToast('Gasto registrado correctamente');
   };
 
   const handleOpenAddExpenseModal = () => {
@@ -739,6 +809,7 @@ export default function App() {
     tieneFactura: boolean;
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
+    fecha_vencimiento?: string;
   }) => {
     if (selectedProviderPayment) {
       // Edit mode
@@ -747,6 +818,7 @@ export default function App() {
           ? { ...p, ...formData } 
           : p
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode
       const newPayment: ProviderPayment = {
@@ -754,6 +826,7 @@ export default function App() {
         ...formData
       };
       setProviderPayments(prev => [newPayment, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsProviderPaymentModalOpen(false);
     setSelectedProviderPayment(null);
@@ -761,6 +834,7 @@ export default function App() {
 
   const handleDeleteProviderPayment = (id: string) => {
     setProviderPayments(prev => prev.filter(p => p.id !== id));
+    showToast('Eliminado con éxito');
   };
 
   const handleOpenAddProviderPaymentModal = () => {
@@ -791,13 +865,17 @@ export default function App() {
           ? { ...p, ...formData } 
           : p
       ));
+      showToast('Cambios guardados');
     } else {
       // Add mode
       const newPayment: ThirdPartyPayment = {
         id: `tpay_${Math.random().toString(36).substr(2, 9)}`,
-        ...formData
+        ...formData,
+        dinero_recibido: false,
+        fecha_recibido: null
       };
       setThirdPartyPayments(prev => [newPayment, ...prev]);
+      showToast('Guardado con éxito');
     }
     setIsThirdPartyPaymentModalOpen(false);
     setSelectedThirdPartyPayment(null);
@@ -805,14 +883,48 @@ export default function App() {
 
   const handleDeleteThirdPartyPayment = (id: string) => {
     setThirdPartyPayments(prev => prev.filter(p => p.id !== id));
+    showToast('Eliminado con éxito');
   };
 
   const handleMarkThirdPartyPaymentAsPaid = (id: string) => {
+    const payment = thirdPartyPayments.find(p => p.id === id);
+    if (!payment) return;
+
+    if (!payment.proyectoId) {
+      // Rule 1: No project
+      if (!payment.dinero_recibido) {
+        showToast("No puedes dispersar este pago — el solicitante todavía no te ha entregado el dinero. Márcalo como 'Recibido' primero.");
+        return;
+      }
+    } else {
+      // Rule 2: Has project
+      const proj = projects.find(p => p.id === payment.proyectoId);
+      const projName = proj ? proj.nombre : '';
+      const billingStatus = calculateProjectBillingStatus(payment.proyectoId, invoices);
+      if (billingStatus !== 'Pagado') {
+        showToast(`No puedes dispersar este pago — el cliente del proyecto '${projName}' todavía no ha pagado todas sus facturas.`);
+        return;
+      }
+    }
+
     setThirdPartyPayments(prev => prev.map(p => 
       p.id === id 
         ? { ...p, estatusPago: 'Pagado' } 
         : p
     ));
+    showToast('Cambios guardados');
+  };
+
+  const handleConfirmMarkAsReceived = (fechaRecibido: string) => {
+    if (!paymentToMarkAsReceived) return;
+    setThirdPartyPayments(prev => prev.map(p => 
+      p.id === paymentToMarkAsReceived.id 
+        ? { ...p, dinero_recibido: true, fecha_recibido: fechaRecibido } 
+        : p
+    ));
+    setIsRecibirDineroOpen(false);
+    setPaymentToMarkAsReceived(null);
+    showToast('Dinero marcado como recibido');
   };
 
   const handleOpenAddThirdPartyPaymentModal = () => {
@@ -823,6 +935,21 @@ export default function App() {
   const handleOpenEditThirdPartyPaymentModal = (payment: ThirdPartyPayment) => {
     setSelectedThirdPartyPayment(payment);
     setIsThirdPartyPaymentModalOpen(true);
+  };
+
+  // Bóveda de IVA handlers
+  const handleAddIvaWithdrawal = (withdrawalData: { concepto: string; monto: number; fecha: string }) => {
+    const newWithdrawal: IvaWithdrawal = {
+      id: `wit_${Math.random().toString(36).substr(2, 9)}`,
+      ...withdrawalData
+    };
+    setIvaWithdrawals(prev => [newWithdrawal, ...prev]);
+    showToast('Retiro de IVA registrado');
+  };
+
+  const handleDeleteIvaWithdrawal = (id: string) => {
+    setIvaWithdrawals(prev => prev.filter(w => w.id !== id));
+    showToast('Retiro de IVA eliminado');
   };
 
   // Render placeholder module view (strictly following user constraints)
@@ -866,6 +993,7 @@ export default function App() {
             providerPayments={providerPayments}
             profitDistributions={profitDistributions}
             porImpactar={porImpactar}
+            thirdPartyPayments={thirdPartyPayments}
             onAddClick={handleOpenAddProjectModal}
             onEditClick={handleOpenEditProjectModal}
             onDeleteClick={handleDeleteProject}
@@ -892,6 +1020,14 @@ export default function App() {
             onDeleteClick={handleDeleteExpense}
           />
         );
+      case 'cuenta_juan_carlos':
+        return (
+          <CuentaJuanCarlos
+            invoices={invoices}
+            expenses={expenses}
+            projects={projects}
+          />
+        );
       case 'pagos_proveedores':
         return (
           <ProviderPaymentsList
@@ -911,6 +1047,10 @@ export default function App() {
             onEditClick={handleOpenEditThirdPartyPaymentModal}
             onDeleteClick={handleDeleteThirdPartyPayment}
             onMarkAsPaidClick={handleMarkThirdPartyPaymentAsPaid}
+            onMarkAsReceivedClick={(pay) => {
+              setPaymentToMarkAsReceived(pay);
+              setIsRecibirDineroOpen(true);
+            }}
           />
         );
       case 'reparto_utilidades':
@@ -960,6 +1100,17 @@ export default function App() {
             providerPayments={providerPayments}
           />
         );
+      case 'boveda_iva':
+        return (
+          <BovedaIva
+            invoices={invoices}
+            expenses={expenses}
+            providerPayments={providerPayments}
+            ivaWithdrawals={ivaWithdrawals}
+            onAddWithdrawal={handleAddIvaWithdrawal}
+            onDeleteWithdrawal={handleDeleteIvaWithdrawal}
+          />
+        );
       default:
         return null;
     }
@@ -995,6 +1146,8 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          onQuickGastoClick={handleOpenAddExpenseModal}
+          onQuickFacturaClick={handleOpenAddInvoiceModal}
         />
 
         {/* Content Area */}
@@ -1014,6 +1167,19 @@ export default function App() {
         initialData={selectedClient}
       />
 
+      {/* Eliminar Cliente Modal */}
+      <EliminarClienteModal
+        isOpen={isDeleteClientModalOpen}
+        onClose={() => {
+          setIsDeleteClientModalOpen(false);
+          setClientToDeleteId(null);
+          setClientDeleteCounts(null);
+        }}
+        client={clients.find(c => c.id === clientToDeleteId) || null}
+        counts={clientDeleteCounts}
+        onConfirmDelete={handleConfirmDeleteClient}
+      />
+
       {/* Shared Project Form Modal (Add / Edit) */}
       <ProyectoFormModal
         isOpen={isProjectModalOpen}
@@ -1021,6 +1187,19 @@ export default function App() {
         onSubmit={handleAddOrEditProjectSubmit}
         initialData={selectedProject}
         clients={clients}
+      />
+
+      {/* Eliminar Proyecto Modal */}
+      <EliminarProyectoModal
+        isOpen={isDeleteProjectModalOpen}
+        onClose={() => {
+          setIsDeleteProjectModalOpen(false);
+          setProjectToDeleteId(null);
+          setProjectDeleteCounts(null);
+        }}
+        project={projects.find(p => p.id === projectToDeleteId) || null}
+        counts={projectDeleteCounts}
+        onConfirmDelete={handleConfirmDeleteProject}
       />
 
       {/* Shared Invoice Form Modal (Add / Edit) */}
@@ -1047,6 +1226,7 @@ export default function App() {
         onClose={() => setIsMarkAsPaidOpen(false)}
         onConfirm={handleConfirmMarkAsPaid}
         folio={invoiceToMarkAsPaid?.folio || ''}
+        facturadoPor={invoiceToMarkAsPaid?.facturado_por}
       />
 
       {/* Eliminar Factura Modal (Con control de cascada y bloqueo) */}
@@ -1091,6 +1271,18 @@ export default function App() {
         onSubmit={handleAddOrEditThirdPartyPaymentSubmit}
         initialData={selectedThirdPartyPayment}
         projects={projects}
+        invoices={invoices}
+      />
+
+      {/* Recibir Dinero Modal */}
+      <RecibirDineroModal
+        isOpen={isRecibirDineroOpen}
+        onClose={() => {
+          setIsRecibirDineroOpen(false);
+          setPaymentToMarkAsReceived(null);
+        }}
+        onConfirm={handleConfirmMarkAsReceived}
+        concepto={paymentToMarkAsReceived?.concepto || ''}
       />
 
       {/* Por Impactar Form Modal (Add / Edit) */}

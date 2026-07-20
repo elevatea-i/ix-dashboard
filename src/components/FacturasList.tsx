@@ -225,9 +225,14 @@ export default function FacturasList({
                     <tr key={inv.id} className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-colors">
                       {/* Folio */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
-                        <span className="font-mono text-sm font-bold text-enchanted-green dark:text-light-ivory">
-                          {inv.folio}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-mono text-sm font-bold text-enchanted-green dark:text-light-ivory">
+                            {inv.folio}
+                          </span>
+                          <span className="text-[10px] text-rocky-gray">
+                            Por: {inv.facturado_por || 'IX'}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Proyecto */}

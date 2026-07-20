@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Calendar, Layers, CreditCard, Calculator } from 'lucide-react';
 import { Project, ProviderPayment } from '../types';
-import { getMexicoCityDate } from '../utils';
+import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput } from '../utils';
 
 interface ProviderPaymentFormModalProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface ProviderPaymentFormModalProps {
     tieneFactura: boolean;
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
+    fecha_vencimiento?: string;
   }) => void;
   initialData: ProviderPayment | null;
   projects: Project[];
@@ -50,6 +51,7 @@ export default function ProviderPaymentFormModal({
   const [tieneFactura, setTieneFactura] = useState<boolean>(false);
   const [estatus, setEstatus] = useState<'Pagado' | 'Pendiente'>('Pagado');
   const [fecha, setFecha] = useState<string>('');
+  const [fecha_vencimiento, setFechaVencimiento] = useState<string>('');
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -59,13 +61,14 @@ export default function ProviderPaymentFormModal({
       if (initialData) {
         setProyectoId(initialData.proyectoId);
         setProveedor(initialData.proveedor);
-        setSubtotal(initialData.subtotal.toString());
+        setSubtotal(formatLiveCurrency(initialData.subtotal.toString()));
         setIva(initialData.iva.toString());
         setIsrRetenido(initialData.isrRetenido.toString());
         setIvaRetenido(initialData.ivaRetenido.toString());
         setTieneFactura(initialData.tieneFactura);
         setEstatus(initialData.estatus);
         setFecha(initialData.fecha);
+        setFechaVencimiento(initialData.fecha_vencimiento || '');
       } else {
         setProyectoId(projects.length > 0 ? projects[0].id : '');
         setProveedor('');
@@ -76,13 +79,16 @@ export default function ProviderPaymentFormModal({
         setTieneFactura(false);
         setEstatus('Pagado');
         setFecha(getMexicoCityDate());
+        setFechaVencimiento('');
       }
     }
   }, [isOpen, initialData, projects]);
 
   const handleSubtotalChange = (val: string) => {
-    setSubtotal(val);
-    const sub = parseFloat(val);
+    const formatted = formatLiveCurrency(val);
+    setSubtotal(formatted);
+    const cleanSub = parseCurrencyInput(formatted);
+    const sub = parseFloat(cleanSub);
     if (!isNaN(sub) && sub >= 0) {
       setIva((sub * 0.16).toFixed(2));
     } else {
@@ -90,7 +96,8 @@ export default function ProviderPaymentFormModal({
     }
   };
 
-  const numSubtotal = parseFloat(subtotal) || 0;
+  const cleanSubtotal = parseCurrencyInput(subtotal);
+  const numSubtotal = parseFloat(cleanSubtotal) || 0;
   const numIva = parseFloat(iva) || 0;
   const numIsrRetenido = parseFloat(isrRetenido) || 0;
   const numIvaRetenido = parseFloat(ivaRetenido) || 0;
@@ -134,18 +141,19 @@ export default function ProviderPaymentFormModal({
       total: Number(computedTotal.toFixed(2)),
       tieneFactura,
       estatus,
-      fecha
+      fecha,
+      fecha_vencimiento: fecha_vencimiento || undefined
     });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div id="provider-payment-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#051A14]/80 backdrop-blur-sm">
-      <div id="provider-payment-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-2xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col">
+    <div id="provider-payment-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div id="provider-payment-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-2xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between bg-white dark:bg-[#051A14]">
           <div>
             <h3 className="text-lg font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
               {initialData ? 'Editar Pago a Proveedor' : 'Registrar Pago a Proveedor'}
@@ -156,7 +164,7 @@ export default function ProviderPaymentFormModal({
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-all"
+            className="p-1.5 text-enchanted-green/80 dark:text-light-ivory/80 hover:text-enchanted-green dark:hover:text-light-ivory rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-all"
           >
             <X size={18} />
           </button>
@@ -166,9 +174,9 @@ export default function ProviderPaymentFormModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Project Picker */}
           <div>
-            <label className="block text-xs font-bold text-enchanted-green dark:text-rose-linen mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
               <Layers size={13} className="text-[#8C7853] dark:text-elevated-gold" />
-              <span>Proyecto Vinculado <span className="text-cranberry">*</span></span>
+              <span>Proyecto Vinculado <span className="text-cranberry font-bold">*</span></span>
             </label>
             {projects.length === 0 ? (
               <div className="flex items-center gap-2 px-3.5 py-2.5 bg-rose-linen/30 border border-cranberry/30 rounded text-xs text-cranberry">
@@ -179,12 +187,12 @@ export default function ProviderPaymentFormModal({
               <select
                 value={proyectoId}
                 onChange={(e) => setProyectoId(e.target.value)}
-                className={`w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                  errors.proyectoId ? 'border-cranberry' : 'border-enchanted-green/20 dark:border-light-ivory/20'
+                className={`w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                  errors.proyectoId ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                 }`}
               >
                 {projects.map((p) => (
-                  <option key={p.id} value={p.id} className="bg-light-ivory dark:bg-[#051A14]">
+                  <option key={p.id} value={p.id} className="bg-white dark:bg-[#051A14]">
                     [{p.codigo}] {p.nombre}
                   </option>
                 ))}
@@ -197,16 +205,16 @@ export default function ProviderPaymentFormModal({
 
           {/* Supplier Name */}
           <div>
-            <label className="block text-xs font-bold text-enchanted-green dark:text-rose-linen mb-1.5">
-              Nombre del Proveedor <span className="text-cranberry">*</span>
+            <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+              Nombre del Proveedor <span className="text-cranberry font-bold">*</span>
             </label>
             <input
               type="text"
               value={proveedor}
               onChange={(e) => setProveedor(e.target.value)}
               placeholder="ej. Carpas del Norte, Mobiliario Eventos SA"
-              className={`w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                errors.proveedor ? 'border-cranberry' : 'border-enchanted-green/20 dark:border-light-ivory/20'
+              className={`w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                errors.proveedor ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
               }`}
             />
             {errors.proveedor && (
@@ -224,20 +232,17 @@ export default function ProviderPaymentFormModal({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Subtotal */}
               <div>
-                <label className="block text-[11px] font-bold text-enchanted-green dark:text-rose-linen mb-1">
-                  Subtotal <span className="text-cranberry">*</span>
+                <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                  Subtotal <span className="text-cranberry font-bold">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-xs text-rocky-gray font-bold">$</span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
                     value={subtotal}
                     onChange={(e) => handleSubtotalChange(e.target.value)}
-                    placeholder="0.00"
-                    className={`w-full pl-6 pr-3 py-1.5 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                      errors.subtotal ? 'border-cranberry' : 'border-enchanted-green/15 dark:border-light-ivory/15'
+                    placeholder="$0.00"
+                    className={`w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                      errors.subtotal ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                     }`}
                   />
                 </div>
@@ -248,7 +253,7 @@ export default function ProviderPaymentFormModal({
 
               {/* IVA (Auto + Editable) */}
               <div>
-                <label className="block text-[11px] font-bold text-enchanted-green dark:text-rose-linen mb-1">
+                <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   IVA (16% Autocalculado)
                 </label>
                 <div className="relative">
@@ -260,8 +265,8 @@ export default function ProviderPaymentFormModal({
                     value={iva}
                     onChange={(e) => setIva(e.target.value)}
                     placeholder="0.00"
-                    className={`w-full pl-6 pr-3 py-1.5 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                      errors.iva ? 'border-cranberry' : 'border-enchanted-green/15 dark:border-light-ivory/15'
+                    className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                      errors.iva ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                     }`}
                   />
                 </div>
@@ -272,7 +277,7 @@ export default function ProviderPaymentFormModal({
 
               {/* Retención ISR */}
               <div>
-                <label className="block text-[11px] font-bold text-enchanted-green dark:text-rose-linen mb-1">
+                <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   Retención ISR (Opcional, manual)
                 </label>
                 <div className="relative">
@@ -284,8 +289,8 @@ export default function ProviderPaymentFormModal({
                     value={isrRetenido}
                     onChange={(e) => setIsrRetenido(e.target.value)}
                     placeholder="0.00"
-                    className={`w-full pl-6 pr-3 py-1.5 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                      errors.isrRetenido ? 'border-cranberry' : 'border-enchanted-green/15 dark:border-light-ivory/15'
+                    className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                      errors.isrRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                     }`}
                   />
                 </div>
@@ -296,7 +301,7 @@ export default function ProviderPaymentFormModal({
 
               {/* Retención IVA */}
               <div>
-                <label className="block text-[11px] font-bold text-enchanted-green dark:text-rose-linen mb-1">
+                <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   Retención IVA (Opcional, manual)
                 </label>
                 <div className="relative">
@@ -308,8 +313,8 @@ export default function ProviderPaymentFormModal({
                     value={ivaRetenido}
                     onChange={(e) => setIvaRetenido(e.target.value)}
                     placeholder="0.00"
-                    className={`w-full pl-6 pr-3 py-1.5 bg-light-ivory/40 dark:bg-[#070D0C]/40 border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors ${
-                      errors.ivaRetenido ? 'border-cranberry' : 'border-enchanted-green/15 dark:border-light-ivory/15'
+                    className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
+                      errors.ivaRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                     }`}
                   />
                 </div>
@@ -335,12 +340,12 @@ export default function ProviderPaymentFormModal({
           </div>
 
           {/* Invoice Verification, Status & Date */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-bold text-enchanted-green dark:text-rose-linen mb-1.5">
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Facturado
               </label>
-              <div className="flex items-center justify-between p-2 bg-white/30 dark:bg-black/10 rounded border border-enchanted-green/5 h-10">
+              <div className="flex items-center justify-between p-2 bg-white dark:bg-black/10 rounded border border-enchanted-green/40 dark:border-light-ivory/30 h-10 shadow-xs">
                 <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory">¿Tiene Factura?</span>
                 <input
                   type="checkbox"
@@ -352,29 +357,42 @@ export default function ProviderPaymentFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-enchanted-green dark:text-rose-linen mb-1.5">
-                Estatus de Pago <span className="text-cranberry">*</span>
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Estatus de Pago <span className="text-cranberry font-bold">*</span>
               </label>
               <select
                 value={estatus}
                 onChange={(e) => setEstatus(e.target.value as 'Pagado' | 'Pendiente')}
-                className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
               >
-                <option value="Pagado" className="bg-light-ivory dark:bg-[#051A14]">Pagado</option>
-                <option value="Pendiente" className="bg-light-ivory dark:bg-[#051A14]">Pendiente</option>
+                <option value="Pagado" className="bg-white dark:bg-[#051A14]">Pagado</option>
+                <option value="Pendiente" className="bg-white dark:bg-[#051A14]">Pendiente</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-enchanted-green dark:text-rose-linen mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
                 <Calendar size={13} className="text-[#8C7853]" />
-                <span>Fecha <span className="text-cranberry">*</span></span>
+                <span className="whitespace-nowrap">Fecha <span className="text-cranberry font-bold">*</span></span>
               </label>
               <input
                 type="date"
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
+                <Calendar size={13} className="text-[#8C7853] dark:text-elevated-gold" />
+                <span className="whitespace-nowrap">Vencimiento <span className="text-[10px] text-rocky-gray font-normal ml-1">(Opcional)</span></span>
+              </label>
+              <input
+                type="date"
+                value={fecha_vencimiento}
+                onChange={(e) => setFechaVencimiento(e.target.value)}
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
               />
             </div>
           </div>

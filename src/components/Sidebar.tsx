@@ -12,12 +12,13 @@ import {
   TrendingUp, 
   Percent,
   X,
-  Sparkles,
-  Truck,
+  HandCoins,
   UsersRound,
   Coins,
-  Zap,
-  BarChart3
+  Repeat,
+  BarChart3,
+  ArrowRightLeft,
+  Vault
 } from 'lucide-react';
 import { ModuleId, Module } from '../types';
 
@@ -41,11 +42,13 @@ export default function Sidebar({
     { id: 'facturacion', label: 'Facturación', disabled: false },
     { id: 'gastos', label: 'Gastos', disabled: false },
     { id: 'pagos_proveedores', label: 'Pagos a Proveedores', disabled: false },
-    { id: 'pagos_terceros', label: 'Pagos a Terceros', disabled: false },
-    { id: 'reparto_utilidades', label: 'Reparto de Utilidades', disabled: false },
     { id: 'por_impactar', label: 'Por Impactar', disabled: false },
+    { id: 'pagos_terceros', label: 'Pagos a Terceros', disabled: false },
+    { id: 'cuenta_juan_carlos', label: 'Cuenta Juan Carlos', disabled: false },
+    { id: 'reparto_utilidades', label: 'Reparto de Utilidades', disabled: false },
     { id: 'rentabilidad', label: 'Rentabilidad', disabled: false },
     { id: 'iva', label: 'Panel de IVA', disabled: false },
+    { id: 'boveda_iva', label: 'Bóveda de IVA', disabled: false },
     { id: 'reportes', label: 'Reportes', disabled: false },
   ];
 
@@ -59,20 +62,24 @@ export default function Sidebar({
         return <Receipt size={18} />;
       case 'gastos':
         return <TrendingDown size={18} />;
+      case 'cuenta_juan_carlos':
+        return <ArrowRightLeft size={18} />;
       case 'pagos_proveedores':
-        return <Truck size={18} />;
+        return <HandCoins size={18} />;
       case 'pagos_terceros':
         return <UsersRound size={18} />;
       case 'reparto_utilidades':
         return <Coins size={18} />;
       case 'por_impactar':
-        return <Zap size={18} />;
+        return <Repeat size={18} />;
       case 'rentabilidad':
         return <TrendingUp size={18} />;
       case 'iva':
         return <Percent size={18} />;
       case 'reportes':
         return <BarChart3 size={18} />;
+      case 'boveda_iva':
+        return <Vault size={18} />;
     }
   };
 
@@ -160,7 +167,7 @@ export default function Sidebar({
         {/* Sidebar Footer with Editorial Branding */}
         <div className="p-4 border-t border-white/10 bg-[#07241B] shrink-0">
           <div className="flex items-start space-x-3">
-            <Sparkles size={16} className="text-elevated-gold shrink-0 mt-0.5" />
+            <div className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-serif font-semibold text-light-ivory">IX Marketing</p>
             </div>

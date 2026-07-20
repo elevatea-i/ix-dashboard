@@ -36,6 +36,7 @@ export interface Invoice {
   estado: 'facturada' | 'pagada';
   fechaEmision: string; // YYYY-MM-DD
   fechaPago?: string; // YYYY-MM-DD
+  facturado_por?: 'IX' | 'Juan Carlos'; // Selector for who billed: default IX
 }
 
 export type ExpenseCategory =
@@ -63,7 +64,7 @@ export interface Expense {
   isrRetenido: number;
   ivaRetenido: number;
   total: number;
-  cuentaOrigen: 'San' | 'Ale' | 'Empresa';
+  cuentaOrigen: 'San' | 'Ale' | 'Empresa' | 'Juan Carlos';
   esReembolsable: boolean;
   tieneFactura: boolean;
   metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
@@ -83,6 +84,7 @@ export interface ProviderPayment {
   tieneFactura: boolean;
   estatus: 'Pagado' | 'Pendiente';
   fecha: string; // YYYY-MM-DD
+  fecha_vencimiento?: string; // YYYY-MM-DD (optional)
 }
 
 export interface ThirdPartyPayment {
@@ -95,6 +97,8 @@ export interface ThirdPartyPayment {
   montoADepositar: number;
   estatusPago: 'Pagado' | 'Pendiente';
   fecha: string; // YYYY-MM-DD
+  dinero_recibido?: boolean;
+  fecha_recibido?: string | null;
 }
 
 export interface ProfitDistribution {
@@ -117,11 +121,20 @@ export type ModuleId =
   | 'gastos' 
   | 'pagos_proveedores' 
   | 'pagos_terceros' 
+  | 'cuenta_juan_carlos'
   | 'reparto_utilidades' 
   | 'por_impactar' 
   | 'rentabilidad' 
   | 'iva' 
-  | 'reportes';
+  | 'reportes'
+  | 'boveda_iva';
+
+export interface IvaWithdrawal {
+  id: string;
+  concepto: string;
+  monto: number;
+  fecha: string; // YYYY-MM-DD
+}
 
 export interface PorImpactar {
   id: string;

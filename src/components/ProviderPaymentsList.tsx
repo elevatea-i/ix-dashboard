@@ -15,9 +15,10 @@ import {
   CheckCircle2, 
   Clock, 
   Layers, 
-  RefreshCcw 
+  RefreshCcw,
+  AlertTriangle
 } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { formatCurrency, getDueDateIndicator } from '../utils';
 
 interface ProviderPaymentsListProps {
   payments: ProviderPayment[];
@@ -56,6 +57,15 @@ export default function ProviderPaymentsList({
   const totalPendiente = payments
     .filter(p => p.estatus === 'Pendiente')
     .reduce((sum, p) => sum + p.total, 0);
+
+  const overduePaymentsList = payments.filter(p => {
+    if (p.estatus !== 'Pendiente' || !p.fecha_vencimiento) return false;
+    const indicator = getDueDateIndicator(p.estatus, p.fecha_vencimiento);
+    return indicator && indicator.type === 'past';
+  });
+
+  const countVencidos = overduePaymentsList.length;
+  const totalVencidos = overduePaymentsList.reduce((sum, p) => sum + p.total, 0);
 
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -102,7 +112,7 @@ export default function ProviderPaymentsList({
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Pagado */}
         <div id="kpi-pp-total-pagado" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
           <div className="space-y-1">
@@ -128,6 +138,23 @@ export default function ProviderPaymentsList({
           </div>
           <div className="p-3 bg-rose-linen/25 dark:bg-rose-linen/10 rounded-full text-cranberry">
             <Clock size={22} />
+          </div>
+        </div>
+
+        {/* Vencidos */}
+        <div id="kpi-pp-total-vencidos" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-cranberry/20 dark:border-cranberry/30 shadow-sm flex items-center justify-between relative overflow-hidden">
+          <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-cranberry"></div>
+          <div className="space-y-1 pl-1">
+            <p className="text-[11px] uppercase tracking-wider font-bold text-cranberry">Pagos Vencidos (Urgente)</p>
+            <p className="text-2xl font-mono font-bold text-cranberry">
+              {formatCurrency(totalVencidos)}
+            </p>
+            <p className="text-[10px] text-rocky-gray">
+              {countVencidos} {countVencidos === 1 ? 'pago pendiente vencido' : 'pagos pendientes vencidos'}
+            </p>
+          </div>
+          <div className="p-3 bg-cranberry/10 rounded-full text-cranberry">
+            <AlertTriangle size={22} />
           </div>
         </div>
       </div>
@@ -262,7 +289,14 @@ export default function ProviderPaymentsList({
                     </td>
 
                     <td className="px-6 py-4 font-mono text-rocky-gray">
-                      {pay.fecha}
+                      <div className="flex flex-col">
+                        <span>{pay.fecha}</span>
+                        {pay.fecha_vencimiento && pay.estatus === 'Pendiente' && (
+                          <span className="text-[10px] text-rocky-gray dark:text-rose-linen/50 font-mono mt-0.5">
+                            Venc: {pay.fecha_vencimiento}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">
@@ -283,9 +317,35 @@ export default function ProviderPaymentsList({
                           Pagado
                         </span>
                       ) : (
-                        <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-                          Pendiente
-                        </span>
+                        <div className="flex flex-col gap-1.5 items-start">
+                          <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
+                            Pendiente
+                          </span>
+                          {(() => {
+                            const indicator = getDueDateIndicator(pay.estatus, pay.fecha_vencimiento);
+                            if (!indicator) return null;
+                            
+                            if (indicator.type === 'future') {
+                              return (
+                                <span className="text-[10px] text-rocky-gray dark:text-rose-linen/60 font-medium whitespace-nowrap">
+                                  {indicator.text}
+                                </span>
+                              );
+                            } else if (indicator.type === 'today') {
+                              return (
+                                <span className="text-[10px] text-cranberry dark:text-rose-linen font-bold px-1.5 py-0.5 bg-cranberry/10 border border-cranberry/20 rounded whitespace-nowrap">
+                                  {indicator.text}
+                                </span>
+                              );
+                            } else {
+                              return (
+                                <span className="text-[10px] text-white bg-cranberry font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                                  {indicator.text}
+                                </span>
+                              );
+                            }
+                          })()}
+                        </div>
                       )}
                     </td>
 

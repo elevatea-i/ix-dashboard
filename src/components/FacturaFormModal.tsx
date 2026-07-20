@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Project, Invoice } from '../types';
 import { X, AlertCircle } from 'lucide-react';
+import { formatLiveCurrency, parseCurrencyInput } from '../utils';
 
 interface FacturaFormModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface FacturaFormModalProps {
     metodoPago: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
     fechaEmision: string;
+    facturado_por?: 'IX' | 'Juan Carlos';
   }) => void;
   initialData: Invoice | null;
   projects: Project[];
@@ -34,26 +36,32 @@ export default function FacturaFormModal({
 }: FacturaFormModalProps) {
   const [folio, setFolio] = useState('');
   const [proyectoId, setProyectoId] = useState('');
-  const [subtotal, setSubtotal] = useState<number>(0);
+  const [subtotal, setSubtotal] = useState<string>('');
   const [iva, setIva] = useState<number>(0);
   const [retencionIsr, setRetencionIsr] = useState<number>(0);
   const [retencionIva, setRetencionIva] = useState<number>(0);
   const [metodoPago, setMetodoPago] = useState<'PUE' | 'PPD'>('PUE');
   const [complementoEmitido, setComplementoEmitido] = useState<boolean>(false);
   const [fechaEmision, setFechaEmision] = useState('');
+  const [facturadoPor, setFacturadoPor] = useState<'IX' | 'Juan Carlos'>('IX');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
+  const cleanSubtotal = parseCurrencyInput(subtotal);
+  const numSubtotal = parseFloat(cleanSubtotal) || 0;
+
   // Auto-calculate 16% IVA when subtotal changes
-  const handleSubtotalChange = (val: number) => {
-    setSubtotal(val);
+  const handleSubtotalChange = (val: string) => {
+    const formatted = formatLiveCurrency(val);
+    setSubtotal(formatted);
     // Calculated as exactly 16% of subtotal
-    const calculatedIva = Number((val * 0.16).toFixed(2));
+    const cleanVal = parseFloat(parseCurrencyInput(formatted)) || 0;
+    const calculatedIva = Number((cleanVal * 0.16).toFixed(2));
     setIva(calculatedIva);
   };
 
   // Recalculate total for read-only preview display
   const calculatedTotal = Number(
-    (subtotal + iva - retencionIsr - retencionIva).toFixed(2)
+    (numSubtotal + iva - retencionIsr - retencionIva).toFixed(2)
   );
 
   useEffect(() => {
@@ -61,23 +69,25 @@ export default function FacturaFormModal({
       if (initialData) {
         setFolio(initialData.folio);
         setProyectoId(initialData.proyectoId);
-        setSubtotal(initialData.subtotal);
+        setSubtotal(formatLiveCurrency(initialData.subtotal.toString()));
         setIva(initialData.iva);
         setRetencionIsr(initialData.retencionIsr);
         setRetencionIva(initialData.retencionIva);
         setMetodoPago(initialData.metodoPago);
         setComplementoEmitido(initialData.complementoEmitido ?? false);
         setFechaEmision(initialData.fechaEmision);
+        setFacturadoPor(initialData.facturado_por || 'IX');
       } else {
         setFolio('');
         setProyectoId(projects.length > 0 ? projects[0].id : '');
-        setSubtotal(0);
+        setSubtotal('');
         setIva(0);
         setRetencionIsr(0);
         setRetencionIva(0);
         setMetodoPago('PUE');
         setComplementoEmitido(false);
         setFechaEmision('');
+        setFacturadoPor('IX');
       }
       setErrors({});
     }
@@ -93,7 +103,8 @@ export default function FacturaFormModal({
     if (!proyectoId) {
       newErrors.proyectoId = 'Debe seleccionar un proyecto.';
     }
-    if (subtotal <= 0) {
+    const cleanSub = parseFloat(cleanSubtotal);
+    if (isNaN(cleanSub) || cleanSub <= 0) {
       newErrors.subtotal = 'El subtotal debe ser un número mayor a 0.';
     }
     if (iva < 0) {
@@ -119,29 +130,30 @@ export default function FacturaFormModal({
     onSubmit({
       folio: folio.trim(),
       proyectoId,
-      subtotal,
+      subtotal: Number(numSubtotal.toFixed(2)),
       iva,
       retencionIsr,
       retencionIva,
       metodoPago,
       complementoEmitido: metodoPago === 'PPD' ? complementoEmitido : undefined,
-      fechaEmision
+      fechaEmision,
+      facturado_por: facturadoPor
     });
   };
 
   return (
-    <div id="invoice-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-enchanted-green/80 dark:bg-black/80 backdrop-blur-sm">
+    <div id="invoice-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div id="invoice-form-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-3xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
         
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
-          <h3 className="font-serif text-lg font-medium text-enchanted-green dark:text-light-ivory">
+          <h3 className="font-serif text-lg font-bold text-enchanted-green dark:text-light-ivory">
             {initialData ? 'Editar Factura / CFDI' : 'Registrar Nueva Factura CFDI'}
           </h3>
           <button
             id="close-invoice-modal-btn"
             onClick={onClose}
-            className="text-enchanted-green/60 dark:text-light-ivory/60 hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors"
+            className="text-enchanted-green/80 dark:text-light-ivory/80 hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors"
           >
             <X size={20} />
           </button>
@@ -171,8 +183,8 @@ export default function FacturaFormModal({
               {/* Folio y Proyecto */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
-                    Folio CFDI <span className="text-cranberry">*</span>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Folio CFDI <span className="text-cranberry font-bold">*</span>
                   </label>
                   <input
                     type="text"
@@ -180,7 +192,7 @@ export default function FacturaFormModal({
                     value={folio}
                     onChange={(e) => setFolio(e.target.value)}
                     placeholder="Ej. IX01, B-452"
-                    className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                   />
                   {errors.folio && (
                     <p className="text-xs text-cranberry mt-1 font-medium">{errors.folio}</p>
@@ -188,13 +200,13 @@ export default function FacturaFormModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
-                    Proyecto Asociado <span className="text-cranberry">*</span>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Proyecto Asociado <span className="text-cranberry font-bold">*</span>
                   </label>
                   <select
                     value={proyectoId}
                     onChange={(e) => setProyectoId(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                   >
                     {projects.map((proj) => (
                       <option key={proj.id} value={proj.id} className="bg-light-ivory dark:bg-[#051A14]">
@@ -208,18 +220,18 @@ export default function FacturaFormModal({
                 </div>
               </div>
 
-              {/* Fecha Emisión y Método Pago */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Fecha Emisión, Método Pago y Facturado Por */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
-                    Fecha de Emisión <span className="text-cranberry">*</span>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Fecha de Emisión <span className="text-cranberry font-bold">*</span>
                   </label>
                   <input
                     type="date"
                     required
                     value={fechaEmision}
                     onChange={(e) => setFechaEmision(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                   />
                   {errors.fechaEmision && (
                     <p className="text-xs text-cranberry mt-1 font-medium">{errors.fechaEmision}</p>
@@ -227,16 +239,30 @@ export default function FacturaFormModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
-                    Método de Pago <span className="text-cranberry">*</span>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Método de Pago <span className="text-cranberry font-bold">*</span>
                   </label>
                   <select
                     value={metodoPago}
                     onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD')}
-                    className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold"
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold shadow-xs"
                   >
                     <option value="PUE" className="bg-light-ivory dark:bg-[#051A14]">PUE</option>
                     <option value="PPD" className="bg-light-ivory dark:bg-[#051A14]">PPD</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Facturado Por <span className="text-cranberry font-bold">*</span>
+                  </label>
+                  <select
+                    value={facturadoPor}
+                    onChange={(e) => setFacturadoPor(e.target.value as 'IX' | 'Juan Carlos')}
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-medium shadow-xs"
+                  >
+                    <option value="IX" className="bg-light-ivory dark:bg-[#051A14]">IX</option>
+                    <option value="Juan Carlos" className="bg-light-ivory dark:bg-[#051A14]">Juan Carlos</option>
                   </select>
                 </div>
               </div>
@@ -265,20 +291,17 @@ export default function FacturaFormModal({
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
-                      Subtotal <span className="text-cranberry">*</span>
+                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                      Subtotal <span className="text-cranberry font-bold">*</span>
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3.5 top-2 text-sm text-rocky-gray">$</span>
                       <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
+                        type="text"
                         required
-                        value={subtotal || ''}
-                        onChange={(e) => handleSubtotalChange(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                        value={subtotal}
+                        onChange={(e) => handleSubtotalChange(e.target.value)}
+                        placeholder="$0.00"
+                        className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
                       />
                     </div>
                     {errors.subtotal && (
@@ -287,7 +310,7 @@ export default function FacturaFormModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                       IVA (16% pre-calculado, editable)
                     </label>
                     <div className="relative">
@@ -300,7 +323,7 @@ export default function FacturaFormModal({
                         value={iva || ''}
                         onChange={(e) => setIva(parseFloat(e.target.value) || 0)}
                         placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                       />
                     </div>
                     {errors.iva && (
@@ -311,7 +334,7 @@ export default function FacturaFormModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                       Retención ISR (opcional)
                     </label>
                     <div className="relative">
@@ -323,7 +346,7 @@ export default function FacturaFormModal({
                         value={retencionIsr || ''}
                         onChange={(e) => setRetencionIsr(parseFloat(e.target.value) || 0)}
                         placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                       />
                     </div>
                     {errors.retencionIsr && (
@@ -332,7 +355,7 @@ export default function FacturaFormModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                       Retención IVA (opcional)
                     </label>
                     <div className="relative">
@@ -344,7 +367,7 @@ export default function FacturaFormModal({
                         value={retencionIva || ''}
                         onChange={(e) => setRetencionIva(parseFloat(e.target.value) || 0)}
                         placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                       />
                     </div>
                     {errors.retencionIva && (

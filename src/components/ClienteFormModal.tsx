@@ -78,7 +78,7 @@ export default function ClienteFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg bg-[#FAF6F2] dark:bg-[#0E1A16] border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg shadow-2xl overflow-hidden transition-colors duration-300 font-sans">
+      <div className="relative w-full max-w-lg bg-white dark:bg-[#0E1A16] border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-2xl overflow-hidden transition-colors duration-300 font-sans">
         {/* Top gold bar */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
 
@@ -94,7 +94,7 @@ export default function ClienteFormModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-enchanted-green/60 dark:text-light-ivory/60 hover:text-cranberry dark:hover:text-[#DFBDB5] hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded-full transition-all"
+            className="p-1.5 text-enchanted-green/80 dark:text-light-ivory/80 hover:text-cranberry dark:hover:text-[#DFBDB5] hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded-full transition-all"
           >
             <X size={18} />
           </button>
@@ -104,7 +104,7 @@ export default function ClienteFormModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Nombre (Requerido) */}
           <div>
-            <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+            <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
               Nombre o Alías Comercial <span className="text-cranberry font-bold">*</span>
             </label>
             <input
@@ -114,7 +114,7 @@ export default function ClienteFormModal({
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej. Nupec o Heineken México"
-              className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
             />
             {errors.nombre && (
               <p className="mt-1 text-xs text-cranberry dark:text-rose-linen flex items-center">
@@ -126,7 +126,7 @@ export default function ClienteFormModal({
 
           {/* Razón Social */}
           <div>
-            <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+            <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
               Razón Social (Opcional)
             </label>
             <input
@@ -135,7 +135,7 @@ export default function ClienteFormModal({
               value={razonSocial}
               onChange={(e) => setRazonSocial(e.target.value)}
               placeholder="Ej. Comercializadora de Alimentos S.A. de C.V."
-              className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
             />
           </div>
 
@@ -143,7 +143,7 @@ export default function ClienteFormModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* RFC */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 RFC (Opcional)
               </label>
               <input
@@ -153,7 +153,7 @@ export default function ClienteFormModal({
                 onChange={(e) => setRfc(e.target.value.toUpperCase())}
                 placeholder="Ej. COCO800101XYZ"
                 maxLength={13}
-                className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
               />
               {errors.rfc && (
                 <p className="mt-1 text-xs text-cranberry dark:text-rose-linen flex items-center">
@@ -165,7 +165,7 @@ export default function ClienteFormModal({
 
             {/* Contacto */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green/70 dark:text-light-ivory/70 mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Contacto (Nombre, Correo o Tel)
               </label>
               <input
@@ -174,7 +174,7 @@ export default function ClienteFormModal({
                 value={contacto}
                 onChange={(e) => setContacto(e.target.value)}
                 placeholder="Ej. Ing. Carlos - carlos@correo.com"
-                className="w-full px-3.5 py-2 bg-light-ivory/40 dark:bg-[#070D0C]/40 border border-enchanted-green/20 dark:border-light-ivory/20 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
               />
             </div>
           </div>

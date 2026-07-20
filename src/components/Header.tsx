@@ -4,20 +4,24 @@
  */
 
 import React from 'react';
-import { Menu, Sun, Moon, LogOut } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 
 interface HeaderProps {
   onLogout: () => void;
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   onMenuToggle: () => void;
+  onQuickGastoClick: () => void;
+  onQuickFacturaClick: () => void;
 }
 
 export default function Header({ 
   onLogout, 
   darkMode, 
   setDarkMode, 
-  onMenuToggle 
+  onMenuToggle,
+  onQuickGastoClick,
+  onQuickFacturaClick
 }: HeaderProps) {
   return (
     <header className="h-16 px-6 bg-white/40 dark:bg-[#070D0C]/40 backdrop-blur-md border-b border-rocky-gray/30 dark:border-light-ivory/10 flex items-center justify-between transition-all duration-300 shadow-sm">
@@ -39,7 +43,31 @@ export default function Header({
         </div>
       </div>
 
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        {/* Quick Action: Gasto Rápido */}
+        <button
+          onClick={onQuickGastoClick}
+          id="header-quick-gasto-btn"
+          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#84344E]/5 dark:bg-[#FC5C7D]/10 text-[#84344E] dark:text-[#FC5C7D] border border-[#84344E]/25 dark:border-[#FC5C7D]/30 hover:bg-[#84344E]/10 dark:hover:bg-[#FC5C7D]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
+          title="Registrar Gasto Rápido"
+        >
+          <ArrowDownCircle size={16} />
+          <span className="hidden sm:inline">Gasto Rápido</span>
+        </button>
+
+        {/* Quick Action: Factura Rápida */}
+        <button
+          onClick={onQuickFacturaClick}
+          id="header-quick-factura-btn"
+          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#047857]/5 dark:bg-[#34D399]/10 text-[#047857] dark:text-[#34D399] border border-[#047857]/25 dark:border-[#34D399]/30 hover:bg-[#047857]/10 dark:hover:bg-[#34D399]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
+          title="Registrar Factura Rápida"
+        >
+          <ArrowUpCircle size={16} />
+          <span className="hidden sm:inline">Factura Rápida</span>
+        </button>
+
+        <div className="hidden xs:block h-8 w-[1px] bg-enchanted-green/10 dark:bg-light-ivory/10 mx-1"></div>
+
         {/* Theme mode toggle */}
         <button
           onClick={() => setDarkMode(!darkMode)}

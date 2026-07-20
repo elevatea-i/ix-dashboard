@@ -5,40 +5,45 @@
 
 import React from 'react';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
-import { Expense, PorImpactar } from '../types';
-import { formatCurrency } from '../utils';
+import { Project } from '../types';
 
-interface EliminarGastoModalProps {
+interface EliminarProyectoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  expense: Expense | null;
-  linkedPorImpactar: PorImpactar | null;
-  onConfirmDelete: (expenseId: string, revertPorImpactarId: string | null) => void;
+  project: Project | null;
+  counts: {
+    invoices: number;
+    expenses: number;
+    providerPayments: number;
+    thirdPartyPayments: number;
+    profitDistributions: number;
+  } | null;
+  onConfirmDelete: (projectId: string) => void;
 }
 
-export default function EliminarGastoModal({
+export default function EliminarProyectoModal({
   isOpen,
   onClose,
-  expense,
-  linkedPorImpactar,
+  project,
+  counts,
   onConfirmDelete
-}: EliminarGastoModalProps) {
-  if (!isOpen || !expense) return null;
+}: EliminarProyectoModalProps) {
+  if (!isOpen || !project || !counts) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirmDelete(expense.id, linkedPorImpactar ? linkedPorImpactar.id : null);
+    onConfirmDelete(project.id);
   };
 
   return (
-    <div id="eliminar-gasto-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="eliminar-gasto-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden animate-fade-in">
+    <div id="eliminar-proyecto-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div id="eliminar-proyecto-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden animate-fade-in">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
           <h3 className="font-serif text-base font-semibold text-cranberry flex items-center space-x-2">
             <Trash2 size={18} className="text-cranberry animate-pulse" />
-            <span>Eliminar Gasto Vinculado</span>
+            <span>Eliminar Proyecto</span>
           </h3>
           <button
             type="button"
@@ -56,13 +61,13 @@ export default function EliminarGastoModal({
               <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
               <div className="space-y-2 w-full">
                 <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                  Advertencia de Reversión
+                  Eliminación en Cascada
                 </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Este gasto se generó al resolver un registro de Por Impactar (<strong>'{linkedPorImpactar?.descripcion}'</strong>, {linkedPorImpactar ? formatCurrency(linkedPorImpactar.monto) : ''}).
+                <p className="text-sm text-[#082019] dark:text-light-ivory font-semibold">
+                  {project.nombre} ({project.codigo})
                 </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Al eliminarlo, ese registro volverá a estado Pendiente. ¿Confirmar?
+                <p className="text-xs text-[#082019] dark:text-light-ivory/95 leading-relaxed font-semibold">
+                  Este proyecto tiene <strong>{counts.invoices}</strong> facturas, <strong>{counts.expenses}</strong> gastos, <strong>{counts.providerPayments}</strong> pagos a proveedores, <strong>{counts.profitDistributions}</strong> repartos de utilidades y <strong>{counts.thirdPartyPayments}</strong> pagos a terceros vinculados. Al eliminarlo, todo esto se eliminará también de forma permanente. ¿Confirmar?
                 </p>
               </div>
             </div>

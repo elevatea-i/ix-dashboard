@@ -44,8 +44,8 @@ export default function EliminarFacturaModal({
   };
 
   return (
-    <div id="eliminar-factura-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-enchanted-green/80 dark:bg-black/80 backdrop-blur-sm">
-      <div id="eliminar-factura-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden">
+    <div id="eliminar-factura-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div id="eliminar-factura-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
@@ -67,10 +67,10 @@ export default function EliminarFacturaModal({
           
           {affectedDists.length === 0 ? (
             <div className="space-y-3">
-              <p className="text-sm text-enchanted-green/90 dark:text-light-ivory/90 leading-relaxed">
+              <p className="text-sm text-[#082019] dark:text-light-ivory/90 leading-relaxed">
                 ¿Está seguro de que desea eliminar la factura con folio <strong className="font-mono text-elevated-gold">{invoice.folio}</strong>?
               </p>
-              <p className="text-xs text-rocky-gray">
+              <p className="text-xs text-rocky-gray dark:text-light-ivory/60">
                 Esta acción no se puede deshacer y ajustará el estatus de facturación del proyecto.
               </p>
             </div>
@@ -82,14 +82,14 @@ export default function EliminarFacturaModal({
                   <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
                     Advertencia de Cascada
                   </p>
-                  <p className="text-xs text-enchanted-green dark:text-light-ivory leading-relaxed">
+                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed">
                     Esta acción eliminará también {affectedDists.length} {affectedDists.length === 1 ? 'distribución' : 'distribuciones'} de utilidades {affectedDists.length === 1 ? 'relacionada' : 'relacionadas'}:
                   </p>
                   
                   {/* List of affected distributions */}
                   <div className="bg-white/50 dark:bg-black/30 rounded border border-cranberry/10 p-2 max-h-32 overflow-y-auto space-y-1">
                     {affectedDists.map((dist, idx) => (
-                      <div key={dist.id} className="flex justify-between text-[11px] font-mono text-enchanted-green dark:text-light-ivory">
+                      <div key={dist.id} className="flex justify-between text-[11px] font-mono text-[#082019] dark:text-light-ivory/90">
                         <span>Dist. #{idx + 1} ({dist.fechaCreacion}):</span>
                         <span className="font-bold text-cranberry">{formatCurrency(dist.gananciaTotal)}</span>
                       </div>
@@ -103,7 +103,7 @@ export default function EliminarFacturaModal({
                 </div>
               </div>
               <p className="text-[11px] text-rocky-gray leading-relaxed">
-                Al confirmar, se eliminará permanentemente la factura con folio <strong className="font-mono">{invoice.folio}</strong> y todos sus repartos de utilidades subsecuentes asociados.
+                Esta acción eliminará la factura con folio <strong className="font-mono">{invoice.folio}</strong> y el reparto de utilidades que generó directamente. Otros repartos de utilidades de este proyecto no se ven afectados.
               </p>
             </div>
           )}

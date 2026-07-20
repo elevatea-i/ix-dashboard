@@ -170,21 +170,21 @@ export default function PorImpactarResolverModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="relative bg-white dark:bg-[#070D0C] w-full max-w-2xl rounded-lg shadow-xl overflow-hidden border border-rocky-gray/30 dark:border-white/10">
         <div className="h-[3px] bg-elevated-gold"></div>
 
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-rocky-gray/20 dark:border-white/5 bg-light-ivory/50 dark:bg-[#0E1A16]/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-rocky-gray/20 dark:border-white/5 bg-white dark:bg-[#0E1A16]">
           <div className="flex items-center space-x-2">
             <Layers className="text-elevated-gold" size={18} />
-            <h2 className="text-xl font-serif font-semibold text-enchanted-green dark:text-light-ivory">
+            <h2 className="text-xl font-serif font-bold text-enchanted-green dark:text-light-ivory">
               Resolver &gt; Convertir en Gasto Real
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            className="text-enchanted-green/80 dark:text-light-ivory/80 hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
           >
             <X size={20} />
           </button>
@@ -214,15 +214,15 @@ export default function PorImpactarResolverModal({
 
             {/* Proyecto Destino */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
-                Proyecto de Destino <span className="text-cranberry">*</span>
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Proyecto de Destino <span className="text-cranberry font-bold">*</span>
               </label>
               <select
                 value={proyectoId}
                 onChange={(e) => setProyectoId(e.target.value)}
                 className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                  errors.proyectoId ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors`}
+                  errors.proyectoId ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs`}
               >
                 <option value="">-- Seleccionar proyecto --</option>
                 {projects.map((proj) => (
@@ -243,16 +243,16 @@ export default function PorImpactarResolverModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Concepto */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
-                Concepto del Gasto <span className="text-cranberry">*</span>
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Concepto del Gasto <span className="text-cranberry font-bold">*</span>
               </label>
               <input
                 type="text"
                 value={concepto}
                 onChange={(e) => setConcepto(e.target.value)}
                 className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                  errors.concepto ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors`}
+                  errors.concepto ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs`}
                 placeholder="Concepto detallado"
               />
               {errors.concepto && (
@@ -265,13 +265,13 @@ export default function PorImpactarResolverModal({
 
             {/* Categoría */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Categoría
               </label>
               <select
                 value={categoriaId}
                 onChange={(e) => setCategoriaId(e.target.value as ExpenseCategory)}
-                className="w-full bg-white dark:bg-[#0E1A16] border border-rocky-gray/40 dark:border-white/10 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors"
+                className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -299,8 +299,8 @@ export default function PorImpactarResolverModal({
                   value={subtotal}
                   onChange={(e) => setSubtotal(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                    errors.subtotal ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold`}
+                    errors.subtotal ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
               </div>
 
@@ -325,8 +325,8 @@ export default function PorImpactarResolverModal({
                   value={iva}
                   onChange={(e) => setIva(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                    errors.iva ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold`}
+                    errors.iva ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
               </div>
 
@@ -341,8 +341,8 @@ export default function PorImpactarResolverModal({
                   value={isrRetenido}
                   onChange={(e) => setIsrRetenido(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                    errors.isrRetenido ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold`}
+                    errors.isrRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
               </div>
 
@@ -357,8 +357,8 @@ export default function PorImpactarResolverModal({
                   value={ivaRetenido}
                   onChange={(e) => setIvaRetenido(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                    errors.ivaRetenido ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold`}
+                    errors.ivaRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                  } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
               </div>
             </div>
@@ -373,13 +373,13 @@ export default function PorImpactarResolverModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Cuenta Origen */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Origen de Fondos
               </label>
               <select
                 value={cuentaOrigen}
                 onChange={(e) => setCuentaOrigen(e.target.value as 'San' | 'Ale' | 'Empresa')}
-                className="w-full bg-white dark:bg-[#0E1A16] border border-rocky-gray/40 dark:border-white/10 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none"
+                className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs"
               >
                 <option value="Empresa">Empresa</option>
                 <option value="San">San</option>
@@ -389,13 +389,13 @@ export default function PorImpactarResolverModal({
 
             {/* Método Pago */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Método de Pago
               </label>
               <select
                 value={metodoPago}
                 onChange={(e) => setMetodoPago(e.target.value as 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo')}
-                className="w-full bg-white dark:bg-[#0E1A16] border border-rocky-gray/40 dark:border-white/10 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none"
+                className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs"
               >
                 <option value="Transferencia">Transferencia</option>
                 <option value="Tarjeta de Débito">Tarjeta de Débito</option>
@@ -405,13 +405,13 @@ export default function PorImpactarResolverModal({
 
             {/* Estatus Pago */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Estatus de Pago
               </label>
               <select
                 value={estatusPago}
                 onChange={(e) => setEstatusPago(e.target.value as 'Pagado' | 'Pendiente')}
-                className="w-full bg-white dark:bg-[#0E1A16] border border-rocky-gray/40 dark:border-white/10 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none"
+                className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs"
               >
                 <option value="Pagado">Pagado</option>
                 <option value="Pendiente">Pendiente</option>
@@ -422,8 +422,8 @@ export default function PorImpactarResolverModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
             {/* Fecha del Gasto */}
             <div>
-              <label className="block text-xs uppercase tracking-wider font-semibold text-enchanted-green dark:text-light-ivory mb-1.5">
-                Fecha del Gasto <span className="text-cranberry">*</span>
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Fecha del Gasto <span className="text-cranberry font-bold">*</span>
               </label>
               <div className="relative">
                 <input
@@ -431,8 +431,8 @@ export default function PorImpactarResolverModal({
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
-                    errors.fecha ? 'border-cranberry' : 'border-rocky-gray/40 dark:border-white/10'
-                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none`}
+                    errors.fecha ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs`}
                 />
               </div>
               {errors.fecha && (
@@ -452,7 +452,7 @@ export default function PorImpactarResolverModal({
                 onChange={(e) => setTieneFactura(e.target.checked)}
                 className="w-4 h-4 text-enchanted-green border-rocky-gray/40 rounded focus:ring-elevated-gold"
               />
-              <label htmlFor="tieneFacturaResolve" className="text-xs font-semibold text-enchanted-green dark:text-light-ivory select-none">
+              <label htmlFor="tieneFacturaResolve" className="text-xs font-bold text-enchanted-green dark:text-light-ivory select-none">
                 ¿Tiene Factura CFDI?
               </label>
             </div>
@@ -466,7 +466,7 @@ export default function PorImpactarResolverModal({
                 onChange={(e) => setEsReembolsable(e.target.checked)}
                 className="w-4 h-4 text-enchanted-green border-rocky-gray/40 rounded focus:ring-elevated-gold"
               />
-              <label htmlFor="esReembolsableResolve" className="text-xs font-semibold text-enchanted-green dark:text-light-ivory select-none">
+              <label htmlFor="esReembolsableResolve" className="text-xs font-bold text-enchanted-green dark:text-light-ivory select-none">
                 ¿Es Reembolsable?
               </label>
             </div>

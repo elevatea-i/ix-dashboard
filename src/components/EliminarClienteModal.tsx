@@ -5,40 +5,46 @@
 
 import React from 'react';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
-import { Expense, PorImpactar } from '../types';
-import { formatCurrency } from '../utils';
+import { Client } from '../types';
 
-interface EliminarGastoModalProps {
+interface EliminarClienteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  expense: Expense | null;
-  linkedPorImpactar: PorImpactar | null;
-  onConfirmDelete: (expenseId: string, revertPorImpactarId: string | null) => void;
+  client: Client | null;
+  counts: {
+    projects: number;
+    invoices: number;
+    expenses: number;
+    providerPayments: number;
+    thirdPartyPayments: number;
+    profitDistributions: number;
+  } | null;
+  onConfirmDelete: (clientId: string) => void;
 }
 
-export default function EliminarGastoModal({
+export default function EliminarClienteModal({
   isOpen,
   onClose,
-  expense,
-  linkedPorImpactar,
+  client,
+  counts,
   onConfirmDelete
-}: EliminarGastoModalProps) {
-  if (!isOpen || !expense) return null;
+}: EliminarClienteModalProps) {
+  if (!isOpen || !client || !counts) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirmDelete(expense.id, linkedPorImpactar ? linkedPorImpactar.id : null);
+    onConfirmDelete(client.id);
   };
 
   return (
-    <div id="eliminar-gasto-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="eliminar-gasto-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden animate-fade-in">
+    <div id="eliminar-cliente-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div id="eliminar-cliente-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
           <h3 className="font-serif text-base font-semibold text-cranberry flex items-center space-x-2">
             <Trash2 size={18} className="text-cranberry animate-pulse" />
-            <span>Eliminar Gasto Vinculado</span>
+            <span>Eliminar Cliente</span>
           </h3>
           <button
             type="button"
@@ -56,13 +62,24 @@ export default function EliminarGastoModal({
               <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
               <div className="space-y-2 w-full">
                 <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                  Advertencia de Reversión
+                  Advertencia: Eliminación Absoluta en Cascada
                 </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Este gasto se generó al resolver un registro de Por Impactar (<strong>'{linkedPorImpactar?.descripcion}'</strong>, {linkedPorImpactar ? formatCurrency(linkedPorImpactar.monto) : ''}).
+                <p className="text-sm text-[#082019] dark:text-light-ivory font-semibold">
+                  {client.nombre} {client.razonSocial ? `(${client.razonSocial})` : ''}
                 </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Al eliminarlo, ese registro volverá a estado Pendiente. ¿Confirmar?
+                <p className="text-xs text-[#082019] dark:text-light-ivory/95 leading-relaxed font-semibold">
+                  Al eliminar este cliente se borrarán de forma PERMANENTE todos sus proyectos y por ende TODA la documentación relacionada:
+                </p>
+                <ul className="text-xs text-cranberry font-bold list-disc pl-5 space-y-1">
+                  <li>Proyectos vinculados: {counts.projects}</li>
+                  <li>Facturas (CFDIs): {counts.invoices}</li>
+                  <li>Gastos: {counts.expenses}</li>
+                  <li>Pagos a proveedores: {counts.providerPayments}</li>
+                  <li>Pagos a terceros: {counts.thirdPartyPayments}</li>
+                  <li>Reparto de utilidades: {counts.profitDistributions}</li>
+                </ul>
+                <p className="text-[11px] text-rocky-gray dark:text-rose-linen/70 mt-2 italic">
+                  Esta acción no se puede deshacer y los saldos se recalcularán de inmediato.
                 </p>
               </div>
             </div>
@@ -82,7 +99,7 @@ export default function EliminarGastoModal({
               className="px-4 py-2 text-xs font-semibold bg-cranberry hover:bg-cranberry/90 text-white rounded shadow-sm transition-all flex items-center space-x-1.5"
             >
               <Trash2 size={14} />
-              <span>Confirmar</span>
+              <span>Confirmar Eliminación</span>
             </button>
           </div>
         </form>

@@ -29,6 +29,7 @@ interface ThirdPartyPaymentsListProps {
   onEditClick: (payment: ThirdPartyPayment) => void;
   onDeleteClick: (id: string) => void;
   onMarkAsPaidClick: (id: string) => void;
+  onMarkAsReceivedClick: (payment: ThirdPartyPayment) => void;
 }
 
 /**
@@ -41,7 +42,8 @@ export default function ThirdPartyPaymentsList({
   onAddClick,
   onEditClick,
   onDeleteClick,
-  onMarkAsPaidClick
+  onMarkAsPaidClick,
+  onMarkAsReceivedClick
 }: ThirdPartyPaymentsListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProject, setFilterProject] = useState('all');
@@ -97,8 +99,8 @@ export default function ThirdPartyPaymentsList({
           <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
             Pagos a Terceros (Yazu / Xiomara)
           </h2>
-          <p className="text-xs text-rocky-gray mt-1">
-            Módulo de liquidación automatizada para intermediaciones y distribución de ingresos (7.2727% Comisión, 1.8182% Ganancia IX).
+          <p className="text-xs text-[#3c3c3c] dark:text-light-ivory/80 mt-1">
+            Módulo de liquidación automatizada para intermediaciones y distribución de ingresos (8% Comisión, 8% Ganancia IX).
           </p>
         </div>
         <button
@@ -134,7 +136,7 @@ export default function ThirdPartyPaymentsList({
             <p className="text-lg font-mono font-bold text-[#8C7853] dark:text-elevated-gold">
               {formatCurrency(totalComision)}
             </p>
-            <p className="text-[9px] text-rocky-gray">Comisión retenida (7.2727%)</p>
+            <p className="text-[9px] text-rocky-gray">Comisión retenida (8%)</p>
           </div>
           <div className="p-2 bg-[#8C7853]/10 rounded-full text-[#8C7853] dark:text-elevated-gold">
             <BadgePercent size={18} />
@@ -148,7 +150,7 @@ export default function ThirdPartyPaymentsList({
             <p className="text-lg font-mono font-bold text-[#0B3D2E] dark:text-light-ivory">
               {formatCurrency(totalGanancia)}
             </p>
-            <p className="text-[9px] text-[#0B3D2E]/80 dark:text-[#DFBDB5]/80 font-semibold">Margen IX acumulado (1.8182%)</p>
+            <p className="text-[9px] text-[#0B3D2E]/80 dark:text-[#DFBDB5]/80 font-semibold">Margen IX acumulado (8%)</p>
           </div>
           <div className="p-2 bg-[#0B3D2E]/10 rounded-full text-[#0B3D2E] dark:text-[#DFBDB5]">
             <Scale size={18} />
@@ -263,10 +265,11 @@ export default function ThirdPartyPaymentsList({
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Concepto</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Proyecto</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Saldo Entrada</th>
-                  <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Comisión (7.27%)</th>
-                  <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Ganancia IX (1.81%)</th>
+                  <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Comisión (8%)</th>
+                  <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Ganancia IX (8%)</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Neto Depositar</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Fecha</th>
+                  <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Recibido</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px]">Estatus</th>
                   <th className="px-5 py-4 uppercase tracking-wider font-bold text-rocky-gray text-[10px] text-right">Acciones</th>
                 </tr>
@@ -313,6 +316,22 @@ export default function ThirdPartyPaymentsList({
                     </td>
 
                     <td className="px-5 py-4">
+                      {!pay.proyectoId ? (
+                        pay.dinero_recibido ? (
+                          <span className="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
+                            Sí ({pay.fecha_recibido})
+                          </span>
+                        ) : (
+                          <span className="bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
+                            No
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-rocky-gray/60">-</span>
+                      )}
+                    </td>
+
+                    <td className="px-5 py-4">
                       {pay.estatusPago === 'Pagado' ? (
                         <span className="bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
                           Pagado
@@ -326,6 +345,16 @@ export default function ThirdPartyPaymentsList({
 
                     <td className="px-5 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
+                        {/* Quick Recibir Dinero (only for records without project, unpaid and not received yet) */}
+                        {!pay.proyectoId && !pay.dinero_recibido && pay.estatusPago === 'Pendiente' && (
+                          <button
+                            title="Marcar dinero como recibido"
+                            onClick={() => onMarkAsReceivedClick(pay)}
+                            className="p-1.5 text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded transition-all font-bold"
+                          >
+                            <Coins size={14} />
+                          </button>
+                        )}
                         {/* Quick Pay */}
                         {pay.estatusPago === 'Pendiente' && (
                           <button

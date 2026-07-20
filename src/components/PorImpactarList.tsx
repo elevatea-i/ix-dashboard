@@ -279,7 +279,13 @@ export default function PorImpactarList({
                         </span>
                       </td>
                       <td className="py-4 px-4 text-rocky-gray dark:text-rose-linen/80">
-                        {getProjectName(record.proyectoOrigenId)}
+                        {record.estatus === 'resuelto' ? (
+                          <span className="text-elevated-gold dark:text-elevated-gold font-medium">
+                            {getProjectName(record.proyectoDestinoId)}
+                          </span>
+                        ) : (
+                          getProjectName(record.proyectoOrigenId)
+                        )}
                       </td>
                       <td className="py-4 px-4 text-rocky-gray dark:text-rose-linen/80">
                         {record.fecha}
