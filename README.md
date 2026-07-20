@@ -1,20 +1,19 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# IX Control Financiero
 
-# Run and deploy your AI Studio app
+Dashboard financiero y CRM ligero interno para **IX**, empresa de producción de eventos y activaciones en México. Gestiona clientes, proyectos, facturación, gastos, pagos a proveedores y a terceros, reparto automático de utilidades, rentabilidad, panel de IVA, y módulos de conciliación de alta sensibilidad (Cuenta Juan Carlos, Bóveda de IVA).
 
-This contains everything you need to run your app locally.
+Proyecto privado desarrollado por **NodesLabs** para IX.
 
-View your app in AI Studio: https://ai.studio/apps/3aeea003-6d70-4f4c-a33f-4457272b406e
+## Stack
 
-## Run Locally
+- React + Vite + TailwindCSS
+- Supabase (Auth + Postgres + RLS) — en construcción
 
-**Prerequisites:**  Node.js
+## Correr localmente
 
+**Requisitos:** Node.js
 
-1. Install dependencies:
+1. Instalar dependencias:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+2. Correr la app:
    `npm run dev`
