@@ -93,14 +93,7 @@ export default function Sidebar({
         <div className="flex-1 flex flex-col min-h-0">
           {/* Sidebar Header */}
           <div className="h-16 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-light-ivory/20 backdrop-blur-sm border border-elevated-gold/40 flex items-center justify-center p-1 shadow-sm shrink-0">
-                <img src="/assets/images/IX_LOGOTIPO-01.svg" alt="IX" className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <span className="font-serif text-lg tracking-wide font-medium block">IX Dashboard</span>
-              </div>
-            </div>
+            <span className="font-serif text-lg tracking-wide font-medium flex-1 text-center">IX Dashboard</span>
 
             <button 
               onClick={() => setIsOpen(false)}
