@@ -51,22 +51,41 @@ export default function EliminarGastoModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
-              <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
-              <div className="space-y-2 w-full">
-                <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                  Advertencia de Reversión
-                </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Este gasto se generó al resolver un registro de Por Impactar (<strong>'{linkedPorImpactar?.descripcion}'</strong>, {linkedPorImpactar ? formatCurrency(linkedPorImpactar.monto) : ''}).
-                </p>
-                <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                  Al eliminarlo, ese registro volverá a estado Pendiente. ¿Confirmar?
-                </p>
+          {linkedPorImpactar ? (
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
+                <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
+                <div className="space-y-2 w-full">
+                  <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
+                    Advertencia de Reversión
+                  </p>
+                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
+                    Este gasto se generó al resolver un registro de Por Impactar (<strong>'{linkedPorImpactar.descripcion}'</strong>, {formatCurrency(linkedPorImpactar.monto)}).
+                  </p>
+                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
+                    Al eliminarlo, ese registro volverá a estado Pendiente. ¿Confirmar?
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
+                <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
+                <div className="space-y-2 w-full">
+                  <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
+                    Advertencia de Eliminación
+                  </p>
+                  <p className="text-sm text-[#082019] dark:text-light-ivory font-semibold">
+                    {expense.concepto} ({formatCurrency(expense.total)})
+                  </p>
+                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
+                    ¿Eliminar este gasto? Esto afectará los cálculos de Rentabilidad e IVA del proyecto. No se puede deshacer.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end space-x-3 pt-2">

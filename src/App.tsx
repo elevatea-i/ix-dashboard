@@ -23,18 +23,22 @@ import GastoFormModal from './components/GastoFormModal';
 import EliminarGastoModal from './components/EliminarGastoModal';
 import ProviderPaymentsList from './components/ProviderPaymentsList';
 import ProviderPaymentFormModal from './components/ProviderPaymentFormModal';
+import EliminarPagoProveedorModal from './components/EliminarPagoProveedorModal';
 import ThirdPartyPaymentsList from './components/ThirdPartyPaymentsList';
 import ThirdPartyPaymentFormModal from './components/ThirdPartyPaymentFormModal';
+import EliminarPagoTerceroModal from './components/EliminarPagoTerceroModal';
 import RecibirDineroModal from './components/RecibirDineroModal';
 import RepartoUtilidadesList from './components/RepartoUtilidadesList';
 import PorImpactarList from './components/PorImpactarList';
 import PorImpactarFormModal from './components/PorImpactarFormModal';
 import PorImpactarResolverModal from './components/PorImpactarResolverModal';
+import EliminarPorImpactarModal from './components/EliminarPorImpactarModal';
 import RentabilidadList from './components/RentabilidadList';
 import IvaPanel from './components/IvaPanel';
 import ReportesPanel from './components/ReportesPanel';
 import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
+import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { getMexicoCityDate, getMexicoCityDateTimeString, calculateProjectBillingStatus } from './utils';
 import { calculateProfitDistribution, calculateProfitDistributionForAmount } from './utils/profitDistribution';
@@ -145,6 +149,19 @@ export default function App() {
   // Marcar como Recibido (Dinero Recibido) Modal controls
   const [isRecibirDineroOpen, setIsRecibirDineroOpen] = useState(false);
   const [paymentToMarkAsReceived, setPaymentToMarkAsReceived] = useState<ThirdPartyPayment | null>(null);
+
+  // New Delete Confirmation Modals state variables
+  const [isDeleteProviderPaymentModalOpen, setIsDeleteProviderPaymentModalOpen] = useState(false);
+  const [providerPaymentToDelete, setProviderPaymentToDelete] = useState<ProviderPayment | null>(null);
+
+  const [isDeleteThirdPartyPaymentModalOpen, setIsDeleteThirdPartyPaymentModalOpen] = useState(false);
+  const [thirdPartyPaymentToDelete, setThirdPartyPaymentToDelete] = useState<ThirdPartyPayment | null>(null);
+
+  const [isDeletePorImpactarModalOpen, setIsDeletePorImpactarModalOpen] = useState(false);
+  const [porImpactarToDelete, setPorImpactarToDelete] = useState<PorImpactar | null>(null);
+
+  const [isDeleteIvaWithdrawalModalOpen, setIsDeleteIvaWithdrawalModalOpen] = useState(false);
+  const [ivaWithdrawalToDelete, setIvaWithdrawalToDelete] = useState<IvaWithdrawal | null>(null);
 
   // Apply dark mode theme class
   useEffect(() => {
@@ -443,24 +460,6 @@ export default function App() {
     const inv = invoices.find(i => i.id === id);
     if (!inv) return;
     
-    // Check if the project has any profit distributions at all
-    const projId = inv.proyectoId;
-    const projectDists = profitDistributions.filter(pd => pd.proyectoId === projId);
-
-    if (projectDists.length === 0) {
-      // 1. Delete directly from state, no modal
-      const updatedInvoices = invoices.filter(i => i.id !== id);
-      setInvoices(updatedInvoices);
-
-      // 2. Always recalculate billing status of the project after this change
-      const newStatus = calculateProjectBillingStatus(projId, updatedInvoices);
-      setProjects(prevProjects => prevProjects.map(p => 
-        p.id === projId ? { ...p, estadoFacturacion: newStatus } : p
-      ));
-      showToast('Eliminado con éxito');
-      return;
-    }
-
     setInvoiceToDelete(inv);
     setIsDeleteInvoiceModalOpen(true);
   };
@@ -634,14 +633,9 @@ export default function App() {
     // Check if there is a linked Por Impactar record
     const linkedRecord = (porImpactar || []).find(rec => rec.gastoIdGenerado === id);
 
-    if (linkedRecord) {
-      setExpenseToDelete(expense);
-      setPorImpactarToRevert(linkedRecord);
-      setIsDeleteExpenseModalOpen(true);
-    } else {
-      setExpenses(prev => prev.filter(exp => exp.id !== id));
-      showToast('Eliminado con éxito');
-    }
+    setExpenseToDelete(expense);
+    setPorImpactarToRevert(linkedRecord || null);
+    setIsDeleteExpenseModalOpen(true);
   };
 
   const handleConfirmDeleteExpense = (expenseId: string, revertPorImpactarId: string | null) => {
@@ -702,7 +696,16 @@ export default function App() {
   };
 
   const handleDeletePorImpactar = (id: string) => {
+    const record = porImpactar.find(rec => rec.id === id);
+    if (!record) return;
+    setPorImpactarToDelete(record);
+    setIsDeletePorImpactarModalOpen(true);
+  };
+
+  const handleConfirmDeletePorImpactar = (id: string) => {
     setPorImpactar(prev => prev.filter(rec => rec.id !== id));
+    setIsDeletePorImpactarModalOpen(false);
+    setPorImpactarToDelete(null);
     showToast('Eliminado con éxito');
   };
 
@@ -833,7 +836,16 @@ export default function App() {
   };
 
   const handleDeleteProviderPayment = (id: string) => {
+    const payment = providerPayments.find(p => p.id === id);
+    if (!payment) return;
+    setProviderPaymentToDelete(payment);
+    setIsDeleteProviderPaymentModalOpen(true);
+  };
+
+  const handleConfirmDeleteProviderPayment = (id: string) => {
     setProviderPayments(prev => prev.filter(p => p.id !== id));
+    setIsDeleteProviderPaymentModalOpen(false);
+    setProviderPaymentToDelete(null);
     showToast('Eliminado con éxito');
   };
 
@@ -882,7 +894,16 @@ export default function App() {
   };
 
   const handleDeleteThirdPartyPayment = (id: string) => {
+    const payment = thirdPartyPayments.find(p => p.id === id);
+    if (!payment) return;
+    setThirdPartyPaymentToDelete(payment);
+    setIsDeleteThirdPartyPaymentModalOpen(true);
+  };
+
+  const handleConfirmDeleteThirdPartyPayment = (id: string) => {
     setThirdPartyPayments(prev => prev.filter(p => p.id !== id));
+    setIsDeleteThirdPartyPaymentModalOpen(false);
+    setThirdPartyPaymentToDelete(null);
     showToast('Eliminado con éxito');
   };
 
@@ -948,7 +969,16 @@ export default function App() {
   };
 
   const handleDeleteIvaWithdrawal = (id: string) => {
+    const withdrawal = ivaWithdrawals.find(w => w.id === id);
+    if (!withdrawal) return;
+    setIvaWithdrawalToDelete(withdrawal);
+    setIsDeleteIvaWithdrawalModalOpen(true);
+  };
+
+  const handleConfirmDeleteIvaWithdrawal = (id: string) => {
     setIvaWithdrawals(prev => prev.filter(w => w.id !== id));
+    setIsDeleteIvaWithdrawalModalOpen(false);
+    setIvaWithdrawalToDelete(null);
     showToast('Retiro de IVA eliminado');
   };
 
@@ -1307,6 +1337,50 @@ export default function App() {
         onResolve={handleResolvePorImpactar}
         recordToResolve={porImpactarToResolve}
         projects={projects}
+      />
+
+      {/* Eliminar Pago a Proveedor Modal */}
+      <EliminarPagoProveedorModal
+        isOpen={isDeleteProviderPaymentModalOpen}
+        onClose={() => {
+          setIsDeleteProviderPaymentModalOpen(false);
+          setProviderPaymentToDelete(null);
+        }}
+        payment={providerPaymentToDelete}
+        onConfirmDelete={handleConfirmDeleteProviderPayment}
+      />
+
+      {/* Eliminar Pago a Tercero Modal */}
+      <EliminarPagoTerceroModal
+        isOpen={isDeleteThirdPartyPaymentModalOpen}
+        onClose={() => {
+          setIsDeleteThirdPartyPaymentModalOpen(false);
+          setThirdPartyPaymentToDelete(null);
+        }}
+        payment={thirdPartyPaymentToDelete}
+        onConfirmDelete={handleConfirmDeleteThirdPartyPayment}
+      />
+
+      {/* Eliminar Por Impactar Modal */}
+      <EliminarPorImpactarModal
+        isOpen={isDeletePorImpactarModalOpen}
+        onClose={() => {
+          setIsDeletePorImpactarModalOpen(false);
+          setPorImpactarToDelete(null);
+        }}
+        record={porImpactarToDelete}
+        onConfirmDelete={handleConfirmDeletePorImpactar}
+      />
+
+      {/* Eliminar Retiro de IVA Modal */}
+      <EliminarRetiroIVAModal
+        isOpen={isDeleteIvaWithdrawalModalOpen}
+        onClose={() => {
+          setIsDeleteIvaWithdrawalModalOpen(false);
+          setIvaWithdrawalToDelete(null);
+        }}
+        withdrawal={ivaWithdrawalToDelete}
+        onConfirmDelete={handleConfirmDeleteIvaWithdrawal}
       />
     </div>
   );

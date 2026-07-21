@@ -66,13 +66,21 @@ export default function EliminarFacturaModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           
           {affectedDists.length === 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[#082019] dark:text-light-ivory/90 leading-relaxed">
-                ¿Está seguro de que desea eliminar la factura con folio <strong className="font-mono text-elevated-gold">{invoice.folio}</strong>?
-              </p>
-              <p className="text-xs text-rocky-gray dark:text-light-ivory/60">
-                Esta acción no se puede deshacer y ajustará el estatus de facturación del proyecto.
-              </p>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
+                <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
+                <div className="space-y-2 w-full">
+                  <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
+                    Advertencia de Eliminación
+                  </p>
+                  <p className="text-sm text-[#082019] dark:text-light-ivory font-semibold">
+                    Factura Folio: <strong className="font-mono text-elevated-gold">{invoice.folio}</strong> ({formatCurrency(invoice.total)})
+                  </p>
+                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
+                    ¿Eliminar esta factura? Esto afectará el estado de facturación del proyecto y los cálculos de Rentabilidad. No se puede deshacer.
+                  </p>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

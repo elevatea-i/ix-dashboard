@@ -60,9 +60,6 @@ export default function BovedaIva({
   // Search/Filter for history
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Deletion modal state
-  const [withdrawalToDelete, setWithdrawalToDelete] = useState<IvaWithdrawal | null>(null);
-
   // Handle opening modal
   const handleOpenModal = () => {
     if (disponible <= 0) return;
@@ -289,7 +286,7 @@ export default function BovedaIva({
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       <button
-                        onClick={() => setWithdrawalToDelete(withdrawal)}
+                        onClick={() => onDeleteWithdrawal(withdrawal.id)}
                         title="Eliminar registro"
                         className="p-1 text-rocky-gray hover:text-cranberry rounded hover:bg-cranberry/5 transition-colors inline-flex items-center justify-center"
                       >
@@ -411,74 +408,6 @@ export default function BovedaIva({
               </div>
 
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Confirmación de Eliminación */}
-      {withdrawalToDelete && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-light-ivory dark:bg-[#051A14] w-full max-w-sm rounded-xl border border-cranberry/20 dark:border-[#8C7853]/30 shadow-2xl overflow-hidden flex flex-col">
-            
-            {/* Modal Header */}
-            <div className="px-5 py-4 bg-cranberry/10 dark:bg-cranberry/25 border-b border-cranberry/20 flex items-center justify-between">
-              <h3 className="font-serif text-sm font-bold text-cranberry dark:text-rose-linen/90 flex items-center gap-2">
-                <AlertTriangle size={16} />
-                <span>Eliminar Registro de Retiro</span>
-              </h3>
-              <button
-                onClick={() => setWithdrawalToDelete(null)}
-                className="text-cranberry/80 hover:text-cranberry dark:text-rose-linen/80 dark:hover:text-rose-linen p-1 hover:bg-cranberry/10 rounded transition-colors"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-5 space-y-4">
-              <p className="text-xs text-rocky-gray leading-relaxed">
-                ¿Estás seguro de que deseas eliminar este registro de retiro? Esta acción es irreversible y devolverá los fondos al saldo disponible.
-              </p>
-
-              {/* Detail box */}
-              <div className="p-3 bg-light-ivory/50 dark:bg-[#070D0C]/40 border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-rocky-gray font-medium">Concepto:</span>
-                  <strong className="text-enchanted-green dark:text-light-ivory text-right max-w-[180px] truncate">{withdrawalToDelete.concepto}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-rocky-gray font-medium">Monto:</span>
-                  <strong className="text-cranberry font-mono">{formatCurrency(withdrawalToDelete.monto)}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-rocky-gray font-medium">Fecha:</span>
-                  <strong className="text-enchanted-green dark:text-light-ivory font-mono">{withdrawalToDelete.fecha}</strong>
-                </div>
-              </div>
-
-              {/* Footer Actions */}
-              <div className="pt-3 border-t border-enchanted-green/5 dark:border-white/5 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setWithdrawalToDelete(null)}
-                  className="px-3.5 py-1.5 border border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-white/5 text-xs font-bold rounded transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onDeleteWithdrawal(withdrawalToDelete.id);
-                    setWithdrawalToDelete(null);
-                  }}
-                  className="px-4 py-1.5 bg-cranberry hover:bg-cranberry/90 text-white text-xs font-bold rounded transition-colors shadow"
-                >
-                  Confirmar Eliminación
-                </button>
-              </div>
-
-            </div>
-
           </div>
         </div>
       )}
