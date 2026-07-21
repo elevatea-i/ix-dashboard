@@ -4,22 +4,7 @@
  */
 
 import React from 'react';
-import { 
-  Users, 
-  FolderGit2, 
-  Receipt, 
-  TrendingDown, 
-  TrendingUp, 
-  Percent,
-  X,
-  HandCoins,
-  UsersRound,
-  Coins,
-  Repeat,
-  BarChart3,
-  ArrowRightLeft,
-  Vault
-} from 'lucide-react';
+import { Users, FolderGit2, Receipt, TrendingDown, TrendingUp, Percent, X, HandCoins, UsersRound, Coins, Repeat, ChartBar as BarChart3, ArrowRightLeft, Vault } from 'lucide-react';
 import { ModuleId, Module } from '../types';
 
 interface SidebarProps {
@@ -109,8 +94,8 @@ export default function Sidebar({
           {/* Sidebar Header */}
           <div className="h-16 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded bg-elevated-gold text-enchanted-green flex items-center justify-center font-serif font-bold text-lg shadow-inner">
-                IX
+              <div className="w-9 h-9 rounded-lg bg-light-ivory/20 backdrop-blur-sm border border-elevated-gold/40 flex items-center justify-center p-1 shadow-sm shrink-0">
+                <img src="/assets/images/IX_LOGOTIPO-01.svg" alt="IX" className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="font-serif text-lg tracking-wide font-medium block">IX Dashboard</span>

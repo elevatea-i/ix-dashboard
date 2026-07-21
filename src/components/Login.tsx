@@ -33,8 +33,8 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
       {/* Upper header with theme toggle */}
       <div className="flex justify-between items-center w-full max-w-7xl mx-auto">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded bg-enchanted-green dark:bg-elevated-gold flex items-center justify-center text-light-ivory dark:text-enchanted-green font-serif font-bold text-lg">
-            IX
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center p-1 bg-enchanted-green/5 dark:bg-light-ivory/20 dark:backdrop-blur-sm border border-enchanted-green/15 dark:border-elevated-gold/40 shadow-sm shrink-0">
+            <img src="/assets/images/IX_LOGOTIPO-01.svg" alt="IX" className="w-full h-full object-contain" />
           </div>
         </div>
         
@@ -51,6 +51,9 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
       {/* Main card */}
       <div className="w-full max-w-md mx-auto my-auto py-12">
         <div className="text-center mb-10">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-xl flex items-center justify-center p-2 bg-enchanted-green/5 dark:bg-light-ivory/20 dark:backdrop-blur-sm border border-enchanted-green/15 dark:border-elevated-gold/40 shadow-sm">
+            <img src="/assets/images/IX_LOGOTIPO-01.svg" alt="IX" className="w-full h-full object-contain" />
+          </div>
           <p className="text-xs tracking-widest text-elevated-gold dark:text-rose-linen uppercase font-semibold mb-2">
             SISTEMA INTERNO DE GESTIÓN FINANCIERA
           </p>
