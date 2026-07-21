@@ -147,7 +147,7 @@ export default function Sidebar({
           <div className="flex items-start space-x-3">
             <div className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
-              <p className="text-xs font-serif font-semibold text-light-ivory">Eleva. Expande. Impacta. </p>
+              <p className="text-sm font-serif font-semibold text-light-ivory">Eleva. Expande. Impacta. </p>
             </div>
           </div>
         </div>
