@@ -815,7 +815,7 @@ export default function App() {
    * Resolves a pending Por Impactar record by converting it to a real Expense
    * and updating the original record status to 'resuelto'.
    */
-  const handleResolvePorImpactar = (
+  const handleResolvePorImpactar = async (
     recordId: string,
     expenseData: {
       proyectoId: string;
@@ -833,41 +833,39 @@ export default function App() {
       fecha: string;
     }
   ) => {
-    const newExpenseId = `gasto_${Math.random().toString(36).substr(2, 9)}`;
     const calculatedTotal = Number(
       (expenseData.subtotal + expenseData.iva - expenseData.isrRetenido - expenseData.ivaRetenido).toFixed(2)
     );
 
-    const newExpense: Expense = {
-      id: newExpenseId,
+    const insertData = expenseToDb({
       tipo: 'Proveedor por Proyecto',
-      proyectoId: expenseData.proyectoId,
-      categoriaId: expenseData.categoriaId,
-      concepto: expenseData.concepto,
-      subtotal: expenseData.subtotal,
-      iva: expenseData.iva,
-      isrRetenido: expenseData.isrRetenido,
-      ivaRetenido: expenseData.ivaRetenido,
+      ...expenseData,
       total: calculatedTotal,
-      cuentaOrigen: expenseData.cuentaOrigen,
-      esReembolsable: expenseData.esReembolsable,
-      tieneFactura: expenseData.tieneFactura,
-      metodoPago: expenseData.metodoPago,
-      estatusPago: expenseData.estatusPago,
-      fecha: expenseData.fecha
-    };
+    });
+    delete insertData.id;
 
-    // Add as a real Expense
+    const { data, error } = await supabase
+      .from('gastos')
+      .insert(insertData)
+      .select()
+      .single();
+
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+
+    const newExpense = expenseFromDb(data);
     setExpenses(prev => [newExpense, ...prev]);
 
-    // Set Por Impactar record as resolved
-    setPorImpactar(prev => prev.map(rec => 
-      rec.id === recordId 
+    // Update Por Impactar in local state (module not yet on Supabase)
+    setPorImpactar(prev => prev.map(rec =>
+      rec.id === recordId
         ? {
             ...rec,
             estatus: 'resuelto',
             proyectoDestinoId: expenseData.proyectoId,
-            gastoIdGenerado: newExpenseId
+            gastoIdGenerado: newExpense.id
           }
         : rec
     ));
