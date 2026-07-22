@@ -5,27 +5,13 @@
 
 import React, { useState } from 'react';
 import { Expense, Project, ExpenseCategory } from '../types';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  Filter, 
-  Coins, 
-  TrendingDown, 
-  Clock, 
-  Tag, 
-  Layers, 
-  ArrowUpRight, 
-  RefreshCcw, 
-  CheckCircle2, 
-  AlertCircle 
-} from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Coins, TrendingDown, Clock, Tag, Layers, ArrowUpRight, RefreshCcw, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface GastosListProps {
   expenses: Expense[];
   projects: Project[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (expense: Expense) => void;
   onDeleteClick: (id: string) => void;
@@ -53,10 +39,19 @@ const CATEGORIES: ExpenseCategory[] = [
 export default function GastosList({
   expenses,
   projects,
+  loading,
   onAddClick,
   onEditClick,
   onDeleteClick
 }: GastosListProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-enchanted-green border-t-transparent" />
+      </div>
+    );
+  }
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterOrigen, setFilterOrigen] = useState<string>('all');

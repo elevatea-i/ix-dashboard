@@ -45,7 +45,7 @@ import { calculateProfitDistribution, calculateProfitDistributionForAmount } fro
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -74,6 +74,7 @@ export default function App() {
 
   // Gastos CRUD State (Starts EMPTY as requested)
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expensesLoading, setExpensesLoading] = useState(true);
 
   // Pagos a Proveedores CRUD State (starts EMPTY as requested)
   const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>([]);
@@ -223,6 +224,18 @@ export default function App() {
         setProjects(data.map(projectFromDb));
       }
       setProjectsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch gastos from Supabase on mount
+  useEffect(() => {
+    supabase.from('gastos').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setExpenses(data.map(expenseFromDb));
+      }
+      setExpensesLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -630,8 +643,8 @@ export default function App() {
     showToast('Factura marcada como pagada');
   };
 
-  // CRUD actions for Expenses
-  const handleAddOrEditExpenseSubmit = (formData: {
+  // CRUD actions for Expenses (Supabase)
+  const handleAddOrEditExpenseSubmit = async (formData: {
     tipo: 'Operativo' | 'Proveedor por Proyecto';
     proyectoId: string | null;
     categoriaId: ExpenseCategory;
@@ -652,20 +665,36 @@ export default function App() {
     );
 
     if (selectedExpense) {
-      // Edit Mode
-      setExpenses(prev => prev.map(exp => 
-        exp.id === selectedExpense.id 
-          ? { ...exp, ...formData, total: calculatedTotal } 
-          : exp
-      ));
+      // Edit mode
+      const updates = expenseToDb({ ...formData, total: calculatedTotal });
+      delete updates.id;
+      const { data, error } = await supabase
+        .from('gastos')
+        .update(updates)
+        .eq('id', selectedExpense.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const updated = expenseFromDb(data);
+      setExpenses(prev => prev.map(exp => exp.id === selectedExpense.id ? updated : exp));
       showToast('Cambios guardados');
     } else {
-      // Add Mode
-      const newExpense: Expense = {
-        id: `gasto_${Math.random().toString(36).substr(2, 9)}`,
-        ...formData,
-        total: calculatedTotal
-      };
+      // Add mode — no id, Postgres generates it
+      const insertData = expenseToDb({ ...formData, total: calculatedTotal });
+      delete insertData.id;
+      const { data, error } = await supabase
+        .from('gastos')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const newExpense = expenseFromDb(data);
       setExpenses(prev => [newExpense, ...prev]);
       showToast('Guardado con éxito');
     }
@@ -685,9 +714,20 @@ export default function App() {
     setIsDeleteExpenseModalOpen(true);
   };
 
-  const handleConfirmDeleteExpense = (expenseId: string, revertPorImpactarId: string | null) => {
+  const handleConfirmDeleteExpense = async (expenseId: string, revertPorImpactarId: string | null) => {
+    const { error } = await supabase
+      .from('gastos')
+      .delete()
+      .eq('id', expenseId);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+
     setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
 
+    // Temporarily replicate the DB trigger's revert in local state
+    // (Por Impactar module still reads from memory)
     if (revertPorImpactarId) {
       setPorImpactar(prev => prev.map(rec => 
         rec.id === revertPorImpactarId
@@ -1135,6 +1175,7 @@ export default function App() {
           <GastosList
             expenses={expenses}
             projects={projects}
+            loading={expensesLoading}
             onAddClick={handleOpenAddExpenseModal}
             onEditClick={handleOpenEditExpenseModal}
             onDeleteClick={handleDeleteExpense}
