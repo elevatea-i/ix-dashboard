@@ -13,8 +13,8 @@ interface LoginProps {
 }
 
 export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
-  const [email, setEmail] = useState('contacto@ix.mx');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
