@@ -5,24 +5,13 @@
 
 import React, { useState } from 'react';
 import { ProviderPayment, Project } from '../types';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  Filter, 
-  Wallet, 
-  CheckCircle2, 
-  Clock, 
-  Layers, 
-  RefreshCcw,
-  AlertTriangle
-} from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react';
 import { formatCurrency, getDueDateIndicator } from '../utils';
 
 interface ProviderPaymentsListProps {
   payments: ProviderPayment[];
   projects: Project[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (payment: ProviderPayment) => void;
   onDeleteClick: (id: string) => void;
@@ -36,6 +25,7 @@ interface ProviderPaymentsListProps {
 export default function ProviderPaymentsList({
   payments,
   projects,
+  loading = false,
   onAddClick,
   onEditClick,
   onDeleteClick
@@ -223,7 +213,12 @@ export default function ProviderPaymentsList({
 
       {/* Main Grid or Table */}
       <div id="provider-payments-table-wrapper" className="bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm overflow-hidden">
-        {filteredPayments.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <Loader2 size={24} className="text-[#8C7853] dark:text-elevated-gold animate-spin mb-3" />
+            <p className="text-xs text-rocky-gray">Cargando pagos a proveedores…</p>
+          </div>
+        ) : filteredPayments.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="w-12 h-12 rounded-full bg-enchanted-green/5 dark:bg-white/5 flex items-center justify-center text-rocky-gray mb-3.5">
               <Wallet size={22} />

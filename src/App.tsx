@@ -45,7 +45,7 @@ import { calculateProfitDistribution, calculateProfitDistributionForAmount } fro
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -77,6 +77,7 @@ export default function App() {
 
   // Pagos a Proveedores CRUD State (starts EMPTY as requested)
   const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>([]);
+  const [providerPaymentsLoading, setProviderPaymentsLoading] = useState(true);
 
   // Pagos a Terceros CRUD State (starts EMPTY as requested)
   const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
@@ -198,6 +199,18 @@ export default function App() {
         setIvaWithdrawals(data.map(ivaWithdrawalFromDb));
       }
       setIvaWithdrawalsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch provider payments from Supabase on mount
+  useEffect(() => {
+    supabase.from('pagos_proveedores').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setProviderPayments(data.map(providerPaymentFromDb));
+      }
+      setProviderPaymentsLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -835,7 +848,7 @@ export default function App() {
   };
 
   // CRUD actions for Provider Payments
-  const handleAddOrEditProviderPaymentSubmit = (formData: {
+  const handleAddOrEditProviderPaymentSubmit = async (formData: {
     proyectoId: string;
     proveedor: string;
     subtotal: number;
@@ -850,18 +863,35 @@ export default function App() {
   }) => {
     if (selectedProviderPayment) {
       // Edit mode
-      setProviderPayments(prev => prev.map(p => 
-        p.id === selectedProviderPayment.id 
-          ? { ...p, ...formData } 
-          : p
-      ));
+      const updates = providerPaymentToDb(formData);
+      delete updates.id;
+      const { data, error } = await supabase
+        .from('pagos_proveedores')
+        .update(updates)
+        .eq('id', selectedProviderPayment.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const updated = providerPaymentFromDb(data);
+      setProviderPayments(prev => prev.map(p => p.id === selectedProviderPayment.id ? updated : p));
       showToast('Cambios guardados');
     } else {
-      // Add mode
-      const newPayment: ProviderPayment = {
-        id: `ppay_${Math.random().toString(36).substr(2, 9)}`,
-        ...formData
-      };
+      // Add mode — no id, Postgres generates it
+      const insertData = providerPaymentToDb(formData);
+      delete insertData.id;
+      const { data, error } = await supabase
+        .from('pagos_proveedores')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const newPayment = providerPaymentFromDb(data);
       setProviderPayments(prev => [newPayment, ...prev]);
       showToast('Guardado con éxito');
     }
@@ -876,7 +906,15 @@ export default function App() {
     setIsDeleteProviderPaymentModalOpen(true);
   };
 
-  const handleConfirmDeleteProviderPayment = (id: string) => {
+  const handleConfirmDeleteProviderPayment = async (id: string) => {
+    const { error } = await supabase
+      .from('pagos_proveedores')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
     setProviderPayments(prev => prev.filter(p => p.id !== id));
     setIsDeleteProviderPaymentModalOpen(false);
     setProviderPaymentToDelete(null);
@@ -1115,6 +1153,7 @@ export default function App() {
           <ProviderPaymentsList
             payments={providerPayments}
             projects={projects}
+            loading={providerPaymentsLoading}
             onAddClick={handleOpenAddProviderPaymentModal}
             onEditClick={handleOpenEditProviderPaymentModal}
             onDeleteClick={handleDeleteProviderPayment}
