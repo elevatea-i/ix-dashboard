@@ -375,22 +375,35 @@ export default function App() {
     setSelectedProject(null);
   };
 
-  const handleDeleteProject = (id: string) => {
-    const countInvoices = invoices.filter(inv => inv.proyectoId === id).length;
-    const countExpenses = expenses.filter(exp => exp.proyectoId === id).length;
-    const countProviderPayments = providerPayments.filter(pp => pp.proyectoId === id).length;
-    const countThirdPartyPayments = thirdPartyPayments.filter(tp => tp.proyectoId === id).length;
-    const countProfitDistributions = profitDistributions.filter(pd => pd.proyectoId === id).length;
-
+  const handleDeleteProject = async (id: string) => {
     setProjectToDeleteId(id);
-    setProjectDeleteCounts({
-      invoices: countInvoices,
-      expenses: countExpenses,
-      providerPayments: countProviderPayments,
-      thirdPartyPayments: countThirdPartyPayments,
-      profitDistributions: countProfitDistributions
-    });
+    setProjectDeleteCounts(null);
     setIsDeleteProjectModalOpen(true);
+
+    const tables = ['facturas', 'gastos', 'pagos_proveedores', 'pagos_terceros', 'repartos_utilidad'] as const;
+    const keys = ['invoices', 'expenses', 'providerPayments', 'thirdPartyPayments', 'profitDistributions'] as const;
+
+    const results = await Promise.all(
+      tables.map(table =>
+        supabase
+          .from(table)
+          .select('*', { count: 'exact', head: true })
+          .eq('proyecto_id', id)
+      )
+    );
+
+    const counts: Record<string, number> = {};
+    results.forEach((res, i) => {
+      counts[keys[i]] = res.count ?? 0;
+    });
+
+    setProjectDeleteCounts({
+      invoices: counts.invoices,
+      expenses: counts.expenses,
+      providerPayments: counts.providerPayments,
+      thirdPartyPayments: counts.thirdPartyPayments,
+      profitDistributions: counts.profitDistributions
+    });
   };
 
   const handleConfirmDeleteProject = async (id: string) => {
@@ -400,11 +413,7 @@ export default function App() {
       .eq('id', id);
 
     if (error) {
-      if (error.code === '23503') {
-        showToast('Este proyecto tiene facturas, gastos o pagos asociados. Elimínalos primero.', 'error');
-      } else {
-        showToast(error.message, 'error');
-      }
+      showToast(error.message, 'error');
       return;
     }
 
