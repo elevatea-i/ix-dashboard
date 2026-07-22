@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { X, AlertTriangle, Trash2 } from 'lucide-react';
+import { X, TriangleAlert as AlertTriangle, Trash2, Loader as Loader2 } from 'lucide-react';
 import { Project } from '../types';
 
 interface EliminarProyectoModalProps {
@@ -28,7 +28,7 @@ export default function EliminarProyectoModal({
   counts,
   onConfirmDelete
 }: EliminarProyectoModalProps) {
-  if (!isOpen || !project || !counts) return null;
+  if (!isOpen || !project) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,15 @@ export default function EliminarProyectoModal({
           </button>
         </div>
 
-        {/* Body */}
+        {/* Body — loading state while counts are being fetched */}
+        {!counts ? (
+          <div className="p-6 flex flex-col items-center justify-center space-y-3 py-10">
+            <Loader2 size={24} className="text-cranberry animate-spin" />
+            <p className="text-sm text-[#082019] dark:text-light-ivory/80 font-semibold">
+              Calculando elementos vinculados…
+            </p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-4">
             <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
@@ -91,6 +99,7 @@ export default function EliminarProyectoModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   );
