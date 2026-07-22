@@ -43,12 +43,12 @@ import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderP
 import { getMexicoCityDate, getMexicoCityDateTimeString, calculateProjectBillingStatus } from './utils';
 import { calculateProfitDistribution, calculateProfitDistributionForAmount } from './utils/profitDistribution';
 import { useToast } from './components/Toast';
+import { useAuth } from './lib/auth';
 
 export default function App() {
   const { showToast } = useToast();
-
-  // Authentication state (in memory for static phase)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const { session, profile, loading, signIn, signOut } = useAuth();
+  const isAuthenticated = !!session;
 
   // Dark Mode State
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -172,13 +172,13 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Handle local Auth persistence
-  const handleLogin = () => {
-    setIsAuthenticated(true);
+  // Handle Auth via Supabase
+  const handleLogin = async (email: string, password: string) => {
+    await signIn(email, password);
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    signOut();
   };
 
   // CRUD actions for Clients
@@ -1146,7 +1146,17 @@ export default function App() {
     }
   };
 
-  // 1. Render Login page if not authenticated
+  // 1. Render Login page if not authenticated (show spinner while checking session)
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-light-ivory dark:bg-[#051A14]">
+        <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+          Cargando…
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <Login 
@@ -1178,6 +1188,7 @@ export default function App() {
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           onQuickGastoClick={handleOpenAddExpenseModal}
           onQuickFacturaClick={handleOpenAddInvoiceModal}
+          profile={profile}
         />
 
         {/* Content Area */}

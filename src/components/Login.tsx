@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, ArrowRight, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (email: string, password: string) => Promise<void>;
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
 }
@@ -17,15 +17,23 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
   const [password, setPassword] = useState('password123');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       setError('Por favor, ingresa tus credenciales.');
       return;
     }
     setError('');
-    onLogin();
+    setSubmitting(true);
+    try {
+      await onLogin(email.trim(), password);
+    } catch (err: any) {
+      setError(err?.message || 'Error al iniciar sesión');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -114,9 +122,10 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
             <button
               id="login-submit-btn"
               type="submit"
-              className="w-full mt-2 bg-enchanted-green dark:bg-elevated-gold text-light-ivory dark:text-[#070D0C] hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-all font-medium py-3 px-4 rounded-md flex items-center justify-center space-x-2 border border-transparent shadow-sm text-sm"
+              disabled={submitting}
+              className="w-full mt-2 bg-enchanted-green dark:bg-elevated-gold text-light-ivory dark:text-[#070D0C] hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-all font-medium py-3 px-4 rounded-md flex items-center justify-center space-x-2 border border-transparent shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="tracking-wide">Ingresar al Dashboard</span>
+              <span className="tracking-wide">{submitting ? 'Ingresando…' : 'Ingresar al Dashboard'}</span>
               <ArrowRight size={16} />
             </button>
           </form>

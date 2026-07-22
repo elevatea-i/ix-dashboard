@@ -4,7 +4,9 @@
  */
 
 import React from 'react';
-import { Menu, Sun, Moon, LogOut, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle } from 'lucide-react';
+
+import type { UserProfile } from '../lib/auth';
 
 interface HeaderProps {
   onLogout: () => void;
@@ -13,6 +15,7 @@ interface HeaderProps {
   onMenuToggle: () => void;
   onQuickGastoClick: () => void;
   onQuickFacturaClick: () => void;
+  profile?: UserProfile | null;
 }
 
 export default function Header({ 
@@ -21,8 +24,11 @@ export default function Header({
   setDarkMode, 
   onMenuToggle,
   onQuickGastoClick,
-  onQuickFacturaClick
+  onQuickFacturaClick,
+  profile
 }: HeaderProps) {
+  const displayName = profile?.nombre || 'Usuario';
+  const displayInitial = displayName.charAt(0).toUpperCase();
   return (
     <header className="h-16 px-6 bg-white/40 dark:bg-[#070D0C]/40 backdrop-blur-md border-b border-rocky-gray/30 dark:border-light-ivory/10 flex items-center justify-between transition-all duration-300 shadow-sm">
       <div className="flex items-center space-x-4">
@@ -80,13 +86,13 @@ export default function Header({
 
         <div className="h-8 w-[1px] bg-enchanted-green/10 dark:bg-light-ivory/10"></div>
 
-        {/* User indicator: "San" */}
+        {/* User indicator */}
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 rounded-full bg-enchanted-green text-light-ivory dark:bg-elevated-gold dark:text-[#070D0C] flex items-center justify-center font-serif text-sm font-bold shadow-sm">
-            S
+            {displayInitial}
           </div>
           <div className="hidden md:block text-left">
-            <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">San</p>
+            <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">{displayName}</p>
           </div>
         </div>
 
