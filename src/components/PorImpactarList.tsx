@@ -4,26 +4,14 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  AlertTriangle, 
-  Zap, 
-  Filter, 
-  Briefcase, 
-  CheckCircle2, 
-  Hourglass, 
-  Coins, 
-  UserCircle 
-} from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, TriangleAlert as AlertTriangle, Zap, ListFilter as Filter, Briefcase, CircleCheck as CheckCircle2, Hourglass, Coins, CircleUser as UserCircle } from 'lucide-react';
 import { Project, PorImpactar } from '../types';
 import { formatCurrency } from '../utils';
 
 interface PorImpactarListProps {
   records: PorImpactar[];
   projects: Project[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (record: PorImpactar) => void;
   onDeleteClick: (id: string) => void;
@@ -37,11 +25,20 @@ interface PorImpactarListProps {
 export default function PorImpactarList({
   records,
   projects,
+  loading,
   onAddClick,
   onEditClick,
   onDeleteClick,
   onResolveClick
 }: PorImpactarListProps) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-enchanted-green border-t-transparent" />
+      </div>
+    );
+  }
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pendiente' | 'resuelto'>('all');
   const [socioFilter, setSocioFilter] = useState<'all' | 'San' | 'Ale' | 'Empresa'>('all');

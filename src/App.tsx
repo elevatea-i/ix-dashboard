@@ -45,7 +45,7 @@ import { calculateProfitDistribution, calculateProfitDistributionForAmount } fro
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -88,6 +88,7 @@ export default function App() {
 
   // Por Impactar CRUD State (starts EMPTY as requested)
   const [porImpactar, setPorImpactar] = useState<PorImpactar[]>([]);
+  const [porImpactarLoading, setPorImpactarLoading] = useState(true);
 
   // Bóveda de IVA Withdrawals State (starts EMPTY as requested)
   const [ivaWithdrawals, setIvaWithdrawals] = useState<IvaWithdrawal[]>([]);
@@ -236,6 +237,18 @@ export default function App() {
         setExpenses(data.map(expenseFromDb));
       }
       setExpensesLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch por_impactar from Supabase on mount
+  useEffect(() => {
+    supabase.from('por_impactar').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setPorImpactar(data.map(porImpactarFromDb));
+      }
+      setPorImpactarLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -726,19 +739,17 @@ export default function App() {
 
     setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
 
-    // Temporarily replicate the DB trigger's revert in local state
-    // (Por Impactar module still reads from memory)
+    // The DB trigger reverted the Por Impactar record — refetch it
     if (revertPorImpactarId) {
-      setPorImpactar(prev => prev.map(rec => 
-        rec.id === revertPorImpactarId
-          ? {
-              ...rec,
-              estatus: 'pendiente',
-              proyectoDestinoId: null,
-              gastoIdGenerado: null
-            }
-          : rec
-      ));
+      const { data: reverted } = await supabase
+        .from('por_impactar')
+        .select('*')
+        .eq('id', revertPorImpactarId)
+        .maybeSingle();
+      if (reverted) {
+        const mapped = porImpactarFromDb(reverted);
+        setPorImpactar(prev => prev.map(rec => rec.id === revertPorImpactarId ? mapped : rec));
+      }
     }
 
     setIsDeleteExpenseModalOpen(false);
@@ -747,7 +758,7 @@ export default function App() {
   };
 
   // CRUD and Resolve actions for Por Impactar
-  const handleAddOrEditPorImpactarSubmit = (formData: {
+  const handleAddOrEditPorImpactarSubmit = async (formData: {
     descripcion: string;
     monto: number;
     socioResponsable: 'San' | 'Ale' | 'Empresa';
@@ -756,25 +767,35 @@ export default function App() {
   }) => {
     if (selectedPorImpactar) {
       // Edit mode
-      setPorImpactar(prev => prev.map(rec => 
-        rec.id === selectedPorImpactar.id 
-          ? { ...rec, ...formData } 
-          : rec
-      ));
+      const updates = porImpactarToDb(formData);
+      delete updates.id;
+      const { data, error } = await supabase
+        .from('por_impactar')
+        .update(updates)
+        .eq('id', selectedPorImpactar.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const updated = porImpactarFromDb(data);
+      setPorImpactar(prev => prev.map(rec => rec.id === selectedPorImpactar.id ? updated : rec));
       showToast('Cambios guardados');
     } else {
-      // Add mode
-      const newRecord: PorImpactar = {
-        id: `imp_${Math.random().toString(36).substr(2, 9)}`,
-        descripcion: formData.descripcion,
-        monto: formData.monto,
-        socioResponsable: formData.socioResponsable,
-        proyectoOrigenId: formData.proyectoOrigenId,
-        fecha: formData.fecha,
-        estatus: 'pendiente',
-        proyectoDestinoId: null,
-        gastoIdGenerado: null
-      };
+      // Add mode — no id, Postgres generates it; estatus defaults to 'pendiente'
+      const insertData = porImpactarToDb(formData);
+      delete insertData.id;
+      const { data, error } = await supabase
+        .from('por_impactar')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const newRecord = porImpactarFromDb(data);
       setPorImpactar(prev => [newRecord, ...prev]);
       showToast('Guardado con éxito');
     }
@@ -789,7 +810,15 @@ export default function App() {
     setIsDeletePorImpactarModalOpen(true);
   };
 
-  const handleConfirmDeletePorImpactar = (id: string) => {
+  const handleConfirmDeletePorImpactar = async (id: string) => {
+    const { error } = await supabase
+      .from('por_impactar')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
     setPorImpactar(prev => prev.filter(rec => rec.id !== id));
     setIsDeletePorImpactarModalOpen(false);
     setPorImpactarToDelete(null);
@@ -858,17 +887,25 @@ export default function App() {
     const newExpense = expenseFromDb(data);
     setExpenses(prev => [newExpense, ...prev]);
 
-    // Update Por Impactar in local state (module not yet on Supabase)
-    setPorImpactar(prev => prev.map(rec =>
-      rec.id === recordId
-        ? {
-            ...rec,
-            estatus: 'resuelto',
-            proyectoDestinoId: expenseData.proyectoId,
-            gastoIdGenerado: newExpense.id
-          }
-        : rec
-    ));
+    // Update Por Impactar record in Supabase
+    const { data: updatedRec, error: updateError } = await supabase
+      .from('por_impactar')
+      .update({
+        estatus: 'resuelto',
+        proyecto_destino_id: expenseData.proyectoId,
+        gasto_id_generado: newExpense.id
+      })
+      .eq('id', recordId)
+      .select()
+      .single();
+
+    if (updateError) {
+      showToast(updateError.message, 'error');
+      return;
+    }
+
+    const mappedRec = porImpactarFromDb(updatedRec);
+    setPorImpactar(prev => prev.map(rec => rec.id === recordId ? mappedRec : rec));
 
     setIsPorImpactarResolverOpen(false);
     setPorImpactarToResolve(null);
@@ -1226,6 +1263,7 @@ export default function App() {
           <PorImpactarList
             records={porImpactar}
             projects={projects}
+            loading={porImpactarLoading}
             onAddClick={handleOpenAddPorImpactarModal}
             onEditClick={handleOpenEditPorImpactarModal}
             onDeleteClick={handleDeletePorImpactar}
