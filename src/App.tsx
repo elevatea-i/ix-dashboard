@@ -40,11 +40,10 @@ import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
-import { calculateProjectBillingStatus } from './utils';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -82,6 +81,7 @@ export default function App() {
 
   // Pagos a Terceros CRUD State (starts EMPTY as requested)
   const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
+  const [thirdPartyPaymentsLoading, setThirdPartyPaymentsLoading] = useState(true);
 
   // Reparto de Utilidades State (starts EMPTY as requested)
   const [profitDistributions, setProfitDistributions] = useState<ProfitDistribution[]>([]);
@@ -272,6 +272,18 @@ export default function App() {
       } else if (data) {
         setProfitDistributions(data.map(profitDistributionFromDb));
       }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch pagos_terceros from Supabase on mount
+  useEffect(() => {
+    supabase.from('pagos_terceros').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setThirdPartyPayments(data.map(thirdPartyPaymentFromDb));
+      }
+      setThirdPartyPaymentsLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1001,7 +1013,7 @@ export default function App() {
   };
 
   // CRUD actions for Third Party Payments
-  const handleAddOrEditThirdPartyPaymentSubmit = (formData: {
+  const handleAddOrEditThirdPartyPaymentSubmit = async (formData: {
     proyectoId: string | null;
     concepto: string;
     saldoOriginal: number;
@@ -1012,22 +1024,38 @@ export default function App() {
     fecha: string;
   }) => {
     if (selectedThirdPartyPayment) {
-      // Edit mode
-      setThirdPartyPayments(prev => prev.map(p => 
-        p.id === selectedThirdPartyPayment.id 
-          ? { ...p, ...formData } 
-          : p
+      const dbPayload = thirdPartyPaymentToDb(formData as Partial<ThirdPartyPayment>);
+      const { data, error } = await supabase
+        .from('pagos_terceros')
+        .update(dbPayload)
+        .eq('id', selectedThirdPartyPayment.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      setThirdPartyPayments(prev => prev.map(p =>
+        p.id === selectedThirdPartyPayment.id ? thirdPartyPaymentFromDb(data) : p
       ));
       showToast('Cambios guardados');
     } else {
-      // Add mode
-      const newPayment: ThirdPartyPayment = {
-        id: `tpay_${Math.random().toString(36).substr(2, 9)}`,
+      const newObj: Partial<ThirdPartyPayment> = {
         ...formData,
         dinero_recibido: false,
         fecha_recibido: null
       };
-      setThirdPartyPayments(prev => [newPayment, ...prev]);
+      const dbPayload = thirdPartyPaymentToDb(newObj);
+      const { data, error } = await supabase
+        .from('pagos_terceros')
+        .insert(dbPayload)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      setThirdPartyPayments(prev => [thirdPartyPaymentFromDb(data), ...prev]);
       showToast('Guardado con éxito');
     }
     setIsThirdPartyPaymentModalOpen(false);
@@ -1041,48 +1069,49 @@ export default function App() {
     setIsDeleteThirdPartyPaymentModalOpen(true);
   };
 
-  const handleConfirmDeleteThirdPartyPayment = (id: string) => {
+  const handleConfirmDeleteThirdPartyPayment = async (id: string) => {
+    const { error } = await supabase.from('pagos_terceros').delete().eq('id', id);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
     setThirdPartyPayments(prev => prev.filter(p => p.id !== id));
     setIsDeleteThirdPartyPaymentModalOpen(false);
     setThirdPartyPaymentToDelete(null);
     showToast('Eliminado con éxito');
   };
 
-  const handleMarkThirdPartyPaymentAsPaid = (id: string) => {
-    const payment = thirdPartyPayments.find(p => p.id === id);
-    if (!payment) return;
-
-    if (!payment.proyectoId) {
-      // Rule 1: No project
-      if (!payment.dinero_recibido) {
-        showToast("No puedes dispersar este pago — el solicitante todavía no te ha entregado el dinero. Márcalo como 'Recibido' primero.");
-        return;
-      }
-    } else {
-      // Rule 2: Has project
-      const proj = projects.find(p => p.id === payment.proyectoId);
-      const projName = proj ? proj.nombre : '';
-      const billingStatus = calculateProjectBillingStatus(payment.proyectoId, invoices);
-      if (billingStatus !== 'Pagado') {
-        showToast(`No puedes dispersar este pago — el cliente del proyecto '${projName}' todavía no ha pagado todas sus facturas.`);
-        return;
-      }
+  const handleMarkThirdPartyPaymentAsPaid = async (id: string) => {
+    const { data, error } = await supabase
+      .from('pagos_terceros')
+      .update({ estatus_pago: 'Pagado' })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) {
+      showToast(error.message, 'error');
+      return;
     }
-
-    setThirdPartyPayments(prev => prev.map(p => 
-      p.id === id 
-        ? { ...p, estatusPago: 'Pagado' } 
-        : p
+    setThirdPartyPayments(prev => prev.map(p =>
+      p.id === id ? thirdPartyPaymentFromDb(data) : p
     ));
     showToast('Cambios guardados');
   };
 
-  const handleConfirmMarkAsReceived = (fechaRecibido: string) => {
+  const handleConfirmMarkAsReceived = async (fechaRecibido: string) => {
     if (!paymentToMarkAsReceived) return;
-    setThirdPartyPayments(prev => prev.map(p => 
-      p.id === paymentToMarkAsReceived.id 
-        ? { ...p, dinero_recibido: true, fecha_recibido: fechaRecibido } 
-        : p
+    const { data, error } = await supabase
+      .from('pagos_terceros')
+      .update({ dinero_recibido: true, fecha_recibido: fechaRecibido })
+      .eq('id', paymentToMarkAsReceived.id)
+      .select()
+      .single();
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+    setThirdPartyPayments(prev => prev.map(p =>
+      p.id === paymentToMarkAsReceived.id ? thirdPartyPaymentFromDb(data) : p
     ));
     setIsRecibirDineroOpen(false);
     setPaymentToMarkAsReceived(null);
