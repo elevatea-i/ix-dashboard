@@ -7,25 +7,14 @@ import React, { useState } from 'react';
 import { Invoice, Expense, ProviderPayment, IvaWithdrawal } from '../types';
 import { calculateIvaMetrics } from '../utils/iva';
 import { formatCurrency, getMexicoCityDate } from '../utils';
-import { 
-  Vault, 
-  ArrowUpRight, 
-  TrendingDown, 
-  History, 
-  Plus, 
-  Trash2, 
-  AlertTriangle, 
-  HelpCircle,
-  CheckCircle2,
-  Calendar,
-  X
-} from 'lucide-react';
+import { Vault, ArrowUpRight, TrendingDown, History, Plus, Trash2, TriangleAlert as AlertTriangle, Circle as HelpCircle, CircleCheck as CheckCircle2, Calendar, X } from 'lucide-react';
 
 interface BovedaIvaProps {
   invoices: Invoice[];
   expenses: Expense[];
   providerPayments: ProviderPayment[];
   ivaWithdrawals: IvaWithdrawal[];
+  loading?: boolean;
   onAddWithdrawal: (withdrawal: { concepto: string; monto: number; fecha: string }) => void;
   onDeleteWithdrawal: (id: string) => void;
 }
@@ -35,6 +24,7 @@ export default function BovedaIva({
   expenses,
   providerPayments,
   ivaWithdrawals,
+  loading,
   onAddWithdrawal,
   onDeleteWithdrawal
 }: BovedaIvaProps) {
@@ -252,7 +242,13 @@ export default function BovedaIva({
         </div>
 
         <div className="flex-1 overflow-x-auto">
-          {filteredWithdrawals.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+                Cargando retiros…
+              </div>
+            </div>
+          ) : filteredWithdrawals.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <div className="w-10 h-10 rounded-full bg-enchanted-green/5 dark:bg-white/5 flex items-center justify-center mx-auto text-rocky-gray">
                 <Vault size={18} />

@@ -4,24 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  UserPlus, 
-  FileCheck2, 
-  PhoneCall, 
-  Grid, 
-  List, 
-  AlertTriangle,
-  RefreshCw,
-  FolderOpen
-} from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, UserPlus, FileCheck2, PhoneCall, Grid2x2 as Grid, List, TriangleAlert as AlertTriangle, RefreshCw, FolderOpen } from 'lucide-react';
 import { Client } from '../types';
 
 interface ClientesListProps {
   clients: Client[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (client: Client) => void;
   onDeleteClick: (id: string) => void;
@@ -29,6 +17,7 @@ interface ClientesListProps {
 
 export default function ClientesList({
   clients,
+  loading,
   onAddClick,
   onEditClick,
   onDeleteClick
@@ -80,8 +69,14 @@ export default function ClientesList({
         )}
       </div>
 
-      {/* Main Condition: Empty State or Data State */}
-      {totalClients === 0 ? (
+      {/* Main Condition: Loading, Empty State or Data State */}
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+            Cargando clientes…
+          </div>
+        </div>
+      ) : totalClients === 0 ? (
         /* GORGEOUS EMPTY STATE (Designed strictly as requested) */
         <div className="max-w-2xl mx-auto my-12 text-center p-8 md:p-12 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>

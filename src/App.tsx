@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, BookOpen, AlertCircle } from 'lucide-react';
+import { Sparkles, Calendar, BookOpen, CircleAlert as AlertCircle } from 'lucide-react';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -44,6 +44,8 @@ import { getMexicoCityDate, getMexicoCityDateTimeString, calculateProjectBilling
 import { calculateProfitDistribution, calculateProfitDistributionForAmount } from './utils/profitDistribution';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
+import { supabase } from './lib/supabase';
+import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -61,6 +63,7 @@ export default function App() {
 
   // Clientes CRUD State (Starts EMPTY as requested)
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
 
   // Proyectos CRUD State (Starts EMPTY as requested)
   const [projects, setProjects] = useState<Project[]>([]);
@@ -85,6 +88,7 @@ export default function App() {
 
   // Bóveda de IVA Withdrawals State (starts EMPTY as requested)
   const [ivaWithdrawals, setIvaWithdrawals] = useState<IvaWithdrawal[]>([]);
+  const [ivaWithdrawalsLoading, setIvaWithdrawalsLoading] = useState(true);
 
   // Modal controls
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -172,6 +176,30 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Fetch clients from Supabase on mount
+  useEffect(() => {
+    supabase.from('clientes').select('*').then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setClients(data.map(clientFromDb));
+      }
+      setClientsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch IVA withdrawals from Supabase on mount
+  useEffect(() => {
+    supabase.from('retiros_iva').select('*').then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setIvaWithdrawals(data.map(ivaWithdrawalFromDb));
+      }
+      setIvaWithdrawalsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle Auth via Supabase
   const handleLogin = async (email: string, password: string) => {
     await signIn(email, password);
@@ -181,8 +209,8 @@ export default function App() {
     signOut();
   };
 
-  // CRUD actions for Clients
-  const handleAddOrEditClientSubmit = (formData: { 
+  // CRUD actions for Clients (Supabase)
+  const handleAddOrEditClientSubmit = async (formData: { 
     nombre: string; 
     razonSocial: string; 
     rfc: string; 
@@ -190,22 +218,35 @@ export default function App() {
   }) => {
     if (selectedClient) {
       // Edit mode
-      setClients(prev => prev.map(c => 
-        c.id === selectedClient.id 
-          ? { ...c, ...formData } 
-          : c
-      ));
+      const updates = clientToDb(formData);
+      const { data, error } = await supabase
+        .from('clientes')
+        .update(updates)
+        .eq('id', selectedClient.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const updated = clientFromDb(data);
+      setClients(prev => prev.map(c => c.id === selectedClient.id ? updated : c));
       showToast('Cambios guardados');
     } else {
-      // Add mode
-      const newClient: Client = {
-        id: `cli_${Math.random().toString(36).substr(2, 9)}`,
-        nombre: formData.nombre,
-        razonSocial: formData.razonSocial,
-        rfc: formData.rfc,
-        contacto: formData.contacto,
-        createdAt: getMexicoCityDateTimeString()
-      };
+      // Add mode — no id, Postgres generates it
+      const insertData = clientToDb(formData);
+      delete insertData.id;
+      delete insertData.created_at;
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const newClient = clientFromDb(data);
       setClients(prev => [newClient, ...prev]);
       showToast('Guardado con éxito');
     }
@@ -237,46 +278,21 @@ export default function App() {
     setIsDeleteClientModalOpen(true);
   };
 
-  const handleConfirmDeleteClient = (id: string) => {
-    // Find all project ids for this client
-    const clientProjects = projects.filter(p => p.clienteId === id);
-    const clientProjectIds = clientProjects.map(p => p.id);
+  const handleConfirmDeleteClient = async (id: string) => {
+    const { error } = await supabase
+      .from('clientes')
+      .delete()
+      .eq('id', id);
 
-    // 1. Delete all profit distributions of these projects
-    setProfitDistributions(prev => prev.filter(pd => !clientProjectIds.includes(pd.proyectoId)));
-
-    // 2. Delete all third party payments of these projects
-    setThirdPartyPayments(prev => prev.filter(tp => !tp.proyectoId || !clientProjectIds.includes(tp.proyectoId)));
-
-    // 3. Delete all provider payments of these projects
-    setProviderPayments(prev => prev.filter(pp => !clientProjectIds.includes(pp.proyectoId)));
-
-    // 4. Revert any porImpactar records generated by expenses of these projects
-    const clientExpenses = expenses.filter(exp => exp.proyectoId && clientProjectIds.includes(exp.proyectoId));
-    const clientExpenseIds = clientExpenses.map(exp => exp.id);
-
-    setPorImpactar(prev => prev.map(rec => {
-      if (rec.gastoIdGenerado && clientExpenseIds.includes(rec.gastoIdGenerado)) {
-        return {
-          ...rec,
-          estatus: 'pendiente',
-          proyectoDestinoId: null,
-          gastoIdGenerado: null
-        };
+    if (error) {
+      if (error.code === '23503') {
+        showToast('Este cliente tiene proyectos asociados. Elimina o reasigna sus proyectos antes de borrarlo.', 'error');
+      } else {
+        showToast(error.message, 'error');
       }
-      return rec;
-    }));
+      return;
+    }
 
-    // 5. Delete all expenses of these projects
-    setExpenses(prev => prev.filter(exp => !exp.proyectoId || !clientProjectIds.includes(exp.proyectoId)));
-
-    // 6. Delete all invoices of these projects
-    setInvoices(prev => prev.filter(inv => !clientProjectIds.includes(inv.proyectoId)));
-
-    // 7. Delete all projects of this client
-    setProjects(prev => prev.filter(p => p.clienteId !== id));
-
-    // 8. Delete the client itself
     setClients(prev => prev.filter(c => c.id !== id));
 
     // Close and reset states
@@ -284,7 +300,7 @@ export default function App() {
     setClientToDeleteId(null);
     setClientDeleteCounts(null);
 
-    showToast('Cliente y toda su documentación eliminados');
+    showToast('Cliente eliminado');
   };
 
   const handleOpenAddModal = () => {
@@ -958,12 +974,20 @@ export default function App() {
     setIsThirdPartyPaymentModalOpen(true);
   };
 
-  // Bóveda de IVA handlers
-  const handleAddIvaWithdrawal = (withdrawalData: { concepto: string; monto: number; fecha: string }) => {
-    const newWithdrawal: IvaWithdrawal = {
-      id: `wit_${Math.random().toString(36).substr(2, 9)}`,
-      ...withdrawalData
-    };
+  // Bóveda de IVA handlers (Supabase)
+  const handleAddIvaWithdrawal = async (withdrawalData: { concepto: string; monto: number; fecha: string }) => {
+    const insertData = ivaWithdrawalToDb(withdrawalData);
+    delete insertData.id;
+    const { data, error } = await supabase
+      .from('retiros_iva')
+      .insert(insertData)
+      .select()
+      .single();
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+    const newWithdrawal = ivaWithdrawalFromDb(data);
     setIvaWithdrawals(prev => [newWithdrawal, ...prev]);
     showToast('Retiro de IVA registrado');
   };
@@ -975,7 +999,15 @@ export default function App() {
     setIsDeleteIvaWithdrawalModalOpen(true);
   };
 
-  const handleConfirmDeleteIvaWithdrawal = (id: string) => {
+  const handleConfirmDeleteIvaWithdrawal = async (id: string) => {
+    const { error } = await supabase
+      .from('retiros_iva')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
     setIvaWithdrawals(prev => prev.filter(w => w.id !== id));
     setIsDeleteIvaWithdrawalModalOpen(false);
     setIvaWithdrawalToDelete(null);
@@ -1008,6 +1040,7 @@ export default function App() {
         return (
           <ClientesList 
             clients={clients}
+            loading={clientsLoading}
             onAddClick={handleOpenAddModal}
             onEditClick={handleOpenEditModal}
             onDeleteClick={handleDeleteClient}
@@ -1137,6 +1170,7 @@ export default function App() {
             expenses={expenses}
             providerPayments={providerPayments}
             ivaWithdrawals={ivaWithdrawals}
+            loading={ivaWithdrawalsLoading}
             onAddWithdrawal={handleAddIvaWithdrawal}
             onDeleteWithdrawal={handleDeleteIvaWithdrawal}
           />
