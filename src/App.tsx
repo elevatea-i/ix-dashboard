@@ -40,12 +40,11 @@ import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
-import { getMexicoCityDate, getMexicoCityDateTimeString, calculateProjectBillingStatus } from './utils';
-import { calculateProfitDistribution, calculateProfitDistributionForAmount } from './utils/profitDistribution';
+import { calculateProjectBillingStatus } from './utils';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -71,6 +70,7 @@ export default function App() {
 
   // Facturas CRUD State (Starts EMPTY as requested)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoicesLoading, setInvoicesLoading] = useState(true);
 
   // Gastos CRUD State (Starts EMPTY as requested)
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -249,6 +249,29 @@ export default function App() {
         setPorImpactar(data.map(porImpactarFromDb));
       }
       setPorImpactarLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch facturas from Supabase on mount
+  useEffect(() => {
+    supabase.from('facturas').select('*').order('fecha_emision', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setInvoices(data.map(invoiceFromDb));
+      }
+      setInvoicesLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch repartos_utilidad from Supabase on mount (read-only)
+  useEffect(() => {
+    supabase.from('repartos_utilidad').select('*').then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setProfitDistributions(data.map(profitDistributionFromDb));
+      }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -476,7 +499,7 @@ export default function App() {
   };
 
   // CRUD actions for Invoices
-  const handleAddOrEditInvoiceSubmit = (formData: {
+  const handleAddOrEditInvoiceSubmit = async (formData: {
     folio: string;
     proyectoId: string;
     subtotal: number;
@@ -492,37 +515,46 @@ export default function App() {
       (formData.subtotal + formData.iva - formData.retencionIsr - formData.retencionIva).toFixed(2)
     );
 
+    const invoiceObj: Partial<Invoice> = {
+      folio: formData.folio,
+      proyectoId: formData.proyectoId,
+      subtotal: formData.subtotal,
+      iva: formData.iva,
+      retencionIsr: formData.retencionIsr,
+      retencionIva: formData.retencionIva,
+      total: calculatedTotal,
+      metodoPago: formData.metodoPago,
+      complementoEmitido: formData.metodoPago === 'PPD' ? formData.complementoEmitido : undefined,
+      fechaEmision: formData.fechaEmision,
+      facturado_por: formData.facturado_por || 'IX',
+    };
+
     if (selectedInvoice) {
-      // Edit mode
-      setInvoices(prev => prev.map(inv => 
-        inv.id === selectedInvoice.id 
-          ? { 
-              ...inv, 
-              ...formData, 
-              total: calculatedTotal,
-              complementoEmitido: formData.metodoPago === 'PPD' ? formData.complementoEmitido : undefined
-            } 
-          : inv
-      ));
+      const dbPayload = invoiceToDb(invoiceObj);
+      const { data, error } = await supabase
+        .from('facturas')
+        .update(dbPayload)
+        .eq('id', selectedInvoice.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      setInvoices(prev => prev.map(inv => inv.id === selectedInvoice.id ? invoiceFromDb(data) : inv));
       showToast('Cambios guardados');
     } else {
-      // Add mode - Starts as "facturada" (Unpaid)
-      const newInvoice: Invoice = {
-        id: `fact_${Math.random().toString(36).substr(2, 9)}`,
-        folio: formData.folio,
-        proyectoId: formData.proyectoId,
-        subtotal: formData.subtotal,
-        iva: formData.iva,
-        retencionIsr: formData.retencionIsr,
-        retencionIva: formData.retencionIva,
-        total: calculatedTotal,
-        metodoPago: formData.metodoPago,
-        complementoEmitido: formData.metodoPago === 'PPD' ? formData.complementoEmitido : undefined,
-        estado: 'facturada',
-        fechaEmision: formData.fechaEmision,
-        facturado_por: formData.facturado_por || 'IX'
-      };
-      setInvoices(prev => [newInvoice, ...prev]);
+      const dbPayload = invoiceToDb(invoiceObj);
+      const { data, error } = await supabase
+        .from('facturas')
+        .insert(dbPayload)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      setInvoices(prev => [invoiceFromDb(data), ...prev]);
       showToast('Guardado con éxito');
     }
     setIsInvoiceModalOpen(false);
@@ -537,27 +569,32 @@ export default function App() {
     setIsDeleteInvoiceModalOpen(true);
   };
 
-  const handleConfirmDeleteInvoice = (invoiceId: string, distributionIdsToDelete?: string[]) => {
+  const handleConfirmDeleteInvoice = async (invoiceId: string, _distributionIdsToDelete?: string[]) => {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return;
     const projId = inv.proyectoId;
 
-    // 1. Delete the invoice from state
-    const updatedInvoices = invoices.filter(i => i.id !== invoiceId);
-    setInvoices(updatedInvoices);
-
-    // 2. Cascade delete specified profit distributions
-    if (distributionIdsToDelete && distributionIdsToDelete.length > 0) {
-      setProfitDistributions(prev => prev.filter(pd => !distributionIdsToDelete.includes(pd.id)));
+    const { error } = await supabase.from('facturas').delete().eq('id', invoiceId);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
     }
 
-    // 3. Always recalculate billing status of the project after this change
-    const newStatus = calculateProjectBillingStatus(projId, updatedInvoices);
-    setProjects(prevProjects => prevProjects.map(p => 
-      p.id === projId ? { ...p, estadoFacturacion: newStatus } : p
-    ));
+    setInvoices(prev => prev.filter(i => i.id !== invoiceId));
 
-    // 4. Close the modal
+    // Refresh project (trigger already recalculated estado_facturacion)
+    const { data: freshProject } = await supabase
+      .from('proyectos').select('*').eq('id', projId).single();
+    if (freshProject) {
+      setProjects(prev => prev.map(p => p.id === projId ? projectFromDb(freshProject) : p));
+    }
+
+    // Refresh repartos (trigger already deleted the one linked to this invoice)
+    const { data: freshDists } = await supabase.from('repartos_utilidad').select('*');
+    if (freshDists) {
+      setProfitDistributions(freshDists.map(profitDistributionFromDb));
+    }
+
     setIsDeleteInvoiceModalOpen(false);
     setInvoiceToDelete(null);
   };
@@ -577,80 +614,37 @@ export default function App() {
     setIsMarkAsPaidOpen(true);
   };
 
-  const handleConfirmMarkAsPaid = (fechaPago: string) => {
+  const handleConfirmMarkAsPaid = async (fechaPago: string) => {
     if (!invoiceToMarkAsPaid) return;
-    
     const projId = invoiceToMarkAsPaid.proyectoId;
-    
-    // 1. Calculate billing status of the project before this change
-    const oldStatus = calculateProjectBillingStatus(projId, invoices);
-    
-    // 2. Prepare the new list of invoices
-    const newInvoices = invoices.map(inv => 
-      inv.id === invoiceToMarkAsPaid.id 
-        ? ({ ...inv, estado: 'pagada', fechaPago } as Invoice)
-        : inv
-    );
-    
-    // 3. Set the new list of invoices
-    setInvoices(newInvoices);
-    
-    // 4. Calculate billing status of the project after this change
-    const newStatus = calculateProjectBillingStatus(projId, newInvoices);
-    
-    // 5. Perform incremental profit distribution calculation for this invoice
-    const projectDistributions = profitDistributions.filter(pd => pd.proyectoId === projId);
-    const lastDistribution = projectDistributions[projectDistributions.length - 1];
 
-    const projectInvoices = newInvoices.filter(inv => inv.proyectoId === projId);
-    const total_facturas_actual = projectInvoices.reduce((sum, inv) => sum + (inv.subtotal || 0), 0);
+    const { data: updated, error } = await supabase
+      .from('facturas')
+      .update({ estado: 'pagada', fecha_pago: fechaPago })
+      .eq('id', invoiceToMarkAsPaid.id)
+      .select()
+      .single();
 
-    const projectProviderPayments = providerPayments.filter(pay => pay.proyectoId === projId);
-    const total_proveedor_actual = projectProviderPayments.reduce((sum, pay) => sum + (pay.subtotal || 0), 0);
-
-    const prev_proveedor_acumulado = lastDistribution && lastDistribution.proveedor_subtotal_acumulado !== undefined
-      ? lastDistribution.proveedor_subtotal_acumulado
-      : 0;
-
-    const delta_proveedor = total_proveedor_actual - prev_proveedor_acumulado;
-    const ganancia_total_delta = Number(((invoiceToMarkAsPaid.subtotal || 0) - delta_proveedor).toFixed(2));
-
-    if (ganancia_total_delta > 0) {
-      // Calculate live accumulated Diploma before this operation
-      const currentDiplomaAccumulated = profitDistributions.reduce(
-        (sum, pd) => sum + (pd.gananciaDiploma || 0),
-        0
-      );
-
-      const calculation = calculateProfitDistributionForAmount(
-        ganancia_total_delta,
-        currentDiplomaAccumulated
-      );
-
-      const newDistribution: ProfitDistribution = {
-        id: `pd_${Math.random().toString(36).substring(2, 9)}`,
-        proyectoId: projId,
-        gananciaTotal: calculation.gananciaTotal,
-        gananciaDueno: calculation.gananciaDueno,
-        gananciaEjecutivo: calculation.gananciaEjecutivo,
-        gananciaDiploma: calculation.gananciaDiploma,
-        fechaCreacion: getMexicoCityDate(),
-        facturas_subtotal_acumulado: total_facturas_actual,
-        proveedor_subtotal_acumulado: total_proveedor_actual,
-        facturaIdsNuevas: [invoiceToMarkAsPaid.id]
-      };
-
-      setProfitDistributions(prev => [...prev, newDistribution]);
+    if (error) {
+      showToast(error.message, 'error');
+      return;
     }
 
-    // Always update project status in state
-    setProjects(prevProjects => prevProjects.map(p => {
-      if (p.id === projId) {
-        return { ...p, estadoFacturacion: newStatus };
-      }
-      return p;
-    }));
-    
+    setInvoices(prev => prev.map(inv => inv.id === updated.id ? invoiceFromDb(updated) : inv));
+
+    // Refresh project (trigger already recalculated estado_facturacion)
+    const { data: freshProject } = await supabase
+      .from('proyectos').select('*').eq('id', projId).single();
+    if (freshProject) {
+      setProjects(prev => prev.map(p => p.id === projId ? projectFromDb(freshProject) : p));
+    }
+
+    // Refresh repartos (trigger may have created a new one)
+    const { data: freshDists } = await supabase.from('repartos_utilidad').select('*');
+    if (freshDists) {
+      setProfitDistributions(freshDists.map(profitDistributionFromDb));
+    }
+
     setIsMarkAsPaidOpen(false);
     setInvoiceToMarkAsPaid(null);
     showToast('Factura marcada como pagada');
