@@ -45,7 +45,7 @@ import { calculateProfitDistribution, calculateProfitDistributionForAmount } fro
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, projectFromDb, projectToDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -67,6 +67,7 @@ export default function App() {
 
   // Proyectos CRUD State (Starts EMPTY as requested)
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
 
   // Facturas CRUD State (Starts EMPTY as requested)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -200,6 +201,18 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Fetch projects from Supabase on mount
+  useEffect(() => {
+    supabase.from('proyectos').select('*').order('fecha_creacion', { ascending: false }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setProjects(data.map(projectFromDb));
+      }
+      setProjectsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle Auth via Supabase
   const handleLogin = async (email: string, password: string) => {
     await signIn(email, password);
@@ -313,32 +326,48 @@ export default function App() {
     setIsFormModalOpen(true);
   };
 
-  // CRUD actions for Projects
-  const handleAddOrEditProjectSubmit = (formData: {
+  // CRUD actions for Projects (Supabase)
+  const handleAddOrEditProjectSubmit = async (formData: {
     nombre: string;
     codigo: string;
     clienteId: string;
     ejecutivoId: 'San' | 'Ale';
   }) => {
     if (selectedProject) {
-      // Edit mode
-      setProjects(prev => prev.map(p => 
-        p.id === selectedProject.id 
-          ? { ...p, ...formData } 
-          : p
-      ));
+      // Edit mode — only fields that changed, never estadoFacturacion
+      const updates = projectToDb(formData);
+      delete updates.id;
+      delete updates.estado_facturacion;
+      delete updates.fecha_creacion;
+      const { data, error } = await supabase
+        .from('proyectos')
+        .update(updates)
+        .eq('id', selectedProject.id)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const updated = projectFromDb(data);
+      setProjects(prev => prev.map(p => p.id === selectedProject.id ? updated : p));
       showToast('Cambios guardados');
     } else {
-      // Add mode
-      const newProject: Project = {
-        id: `proy_${Math.random().toString(36).substr(2, 9)}`,
-        nombre: formData.nombre,
-        codigo: formData.codigo,
-        clienteId: formData.clienteId,
-        ejecutivoId: formData.ejecutivoId,
-        estadoFacturacion: 'Sin facturar',
-        fechaCreacion: getMexicoCityDate()
-      };
+      // Add mode — Postgres generates id, fecha_creacion, estado_facturacion
+      const insertData = projectToDb(formData);
+      delete insertData.id;
+      delete insertData.estado_facturacion;
+      delete insertData.fecha_creacion;
+      const { data, error } = await supabase
+        .from('proyectos')
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const newProject = projectFromDb(data);
       setProjects(prev => [newProject, ...prev]);
       showToast('Guardado con éxito');
     }
@@ -364,43 +393,23 @@ export default function App() {
     setIsDeleteProjectModalOpen(true);
   };
 
-  const handleConfirmDeleteProject = (id: string) => {
-    // 1. Elimina todos los Repartos de Utilidades de ese proyecto.
-    setProfitDistributions(prev => prev.filter(pd => pd.proyectoId !== id));
+  const handleConfirmDeleteProject = async (id: string) => {
+    const { error } = await supabase
+      .from('proyectos')
+      .delete()
+      .eq('id', id);
 
-    // 2. Elimina todos los Pagos a Terceros vinculados a ese proyecto (proyecto_id = este proyecto).
-    setThirdPartyPayments(prev => prev.filter(tp => tp.proyectoId !== id));
-
-    // 3. Elimina todos los Pagos a Proveedores de ese proyecto.
-    setProviderPayments(prev => prev.filter(pp => pp.proyectoId !== id));
-
-    // 4. Para cada Gasto de ese proyecto: si ese Gasto tiene un registro de Por Impactar que lo generó,
-    // revierte ese PorImpactar a estatus "Pendiente" y limpia su proyectoDestinoId y gastoIdGenerado.
-    const projectExpenses = expenses.filter(exp => exp.proyectoId === id);
-    const projectExpenseIds = projectExpenses.map(exp => exp.id);
-
-    setPorImpactar(prev => prev.map(rec => {
-      if (rec.gastoIdGenerado && projectExpenseIds.includes(rec.gastoIdGenerado)) {
-        return {
-          ...rec,
-          estatus: 'pendiente',
-          proyectoDestinoId: null,
-          gastoIdGenerado: null
-        };
+    if (error) {
+      if (error.code === '23503') {
+        showToast('Este proyecto tiene facturas, gastos o pagos asociados. Elimínalos primero.', 'error');
+      } else {
+        showToast(error.message, 'error');
       }
-      return rec;
-    }));
+      return;
+    }
 
-    // 5. Elimina todos los Gastos de ese proyecto.
-    setExpenses(prev => prev.filter(exp => exp.proyectoId !== id));
-
-    // 6. Elimina todas las Facturas de ese proyecto.
-    setInvoices(prev => prev.filter(inv => inv.proyectoId !== id));
-
-    // 7. Elimina el Proyecto.
     setProjects(prev => prev.filter(p => p.id !== id));
 
-    // Close and reset states
     setIsDeleteProjectModalOpen(false);
     setProjectToDeleteId(null);
     setProjectDeleteCounts(null);
@@ -1050,6 +1059,7 @@ export default function App() {
         return (
           <ProyectosList
             projects={projects}
+            loading={projectsLoading}
             clients={clients}
             invoices={invoices}
             expenses={expenses}

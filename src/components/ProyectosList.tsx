@@ -4,27 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  FolderGit2, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Sparkles, 
-  User, 
-  Calendar, 
-  ArrowRight, 
-  X,
-  FileSpreadsheet,
-  Receipt,
-  TrendingUp,
-  AlertTriangle,
-  FileCheck,
-  Award,
-  Zap,
-  UsersRound
-} from 'lucide-react';
+import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound } from 'lucide-react';
 import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment } from '../types';
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
@@ -32,6 +12,7 @@ import { generarReporteProyecto } from '../utils/reports';
 
 interface ProyectosListProps {
   projects: Project[];
+  loading?: boolean;
   clients: Client[];
   invoices: Invoice[];
   expenses: Expense[];
@@ -49,6 +30,7 @@ interface ProyectosListProps {
  */
 export default function ProyectosList({
   projects,
+  loading,
   clients,
   invoices,
   expenses,
@@ -140,7 +122,13 @@ export default function ProyectosList({
         )}
       </div>
 
-      {totalProjects === 0 ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+            Cargando proyectos…
+          </div>
+        </div>
+      ) : totalProjects === 0 ? (
         /* GORGEOUS EMPTY STATE */
         <div className="max-w-2xl mx-auto my-12 text-center p-8 md:p-12 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
