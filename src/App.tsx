@@ -1222,6 +1222,7 @@ export default function App() {
           <FacturasList
             invoices={invoices}
             projects={projects}
+            loading={invoicesLoading}
             onAddClick={handleOpenAddInvoiceModal}
             onEditClick={handleOpenEditInvoiceModal}
             onDeleteClick={handleDeleteInvoice}
@@ -1263,6 +1264,7 @@ export default function App() {
           <ThirdPartyPaymentsList
             payments={thirdPartyPayments}
             projects={projects}
+            loading={thirdPartyPaymentsLoading}
             onAddClick={handleOpenAddThirdPartyPaymentModal}
             onEditClick={handleOpenEditThirdPartyPaymentModal}
             onDeleteClick={handleDeleteThirdPartyPayment}

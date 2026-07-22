@@ -5,25 +5,13 @@
 
 import React, { useState } from 'react';
 import { Invoice, Project } from '../types';
-import { 
-  Plus, 
-  Search, 
-  CheckCircle2, 
-  Edit3, 
-  Trash2, 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  Filter, 
-  Receipt,
-  FileCheck2,
-  CalendarCheck2
-} from 'lucide-react';
+import { Plus, Search, CircleCheck as CheckCircle2, CreditCard as Edit3, Trash2, DollarSign, TrendingUp, Clock, ListFilter as Filter, Receipt, FileCheck2, CalendarCheck2 } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface FacturasListProps {
   invoices: Invoice[];
   projects: Project[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (invoice: Invoice) => void;
   onDeleteClick: (id: string) => void;
@@ -33,6 +21,7 @@ interface FacturasListProps {
 export default function FacturasList({
   invoices,
   projects,
+  loading,
   onAddClick,
   onEditClick,
   onDeleteClick,
@@ -93,6 +82,14 @@ export default function FacturasList({
         </button>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+            Cargando facturas…
+          </div>
+        </div>
+      ) : (
+      <>
       {/* KPI Cards (Cuentas por Cobrar) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Facturado */}
@@ -337,6 +334,8 @@ export default function FacturasList({
             </table>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

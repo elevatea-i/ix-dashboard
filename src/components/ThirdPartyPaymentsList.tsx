@@ -5,26 +5,13 @@
 
 import React, { useState } from 'react';
 import { ThirdPartyPayment, Project } from '../types';
-import { 
-  Plus, 
-  Search, 
-  Edit3, 
-  Trash2, 
-  Filter, 
-  ShieldAlert, 
-  CheckCircle, 
-  Layers, 
-  RefreshCcw, 
-  Scale, 
-  BadgePercent, 
-  Coins,
-  DollarSign
-} from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, ShieldAlert, CircleCheck as CheckCircle, Layers, RefreshCcw, Scale, BadgePercent, Coins, DollarSign } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface ThirdPartyPaymentsListProps {
   payments: ThirdPartyPayment[];
   projects: Project[];
+  loading?: boolean;
   onAddClick: () => void;
   onEditClick: (payment: ThirdPartyPayment) => void;
   onDeleteClick: (id: string) => void;
@@ -39,6 +26,7 @@ interface ThirdPartyPaymentsListProps {
 export default function ThirdPartyPaymentsList({
   payments,
   projects,
+  loading,
   onAddClick,
   onEditClick,
   onDeleteClick,
@@ -113,6 +101,14 @@ export default function ThirdPartyPaymentsList({
         </button>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
+            Cargando pagos a terceros…
+          </div>
+        </div>
+      ) : (
+      <>
       {/* Grid of KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Saldo de Entrada */}
@@ -391,6 +387,8 @@ export default function ThirdPartyPaymentsList({
         )}
       </div>
 
+      </>
+      )}
     </div>
   );
 }
