@@ -37,7 +37,7 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-light-ivory dark:bg-[#051A14] text-enchanted-green dark:text-light-ivory transition-colors duration-300 p-6 md:p-12 font-sans">
+    <div className="h-screen overflow-y-auto flex flex-col justify-between bg-light-ivory dark:bg-[#051A14] text-enchanted-green dark:text-light-ivory transition-colors duration-300 p-6 md:p-12 font-sans">
       {/* Upper header with theme toggle */}
       <div className="flex justify-between items-center w-full max-w-7xl mx-auto">
         <div className="flex items-center space-x-2">
