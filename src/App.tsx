@@ -218,7 +218,7 @@ export default function App() {
 
   // Fetch projects from Supabase on mount
   useEffect(() => {
-    supabase.from('proyectos').select('*').order('fecha_creacion', { ascending: false }).then(({ data, error }) => {
+    supabase.from('proyectos').select('*').order('codigo', { ascending: true }).then(({ data, error }) => {
       if (error) {
         showToast(error.message, 'error');
       } else if (data) {
