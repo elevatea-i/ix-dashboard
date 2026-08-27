@@ -500,7 +500,7 @@ export default function FacturaFormModal({
                     <p className="text-lg font-mono font-bold text-enchanted-green dark:text-light-ivory">
                       ${calculatedTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-[10px] text-elevated-gold tracking-wider uppercase font-semibold">.</p>
+                    <p className="text-[10px] text-elevated-gold tracking-wider uppercase font-semibold">Solo lectura</p>
                   </div>
                 </div>
               </div>
