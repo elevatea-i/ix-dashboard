@@ -1260,6 +1260,7 @@ export default function App() {
           <FacturasList
             invoices={invoices}
             projects={projects}
+            clients={clients}
             loading={invoicesLoading}
             onAddClick={handleOpenAddInvoiceModal}
             onEditClick={handleOpenEditInvoiceModal}

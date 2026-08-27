@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { Invoice, Project } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Invoice, Project, Client } from '../types';
 import { Plus, Search, CircleCheck as CheckCircle2, CreditCard as Edit3, Trash2, DollarSign, TrendingUp, Clock, ListFilter as Filter, Receipt, FileCheck2, CalendarCheck2 } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface FacturasListProps {
   invoices: Invoice[];
   projects: Project[];
+  clients: Client[];
   loading?: boolean;
   onAddClick: () => void;
   onEditClick: (invoice: Invoice) => void;
@@ -18,9 +19,12 @@ interface FacturasListProps {
   onMarkAsPaidClick: (invoice: Invoice) => void;
 }
 
+const numeroFolio = (folio: string) => parseInt(folio.replace(/\D/g, ''), 10) || 0;
+
 export default function FacturasList({
   invoices,
   projects,
+  clients,
   loading,
   onAddClick,
   onEditClick,
@@ -29,6 +33,8 @@ export default function FacturasList({
 }: FacturasListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPpdNoComplement, setFilterPpdNoComplement] = useState(false);
+  const [filterClienteId, setFilterClienteId] = useState<string>('todos');
+  const [filterEstado, setFilterEstado] = useState<'todas' | 'facturada' | 'pagada'>('todas');
 
   // Obtain project object by ID
   const getProjectName = (projId: string) => {
@@ -36,28 +42,70 @@ export default function FacturasList({
     return proj ? proj.nombre : 'Proyecto desconocido';
   };
 
-  // KPI Calculations
+  // Obtain client ID for an invoice via its project
+  const getClienteIdForInvoice = (inv: Invoice): string | null => {
+    const proj = projects.find(p => p.id === inv.proyectoId);
+    return proj ? proj.clienteId : null;
+  };
+
+  // KPI Calculations (based on all invoices, not filtered)
   const totalFacturado = invoices.reduce((sum, inv) => sum + inv.total, 0);
   const totalPagado = invoices.filter(inv => inv.estado === 'pagada').reduce((sum, inv) => sum + inv.total, 0);
   const totalPendiente = totalFacturado - totalPagado;
 
-  // Filtered invoices
-  const filteredInvoices = invoices.filter(inv => {
-    // Search match: folio or project name
-    const projectName = getProjectName(inv.proyectoId).toLowerCase();
-    const matchesSearch = 
-      inv.folio.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      projectName.includes(searchTerm.toLowerCase());
+  // Sort invoices by folio number descending (IX100 above IX99, etc.)
+  const sortedInvoices = useMemo(
+    () => [...invoices].sort((a, b) => numeroFolio(b.folio) - numeroFolio(a.folio)),
+    [invoices]
+  );
 
-    if (!matchesSearch) return false;
+  // Filtered invoices — all filters combined
+  const filteredInvoices = useMemo(() => {
+    return sortedInvoices.filter(inv => {
+      // Search match: folio or project name
+      const projectName = getProjectName(inv.proyectoId).toLowerCase();
+      const matchesSearch =
+        inv.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        projectName.includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
 
-    // Filter "PPD sin complemento"
-    if (filterPpdNoComplement) {
-      return inv.metodoPago === 'PPD' && !inv.complementoEmitido;
-    }
+      // Client filter
+      if (filterClienteId !== 'todos') {
+        const invClienteId = getClienteIdForInvoice(inv);
+        if (invClienteId !== filterClienteId) return false;
+      }
 
-    return true;
-  });
+      // Status filter
+      if (filterEstado !== 'todas') {
+        if (inv.estado !== filterEstado) return false;
+      }
+
+      // PPD sin complemento filter
+      if (filterPpdNoComplement) {
+        if (!(inv.metodoPago === 'PPD' && !inv.complementoEmitido)) return false;
+      }
+
+      return true;
+    });
+  }, [sortedInvoices, searchTerm, filterClienteId, filterEstado, filterPpdNoComplement, projects]);
+
+  // Count for PPD badge — respects other active filters
+  const ppdCount = useMemo(
+    () =>
+      sortedInvoices.filter(inv => {
+        const projectName = getProjectName(inv.proyectoId).toLowerCase();
+        const matchesSearch =
+          inv.folio.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          projectName.includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+        if (filterClienteId !== 'todos' && getClienteIdForInvoice(inv) !== filterClienteId) return false;
+        if (filterEstado !== 'todas' && inv.estado !== filterEstado) return false;
+        return inv.metodoPago === 'PPD' && !inv.complementoEmitido;
+      }).length,
+    [sortedInvoices, searchTerm, filterClienteId, filterEstado]
+  );
+
+  const hasActiveFilters = searchTerm || filterPpdNoComplement || filterClienteId !== 'todos' || filterEstado !== 'todas';
 
   return (
     <div id="facturas-module-container" className="space-y-6 animate-fade-in">
@@ -150,7 +198,33 @@ export default function FacturasList({
           />
         </div>
 
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Client filter */}
+          <select
+            id="filter-cliente"
+            value={filterClienteId}
+            onChange={(e) => setFilterClienteId(e.target.value)}
+            className="px-3 py-2 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs font-semibold text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors cursor-pointer"
+          >
+            <option value="todos">Todos los clientes</option>
+            {clients.map(c => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
+          </select>
+
+          {/* Status filter */}
+          <select
+            id="filter-estado"
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value as 'todas' | 'facturada' | 'pagada')}
+            className="px-3 py-2 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs font-semibold text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors cursor-pointer"
+          >
+            <option value="todas">Todas</option>
+            <option value="facturada">Facturada</option>
+            <option value="pagada">Pagada</option>
+          </select>
+
+          {/* PPD sin complemento toggle */}
           <button
             id="filter-ppd-no-comp-btn"
             onClick={() => setFilterPpdNoComplement(prev => !prev)}
@@ -164,7 +238,7 @@ export default function FacturasList({
             <span>PPD sin complemento</span>
             {filterPpdNoComplement && (
               <span className="ml-1 bg-white text-cranberry px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                {invoices.filter(inv => inv.metodoPago === 'PPD' && !inv.complementoEmitido).length}
+                {ppdCount}
               </span>
             )}
           </button>
@@ -180,15 +254,15 @@ export default function FacturasList({
             </div>
             <div className="space-y-1">
               <h3 className="font-serif text-lg font-semibold text-enchanted-green dark:text-light-ivory">
-                {searchTerm || filterPpdNoComplement ? 'Sin facturas encontradas' : 'No hay facturas registradas'}
+                {hasActiveFilters ? 'Sin facturas encontradas' : 'No hay facturas registradas'}
               </h3>
               <p className="text-xs text-rocky-gray max-w-sm mx-auto">
-                {searchTerm || filterPpdNoComplement 
-                  ? 'Intente modificar los criterios de búsqueda o desactivar el filtro de PPD.' 
+                {hasActiveFilters 
+                  ? 'Intente modificar los criterios de búsqueda o desactivar los filtros.' 
                   : 'Aquí se concentrarán los comprobantes fiscales y el control de cuentas por cobrar. Registre su primera factura vinculándola a un proyecto.'}
               </p>
             </div>
-            {!searchTerm && !filterPpdNoComplement && (
+            {!hasActiveFilters && (
               <button
                 onClick={onAddClick}
                 className="inline-flex items-center space-x-2 text-xs font-semibold bg-enchanted-green dark:bg-elevated-gold text-white dark:text-enchanted-green px-4 py-2 rounded shadow hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-colors"
