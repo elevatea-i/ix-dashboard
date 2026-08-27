@@ -236,7 +236,7 @@ export default function FacturaFormModal({
                         Revertir estado de Pago
                       </p>
                       <p className="text-xs text-enchanted-green/80 dark:text-light-ivory/80 mt-1 leading-relaxed">
-                        Esta factura está marcada como <strong>Pagada</strong>. Si se marcó por error, puedes revertirla a <strong>Facturada</strong>. Esto eliminará el reparto de utilidades que generó (lo hace la base de datos automáticamente).
+                        Esta factura está marcada como <strong>Pagada</strong>. Si se marcó por error, puedes revertirla a <strong>Facturada</strong>. Esto eliminará el reparto de utilidades que generó.
                       </p>
                     </div>
                   </div>
