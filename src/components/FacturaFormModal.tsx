@@ -5,8 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Project, Invoice } from '../types';
-import { X, AlertCircle } from 'lucide-react';
-import { formatLiveCurrency, parseCurrencyInput } from '../utils';
+import { X, CircleAlert as AlertCircle, RotateCcw, TriangleAlert as AlertTriangle } from 'lucide-react';
+import { formatLiveCurrency, parseCurrencyInput, formatCurrency } from '../utils';
+import { supabase } from '../lib/supabase';
 
 interface FacturaFormModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface FacturaFormModalProps {
     fechaEmision: string;
     facturado_por?: 'IX' | 'Juan Carlos';
   }) => void;
+  onRevertToFacturada: (invoiceId: string) => Promise<boolean>;
   initialData: Invoice | null;
   projects: Project[];
 }
@@ -31,6 +33,7 @@ export default function FacturaFormModal({
   isOpen,
   onClose,
   onSubmit,
+  onRevertToFacturada,
   initialData,
   projects
 }: FacturaFormModalProps) {
@@ -45,6 +48,11 @@ export default function FacturaFormModal({
   const [fechaEmision, setFechaEmision] = useState('');
   const [facturadoPor, setFacturadoPor] = useState<'IX' | 'Juan Carlos'>('IX');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const [showRevertConfirm, setShowRevertConfirm] = useState(false);
+  const [revertLoading, setRevertLoading] = useState(false);
+  const [revertAmount, setRevertAmount] = useState(0);
+  const [revertChecking, setRevertChecking] = useState(false);
 
   const cleanSubtotal = parseCurrencyInput(subtotal);
   const numSubtotal = parseFloat(cleanSubtotal) || 0;
@@ -90,6 +98,10 @@ export default function FacturaFormModal({
         setFacturadoPor('IX');
       }
       setErrors({});
+      setShowRevertConfirm(false);
+      setRevertAmount(0);
+      setRevertLoading(false);
+      setRevertChecking(false);
     }
   }, [isOpen, initialData, projects]);
 
@@ -141,6 +153,40 @@ export default function FacturaFormModal({
     });
   };
 
+  const handleRevertClick = async () => {
+    if (!initialData) return;
+    setRevertChecking(true);
+    try {
+      const { data: dists, error } = await supabase
+        .from('repartos_utilidad')
+        .select('ganancia_total')
+        .filter('factura_ids_nuevas', 'cs', `{"${initialData.id}"}`);
+      if (error) {
+        setRevertChecking(false);
+        setShowRevertConfirm(false);
+        return;
+      }
+      const total = (dists || []).reduce((sum, d) => sum + Number(d.ganancia_total || 0), 0);
+      setRevertAmount(total);
+    } catch {
+      setRevertAmount(0);
+    }
+    setRevertChecking(false);
+    setShowRevertConfirm(true);
+  };
+
+  const handleConfirmRevert = async () => {
+    if (!initialData) return;
+    setRevertLoading(true);
+    const success = await onRevertToFacturada(initialData.id);
+    setRevertLoading(false);
+    if (success) {
+      setShowRevertConfirm(false);
+    }
+  };
+
+  const isEditingPagada = initialData && initialData.estado === 'pagada';
+
   return (
     <div id="invoice-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div id="invoice-form-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-3xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
@@ -180,6 +226,74 @@ export default function FacturaFormModal({
             </div>
           ) : (
             <>
+              {/* Revertir a Facturada — solo visible cuando se edita una factura pagada */}
+              {isEditingPagada && !showRevertConfirm && (
+                <div className="p-4 border border-elevated-gold/30 bg-elevated-gold/5 rounded-lg space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <RotateCcw size={18} className="text-elevated-gold shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-elevated-gold uppercase tracking-wide">
+                        Revertir estado de Pago
+                      </p>
+                      <p className="text-xs text-enchanted-green/80 dark:text-light-ivory/80 mt-1 leading-relaxed">
+                        Esta factura está marcada como <strong>Pagada</strong>. Si se marcó por error, puedes revertirla a <strong>Facturada</strong>. Esto eliminará el reparto de utilidades que generó (lo hace la base de datos automáticamente).
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRevertClick}
+                    disabled={revertChecking}
+                    className="w-full px-4 py-2 bg-elevated-gold/90 text-enchanted-green font-bold text-xs rounded hover:bg-elevated-gold transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center justify-center space-x-2"
+                  >
+                    <RotateCcw size={14} />
+                    <span>{revertChecking ? 'Consultando reparto...' : 'Revertir a Facturada'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Confirmación de reversión */}
+              {isEditingPagada && showRevertConfirm && (
+                <div className="p-4 border border-cranberry/30 bg-cranberry/5 rounded-lg space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle size={18} className="text-cranberry shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
+                        Confirmar Reversión
+                      </p>
+                      <p className="text-sm text-[#082019] dark:text-light-ivory leading-relaxed">
+                        Esto revertirá la factura a <strong>Facturada</strong> y eliminará el reparto de utilidades de <strong className="text-cranberry">{formatCurrency(revertAmount)}</strong> que generó. Esta acción no se puede deshacer. ¿Confirmar?
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowRevertConfirm(false)}
+                      disabled={revertLoading}
+                      className="px-3.5 py-2 bg-transparent text-xs font-semibold text-enchanted-green dark:text-light-ivory border border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmRevert}
+                      disabled={revertLoading}
+                      className="px-4 py-2 bg-cranberry text-white font-bold text-xs rounded hover:bg-cranberry/90 transition-colors shadow disabled:opacity-50 disabled:cursor-wait flex items-center space-x-2"
+                    >
+                      {revertLoading ? (
+                        <>
+                          <RotateCcw size={14} className="animate-spin" />
+                          <span>Revirtiendo...</span>
+                        </>
+                      ) : (
+                        <span>Confirmar Reversión</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Folio y Proyecto */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

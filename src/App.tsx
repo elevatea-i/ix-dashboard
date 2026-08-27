@@ -662,6 +662,44 @@ export default function App() {
     showToast('Factura marcada como pagada');
   };
 
+  const handleRevertInvoiceToFacturada = async (invoiceId: string): Promise<boolean> => {
+    const inv = invoices.find(i => i.id === invoiceId);
+    if (!inv) return false;
+    const projId = inv.proyectoId;
+
+    const { data: updated, error } = await supabase
+      .from('facturas')
+      .update({ estado: 'facturada' })
+      .eq('id', invoiceId)
+      .select()
+      .single();
+
+    if (error) {
+      showToast(error.message, 'error');
+      return false;
+    }
+
+    setInvoices(prev => prev.map(invItem => invItem.id === updated.id ? invoiceFromDb(updated) : invItem));
+
+    // Refresh project (trigger already recalculated estado_facturacion)
+    const { data: freshProject } = await supabase
+      .from('proyectos').select('*').eq('id', projId).single();
+    if (freshProject) {
+      setProjects(prev => prev.map(p => p.id === projId ? projectFromDb(freshProject) : p));
+    }
+
+    // Refresh repartos (trigger already deleted the linked distribution)
+    const { data: freshDists } = await supabase.from('repartos_utilidad').select('*');
+    if (freshDists) {
+      setProfitDistributions(freshDists.map(profitDistributionFromDb));
+    }
+
+    setIsInvoiceModalOpen(false);
+    setSelectedInvoice(null);
+    showToast('Factura revertida a Facturada');
+    return true;
+  };
+
   // CRUD actions for Expenses (Supabase)
   const handleAddOrEditExpenseSubmit = async (formData: {
     tipo: 'Operativo' | 'Proveedor por Proyecto';
@@ -1442,6 +1480,7 @@ export default function App() {
         isOpen={isInvoiceModalOpen}
         onClose={() => setIsInvoiceModalOpen(false)}
         onSubmit={handleAddOrEditInvoiceSubmit}
+        onRevertToFacturada={handleRevertInvoiceToFacturada}
         initialData={selectedInvoice}
         projects={projects}
       />
