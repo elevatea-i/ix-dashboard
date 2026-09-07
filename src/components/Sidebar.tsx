@@ -12,15 +12,13 @@ interface SidebarProps {
   setActiveModule: (module: ModuleId) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  collapsed?: boolean;
 }
 
 export default function Sidebar({ 
   activeModule, 
   setActiveModule, 
   isOpen, 
-  setIsOpen,
-  collapsed = false
+  setIsOpen 
 }: SidebarProps) {
   
   const modules: Module[] = [
@@ -88,9 +86,7 @@ export default function Sidebar({
 
       {/* Sidebar container */}
       <aside 
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-enchanted-green text-light-ivory border-r border-enchanted-green/20 flex flex-col justify-between transform transition-transform duration-300 lg:static lg:h-screen overflow-hidden ${
-          collapsed ? 'lg:hidden' : 'lg:translate-x-0'
-        } ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-enchanted-green text-light-ivory border-r border-enchanted-green/20 flex flex-col justify-between transform transition-transform duration-300 lg:translate-x-0 lg:static lg:h-screen overflow-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

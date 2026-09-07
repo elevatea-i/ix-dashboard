@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle } from 'lucide-react';
 
 import type { UserProfile } from '../lib/auth';
 
@@ -13,8 +13,6 @@ interface HeaderProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   onMenuToggle: () => void;
-  onSidebarCollapseToggle: () => void;
-  sidebarCollapsed: boolean;
   onQuickGastoClick: () => void;
   onQuickFacturaClick: () => void;
   profile?: UserProfile | null;
@@ -25,8 +23,6 @@ export default function Header({
   darkMode, 
   setDarkMode, 
   onMenuToggle,
-  onSidebarCollapseToggle,
-  sidebarCollapsed,
   onQuickGastoClick,
   onQuickFacturaClick,
   profile
@@ -43,20 +39,6 @@ export default function Header({
           className="lg:hidden p-2 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-light-ivory/5 rounded-md transition-colors"
         >
           <Menu size={20} />
-        </button>
-
-        {/* Sidebar visibility toggle */}
-        <button
-          onClick={onSidebarCollapseToggle}
-          id="desktop-sidebar-toggle"
-          aria-label={sidebarCollapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
-          className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-md border border-enchanted-green/25 dark:border-light-ivory/25 bg-white/70 dark:bg-[#051A14]/70 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-light-ivory/10 shadow-sm transition-all"
-          title={sidebarCollapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
-        >
-          {sidebarCollapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
-          <span className="hidden sm:inline text-xs font-semibold whitespace-nowrap">
-            {sidebarCollapsed ? 'Mostrar barra' : 'Ocultar barra'}
-          </span>
         </button>
 
         {/* System identity */}
