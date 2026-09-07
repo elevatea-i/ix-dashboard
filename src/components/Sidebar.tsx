@@ -6,6 +6,7 @@
 import React from 'react';
 import { Users, FolderGit2, Receipt, TrendingDown, TrendingUp, Percent, X, HandCoins, UsersRound, Coins, Repeat, ChartBar as BarChart3, ArrowRightLeft, Vault } from 'lucide-react';
 import { ModuleId, Module } from '../types';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 
 interface SidebarProps {
   activeModule: ModuleId;
@@ -76,6 +77,17 @@ export default function Sidebar({
     setIsOpen(false); // Close mobile sidebar on select
   };
 
+  const isDesktop = useIsDesktop();
+  const collapsedOnDesktop = isDesktop && isCollapsed;
+  const sidebarStyle: React.CSSProperties = isDesktop
+    ? {
+        width: collapsedOnDesktop ? '0px' : '16rem',
+        borderWidth: collapsedOnDesktop ? 0 : undefined,
+        overflow: collapsedOnDesktop ? 'hidden' : undefined,
+        opacity: collapsedOnDesktop ? 0 : 1,
+      }
+    : {};
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -88,9 +100,10 @@ export default function Sidebar({
 
       {/* Sidebar container */}
       <aside 
+        style={sidebarStyle}
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-enchanted-green text-light-ivory border-r border-enchanted-green/20 flex flex-col justify-between transform transition-all duration-300 lg:static lg:h-screen lg:translate-x-0 overflow-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${isCollapsed ? 'lg:!w-0 lg:!border-r-0 lg:!overflow-hidden lg:!opacity-0' : 'lg:w-64'}`}
+        }`}
       >
         <div className="flex-1 flex flex-col min-h-0">
           {/* Sidebar Header */}
