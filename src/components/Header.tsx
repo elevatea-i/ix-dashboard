@@ -50,7 +50,7 @@ export default function Header({
           onClick={onSidebarCollapseToggle}
           id="desktop-sidebar-toggle"
           aria-label={sidebarCollapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-enchanted-green/25 dark:border-light-ivory/25 bg-white/70 dark:bg-[#051A14]/70 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-light-ivory/10 shadow-sm transition-all"
+          className="hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-md border border-enchanted-green/25 dark:border-light-ivory/25 bg-white/70 dark:bg-[#051A14]/70 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-light-ivory/10 shadow-sm transition-all"
           title={sidebarCollapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
         >
           {sidebarCollapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
