@@ -56,6 +56,9 @@ export default function App() {
   // Sidebar toggle for mobile responsive layouts
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Sidebar collapse for desktop layouts
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   // Active module state
   const [activeModule, setActiveModule] = useState<ModuleId>('clientes');
 
@@ -1409,6 +1412,7 @@ export default function App() {
         setActiveModule={setActiveModule}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        isCollapsed={isSidebarCollapsed}
       />
 
       {/* Main Container */}
@@ -1422,6 +1426,8 @@ export default function App() {
           onQuickGastoClick={handleOpenAddExpenseModal}
           onQuickFacturaClick={handleOpenAddInvoiceModal}
           profile={profile}
+          isSidebarCollapsed={isSidebarCollapsed}
+          onToggleSidebarCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
         {/* Content Area */}
