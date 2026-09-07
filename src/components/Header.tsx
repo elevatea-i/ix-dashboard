@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import type { UserProfile } from '../lib/auth';
 
@@ -13,6 +13,8 @@ interface HeaderProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
   onMenuToggle: () => void;
+  onSidebarCollapseToggle: () => void;
+  sidebarCollapsed: boolean;
   onQuickGastoClick: () => void;
   onQuickFacturaClick: () => void;
   profile?: UserProfile | null;
@@ -23,6 +25,8 @@ export default function Header({
   darkMode, 
   setDarkMode, 
   onMenuToggle,
+  onSidebarCollapseToggle,
+  sidebarCollapsed,
   onQuickGastoClick,
   onQuickFacturaClick,
   profile
@@ -39,6 +43,16 @@ export default function Header({
           className="lg:hidden p-2 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-light-ivory/5 rounded-md transition-colors"
         >
           <Menu size={20} />
+        </button>
+
+        {/* Desktop sidebar collapse toggle */}
+        <button
+          onClick={onSidebarCollapseToggle}
+          id="desktop-sidebar-toggle"
+          className="hidden lg:inline-flex p-2 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-light-ivory/5 rounded-md transition-colors"
+          title={sidebarCollapsed ? 'Mostrar barra lateral' : 'Ocultar barra lateral'}
+        >
+          {sidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
         </button>
 
         {/* System identity */}

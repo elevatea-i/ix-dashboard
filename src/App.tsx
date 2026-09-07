@@ -56,6 +56,23 @@ export default function App() {
   // Sidebar toggle for mobile responsive layouts
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Sidebar collapse for desktop (persisted in localStorage)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('ix_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapse = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('ix_sidebar_collapsed', String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+
   // Active module state
   const [activeModule, setActiveModule] = useState<ModuleId>('clientes');
 
@@ -1409,6 +1426,7 @@ export default function App() {
         setActiveModule={setActiveModule}
         isOpen={isSidebarOpen}
         setIsOpen={setIsSidebarOpen}
+        collapsed={sidebarCollapsed}
       />
 
       {/* Main Container */}
@@ -1419,6 +1437,8 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+          onSidebarCollapseToggle={toggleSidebarCollapse}
+          sidebarCollapsed={sidebarCollapsed}
           onQuickGastoClick={handleOpenAddExpenseModal}
           onQuickFacturaClick={handleOpenAddInvoiceModal}
           profile={profile}
