@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Expense, Project, ExpenseCategory } from '../types';
 import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Coins, TrendingDown, Clock, Tag, Layers, ArrowUpRight, RefreshCcw, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
@@ -419,3 +414,4 @@ export default function GastosList({
     </div>
   );
 }
+

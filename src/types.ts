@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 export interface Client {
   id: string;
   nombre: string;
@@ -154,3 +149,4 @@ export interface Module {
   disabled: boolean;
   tag?: string;
 }
+

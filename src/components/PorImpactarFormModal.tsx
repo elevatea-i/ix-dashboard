@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, AlertTriangle, Coins } from 'lucide-react';
 import { Project, PorImpactar } from '../types';
@@ -268,3 +263,4 @@ export default function PorImpactarFormModal({
     </div>
   );
 }
+

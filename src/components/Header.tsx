@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { Menu, Sun, Moon, LogOut, CircleArrowDown as ArrowDownCircle, CircleArrowUp as ArrowUpCircle, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
@@ -127,3 +122,4 @@ export default function Header({
     </header>
   );
 }
+

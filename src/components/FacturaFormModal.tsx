@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { Project, Invoice } from '../types';
 import { X, CircleAlert as AlertCircle, RotateCcw, TriangleAlert as AlertTriangle } from 'lucide-react';
@@ -528,3 +523,4 @@ export default function FacturaFormModal({
     </div>
   );
 }
+

@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { Invoice, Expense, ProviderPayment } from '../types';
 import { calculateIvaMetrics } from '../utils/iva';
@@ -211,3 +206,4 @@ export default function IvaPanel({
     </div>
   );
 }
+

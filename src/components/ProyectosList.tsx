@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound } from 'lucide-react';
 import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment } from '../types';
@@ -852,3 +847,4 @@ export default function ProyectosList({
     </div>
   );
 }
+

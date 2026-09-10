@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { Project, Invoice, ProviderPayment, Expense, Client } from '../types';
 
 export interface ProjectProfitability {
@@ -138,3 +133,4 @@ export function calculateClientsProfitability(
     };
   });
 }
+

@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { ProfitDistribution, Project, Client } from '../types';
 import { 
@@ -272,3 +267,4 @@ export default function RepartoUtilidadesList({
     </div>
   );
 }
+

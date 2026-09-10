@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import * as XLSX from 'xlsx';
 import { Project, Invoice, Expense, ProviderPayment } from '../types';
 import { calculateProjectProfitability } from './profitability';
@@ -356,3 +351,4 @@ function applyAutofit(ws: XLSX.WorkSheet): void {
   }
   ws['!cols'] = colWidths;
 }
+

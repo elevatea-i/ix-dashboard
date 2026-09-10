@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Plus, Search, CreditCard as Edit3, Trash2, TriangleAlert as AlertTriangle, Zap, ListFilter as Filter, Briefcase, CircleCheck as CheckCircle2, Hourglass, Coins, CircleUser as UserCircle } from 'lucide-react';
 import { Project, PorImpactar } from '../types';
@@ -367,3 +362,4 @@ export default function PorImpactarList({
     </div>
   );
 }
+

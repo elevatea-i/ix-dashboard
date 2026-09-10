@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
 import { Expense, PorImpactar } from '../types';
@@ -109,3 +104,4 @@ export default function EliminarGastoModal({
     </div>
   );
 }
+

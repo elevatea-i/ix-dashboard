@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React from 'react';
 import { X, TriangleAlert as AlertTriangle, Trash2, Loader as Loader2 } from 'lucide-react';
 import { Project } from '../types';
@@ -104,3 +99,4 @@ export default function EliminarProyectoModal({
     </div>
   );
 }
+

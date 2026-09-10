@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { Client } from '../types';
@@ -202,3 +197,4 @@ export default function ClienteFormModal({
     </div>
   );
 }
+

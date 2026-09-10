@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Project, Client, Invoice, Expense, ProviderPayment } from '../types';
 import { generarReporteProyecto } from '../utils/reports';
@@ -306,3 +301,4 @@ export default function ReportesPanel({
     </div>
   );
 }
+

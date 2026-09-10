@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Calculator, Calendar, Tag, CreditCard, Layers } from 'lucide-react';
 import { Project, PorImpactar, ExpenseCategory } from '../types';
@@ -493,3 +488,4 @@ export default function PorImpactarResolverModal({
     </div>
   );
 }
+

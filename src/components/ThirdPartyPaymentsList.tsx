@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { ThirdPartyPayment, Project } from '../types';
 import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, ShieldAlert, CircleCheck as CheckCircle, Layers, RefreshCcw, Scale, BadgePercent, Coins, DollarSign } from 'lucide-react';
@@ -392,3 +387,4 @@ export default function ThirdPartyPaymentsList({
     </div>
   );
 }
+

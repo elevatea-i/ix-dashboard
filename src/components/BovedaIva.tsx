@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Invoice, Expense, ProviderPayment, IvaWithdrawal } from '../types';
 import { calculateIvaMetrics } from '../utils/iva';
@@ -411,3 +406,4 @@ export default function BovedaIva({
     </div>
   );
 }
+

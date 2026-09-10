@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Plus, Search, CreditCard as Edit3, Trash2, UserPlus, FileCheck2, PhoneCall, Grid2x2 as Grid, List, TriangleAlert as AlertTriangle, RefreshCw, FolderOpen } from 'lucide-react';
 import { Client } from '../types';
@@ -293,3 +288,4 @@ export default function ClientesList({
     </div>
   );
 }
+

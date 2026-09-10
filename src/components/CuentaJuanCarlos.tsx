@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Invoice, Expense, Project } from '../types';
 import { formatCurrency } from '../utils';
@@ -336,3 +331,4 @@ export default function CuentaJuanCarlos({
     </div>
   );
 }
+

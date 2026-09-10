@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { ShieldCheck, ArrowRight, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
@@ -143,3 +138,4 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
     </div>
   );
 }
+

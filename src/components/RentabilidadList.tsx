@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { Project, Client, Invoice, ProviderPayment, Expense } from '../types';
 import { 
@@ -374,3 +369,4 @@ export default function RentabilidadList({
     </div>
   );
 }
+

@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { X, Calendar } from 'lucide-react';
 import { getMexicoCityDate } from '../utils';
@@ -129,3 +124,4 @@ export default function MarcarPagadaModal({
     </div>
   );
 }
+

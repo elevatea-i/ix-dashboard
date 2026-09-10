@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState } from 'react';
 import { ProviderPayment, Project } from '../types';
 import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react';
@@ -375,3 +370,4 @@ export default function ProviderPaymentsList({
     </div>
   );
 }
+
