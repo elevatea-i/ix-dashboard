@@ -326,7 +326,8 @@ export default function ProyectosList({
           </div>
 
           {/* Details Column (Right Side) */}
-          <div className="lg:col-span-1 lg:sticky lg:top-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
             {selectedProject ? (
               <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden p-6 space-y-6">
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
@@ -840,6 +841,7 @@ export default function ProyectosList({
                 </p>
               </div>
             )}
+          </div>
           </div>
 
         </div>
