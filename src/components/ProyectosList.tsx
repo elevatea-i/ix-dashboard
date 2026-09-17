@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useIsDesktop } from '../hooks/useIsDesktop';
 import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound } from 'lucide-react';
 import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment } from '../types';
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
@@ -40,6 +41,44 @@ export default function ProyectosList({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [panelTop, setPanelTop] = useState<number | null>(null);
+  const [colRect, setColRect] = useState<{ left: number; width: number } | null>(null);
+  const [clampedTop, setClampedTop] = useState<number>(0);
+
+  const isDesktop = useIsDesktop();
+  const colRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const measureCol = useCallback(() => {
+    if (!colRef.current || !isDesktop) return;
+    const rect = colRef.current.getBoundingClientRect();
+    setColRect({ left: rect.left, width: rect.width });
+  }, [isDesktop]);
+
+  useLayoutEffect(() => {
+    measureCol();
+  }, [measureCol, selectedProject]);
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    const handler = () => measureCol();
+    window.addEventListener('resize', handler);
+    window.addEventListener('scroll', handler, true);
+    return () => {
+      window.removeEventListener('resize', handler);
+      window.removeEventListener('scroll', handler, true);
+    };
+  }, [isDesktop, measureCol]);
+
+  useLayoutEffect(() => {
+    if (panelTop == null || !isDesktop) return;
+    const HEADER_OFFSET = 88;
+    const BOTTOM_PADDING = 16;
+    const panelHeight = panelRef.current?.offsetHeight ?? 600;
+    const maxTop = window.innerHeight - panelHeight - BOTTOM_PADDING;
+    const top = Math.min(Math.max(panelTop, HEADER_OFFSET), maxTop);
+    setClampedTop(Math.max(top, HEADER_OFFSET));
+  }, [panelTop, isDesktop, selectedProject, colRect]);
 
   // Helper to render dynamic, color-coded billing status badge
   const renderBillingStatusBadge = (projId: string) => {
@@ -274,6 +313,7 @@ export default function ProyectosList({
                                       onDeleteClick(project.id);
                                       if (selectedProject?.id === project.id) {
                                         setSelectedProject(null);
+                                        setPanelTop(null);
                                       }
                                       setDeleteConfirmId(null);
                                     }}
@@ -292,7 +332,14 @@ export default function ProyectosList({
                               ) : (
                                 <div className="flex items-center justify-end space-x-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
                                   <button
-                                    onClick={() => setSelectedProject(project)}
+                                    onClick={(e) => {
+                                      const btn = e.currentTarget;
+                                      const row = btn.closest('tr');
+                                      const target = row || btn;
+                                      const rect = target.getBoundingClientRect();
+                                      setPanelTop(rect.top);
+                                      setSelectedProject(project);
+                                    }}
                                     className="p-1.5 text-enchanted-green/70 dark:text-light-ivory/70 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-white/10 rounded transition-all"
                                     title="Ver Detalles"
                                   >
@@ -326,8 +373,19 @@ export default function ProyectosList({
           </div>
 
           {/* Details Column (Right Side) */}
-          <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+          <div className="lg:col-span-1" ref={colRef}>
+            <div
+              ref={panelRef}
+              style={selectedProject && isDesktop && colRect ? {
+                position: 'fixed',
+                top: clampedTop,
+                left: colRect.left,
+                width: colRect.width,
+                maxHeight: 'calc(100vh - 7rem)',
+                overflowY: 'auto',
+                zIndex: 50,
+              } : undefined}
+            >
             {selectedProject ? (
               <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden p-6 space-y-6">
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
@@ -342,7 +400,7 @@ export default function ProyectosList({
                     <p className="text-xs font-mono text-rocky-gray mt-1">{selectedProject.codigo}</p>
                   </div>
                   <button
-                    onClick={() => setSelectedProject(null)}
+                    onClick={() => { setSelectedProject(null); setPanelTop(null); }}
                     className="p-1 text-rocky-gray hover:text-cranberry dark:hover:text-[#DFBDB5] hover:bg-white/5 rounded-full transition-colors"
                   >
                     <X size={16} />
@@ -841,7 +899,7 @@ export default function ProyectosList({
                 </p>
               </div>
             )}
-          </div>
+            </div>
           </div>
 
         </div>
