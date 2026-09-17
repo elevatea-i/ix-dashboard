@@ -282,11 +282,11 @@ export default function ProyectosList({
                             }`}
                           >
                             <td className="px-6 py-4">
-                              <div className="font-serif font-semibold text-enchanted-green dark:text-light-ivory">
-                                {project.nombre}
-                              </div>
-                              <div className="text-[10px] font-mono text-rocky-gray mt-0.5 tracking-tight">
+                              <div className="font-mono text-sm font-semibold text-enchanted-green dark:text-light-ivory tracking-tight">
                                 {project.codigo}
+                              </div>
+                              <div className="text-xs text-rocky-gray mt-0.5">
+                                {project.nombre}
                               </div>
                             </td>
                             <td className="px-6 py-4 text-xs font-medium">
