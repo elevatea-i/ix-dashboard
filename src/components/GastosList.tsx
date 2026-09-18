@@ -117,7 +117,7 @@ export default function GastosList({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-            Control de Gastos y Egresos
+            Control de gastos pagados
           </h2>
           <p className="text-xs text-rocky-gray mt-1">
             Gestión de costes operativos, pagos a proveedores por proyecto y control de cuentas de egresos.

@@ -23,7 +23,7 @@ export default function Sidebar({
     { id: 'clientes', label: 'Clientes', disabled: false },
     { id: 'proyectos', label: 'Proyectos', disabled: false },
     { id: 'facturacion', label: 'Facturación', disabled: false },
-    { id: 'gastos', label: 'Gastos', disabled: false },
+    { id: 'gastos', label: 'Gastos Pagados', disabled: false },
     { id: 'pagos_proveedores', label: 'Pagos a Proveedores', disabled: false },
     { id: 'por_impactar', label: 'Por Impactar', disabled: false },
     { id: 'pagos_terceros', label: 'Pagos a Terceros', disabled: false },
