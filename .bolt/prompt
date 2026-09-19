@@ -1,0 +1,1 @@
+Para verificar si existen datos reales en Supabase (conteos, patrones, búsquedas), usa siempre una conexión con privilegios completos (ej. mcp__supabase__execute_sql), nunca la REST API con la anon key sin sesión — RLS puede devolver resultados vacíos que no reflejan los datos reales, y eso lleva a conclusiones falsas
