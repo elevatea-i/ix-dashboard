@@ -165,6 +165,8 @@ export function providerPaymentFromDb(row: Record<string, any>): ProviderPayment
     estatus: row.estatus,
     fecha: row.fecha,
     fecha_vencimiento: row.fecha_vencimiento,
+    metodoPago: row.metodo_pago,
+    complementoEmitido: row.complemento_emitido,
   };
 }
 
@@ -182,6 +184,8 @@ export function providerPaymentToDb(obj: Partial<ProviderPayment>): Record<strin
   if (obj.estatus !== undefined) out.estatus = obj.estatus;
   if (obj.fecha !== undefined) out.fecha = obj.fecha;
   if (obj.fecha_vencimiento !== undefined) out.fecha_vencimiento = obj.fecha_vencimiento;
+  if (obj.metodoPago !== undefined) out.metodo_pago = obj.metodoPago;
+  if (obj.complementoEmitido !== undefined) out.complemento_emitido = obj.complementoEmitido;
   return out;
 }
 

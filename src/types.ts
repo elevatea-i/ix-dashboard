@@ -80,6 +80,8 @@ export interface ProviderPayment {
   estatus: 'Pagado' | 'Pendiente';
   fecha: string; // YYYY-MM-DD
   fecha_vencimiento?: string; // YYYY-MM-DD (optional)
+  metodoPago?: 'PUE' | 'PPD'; // undefined = "Sin especificar" (pagos históricos)
+  complementoEmitido?: boolean; // Solo relevante si metodoPago === 'PPD'
 }
 
 export interface ThirdPartyPayment {

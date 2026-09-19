@@ -18,6 +18,8 @@ interface ProviderPaymentFormModalProps {
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
     fecha_vencimiento?: string;
+    metodoPago?: 'PUE' | 'PPD';
+    complementoEmitido?: boolean;
   }) => void;
   initialData: ProviderPayment | null;
   projects: Project[];
@@ -47,6 +49,8 @@ export default function ProviderPaymentFormModal({
   const [estatus, setEstatus] = useState<'Pagado' | 'Pendiente'>('Pagado');
   const [fecha, setFecha] = useState<string>('');
   const [fecha_vencimiento, setFechaVencimiento] = useState<string>('');
+  const [metodoPago, setMetodoPago] = useState<'PUE' | 'PPD' | ''>('PUE');
+  const [complementoEmitido, setComplementoEmitido] = useState<boolean>(false);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -64,6 +68,8 @@ export default function ProviderPaymentFormModal({
         setEstatus(initialData.estatus);
         setFecha(initialData.fecha);
         setFechaVencimiento(initialData.fecha_vencimiento || '');
+        setMetodoPago(initialData.metodoPago || '');
+        setComplementoEmitido(initialData.complementoEmitido || false);
       } else {
         setProyectoId(projects.length > 0 ? projects[0].id : '');
         setProveedor('');
@@ -75,6 +81,8 @@ export default function ProviderPaymentFormModal({
         setEstatus('Pagado');
         setFecha(getMexicoCityDate());
         setFechaVencimiento('');
+        setMetodoPago('PUE');
+        setComplementoEmitido(false);
       }
     }
   }, [isOpen, initialData, projects]);
@@ -120,6 +128,9 @@ export default function ProviderPaymentFormModal({
     if (isNaN(numIvaRetenido) || numIvaRetenido < 0) {
       newErrors.ivaRetenido = 'Ingrese una retención válida o deje 0';
     }
+    if (!initialData && !metodoPago) {
+      newErrors.metodoPago = 'Seleccione un método de pago';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -137,7 +148,9 @@ export default function ProviderPaymentFormModal({
       tieneFactura,
       estatus,
       fecha,
-      fecha_vencimiento: fecha_vencimiento || undefined
+      fecha_vencimiento: fecha_vencimiento || undefined,
+      metodoPago: metodoPago === '' ? undefined : metodoPago,
+      complementoEmitido: metodoPago === 'PPD' ? complementoEmitido : undefined,
     });
   };
 
@@ -391,6 +404,46 @@ export default function ProviderPaymentFormModal({
               />
             </div>
           </div>
+
+          {/* Método de Pago y Complemento */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Método de Pago {!initialData && <span className="text-cranberry font-bold">*</span>}
+              </label>
+              <select
+                value={metodoPago}
+                onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD' | '')}
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold shadow-xs"
+              >
+                {initialData && (
+                  <option value="" className="bg-light-ivory dark:bg-[#051A14]">Sin especificar</option>
+                )}
+                <option value="PUE" className="bg-light-ivory dark:bg-[#051A14]">PUE</option>
+                <option value="PPD" className="bg-light-ivory dark:bg-[#051A14]">PPD</option>
+              </select>
+              {errors.metodoPago && (
+                <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.metodoPago}</p>
+              )}
+            </div>
+          </div>
+
+          {metodoPago === 'PPD' && (
+            <div className="p-3 border border-elevated-gold/20 bg-elevated-gold/5 rounded flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Complemento de Pago Emitido</p>
+                <p className="text-[10px] text-rocky-gray">¿Se ha emitido y timbrado el complemento de pago correspondiente?</p>
+              </div>
+              <select
+                value={complementoEmitido ? 'si' : 'no'}
+                onChange={(e) => setComplementoEmitido(e.target.value === 'si')}
+                className="px-3 py-1.5 bg-light-ivory dark:bg-[#070D0C] border border-enchanted-green/20 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold"
+              >
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+              </select>
+            </div>
+          )}
 
           {/* Footer actions */}
           <div className="pt-4 border-t border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-end space-x-3">

@@ -28,6 +28,7 @@ export default function ProviderPaymentsList({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProject, setFilterProject] = useState('all');
   const [filterEstatus, setFilterEstatus] = useState('all');
+  const [filterPpdNoComplement, setFilterPpdNoComplement] = useState(false);
 
   const getProjectDisplay = (projId: string) => {
     const proj = projects.find(p => p.id === projId);
@@ -56,6 +57,7 @@ export default function ProviderPaymentsList({
     setSearchTerm('');
     setFilterProject('all');
     setFilterEstatus('all');
+    setFilterPpdNoComplement(false);
   };
 
   const filteredPayments = payments.filter(pay => {
@@ -70,8 +72,20 @@ export default function ProviderPaymentsList({
       return false;
     }
 
+    if (filterPpdNoComplement) {
+      if (!(pay.metodoPago === 'PPD' && !pay.complementoEmitido)) return false;
+    }
+
     return true;
   });
+
+  const ppdCount = payments.filter(pay => {
+    const matchesSearch = pay.proveedor.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filterProject !== 'all' && pay.proyectoId !== filterProject) return false;
+    if (filterEstatus !== 'all' && pay.estatus !== filterEstatus) return false;
+    return pay.metodoPago === 'PPD' && !pay.complementoEmitido;
+  }).length;
 
   return (
     <div id="provider-payments-container" className="space-y-6 animate-fade-in">
@@ -151,7 +165,7 @@ export default function ProviderPaymentsList({
             <Filter size={14} className="text-[#8C7853] dark:text-elevated-gold" />
             <span>Filtros de Búsqueda</span>
           </div>
-          {(searchTerm || filterProject !== 'all' || filterEstatus !== 'all') && (
+          {(searchTerm || filterProject !== 'all' || filterEstatus !== 'all' || filterPpdNoComplement) && (
             <button
               onClick={handleResetFilters}
               className="inline-flex items-center gap-1 text-[10px] font-bold text-cranberry dark:text-rose-linen uppercase hover:underline"
@@ -204,6 +218,25 @@ export default function ProviderPaymentsList({
             </select>
           </div>
         </div>
+
+        {/* PPD sin complemento toggle */}
+        <button
+          id="filter-ppd-no-comp-btn"
+          onClick={() => setFilterPpdNoComplement(prev => !prev)}
+          className={`inline-flex items-center space-x-2 px-4 py-2 rounded text-xs font-semibold border transition-all duration-200 ${
+            filterPpdNoComplement
+              ? 'bg-cranberry text-white border-cranberry shadow-sm'
+              : 'bg-transparent text-enchanted-green dark:text-light-ivory border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5'
+          }`}
+        >
+          <Filter size={14} />
+          <span>PPD sin complemento</span>
+          {filterPpdNoComplement && (
+            <span className="ml-1 bg-white text-cranberry px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+              {ppdCount}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Main Grid or Table */}
@@ -243,6 +276,7 @@ export default function ProviderPaymentsList({
                   <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Monto (Fiscal)</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Fecha</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Factura</th>
+                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Método</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Estatus</th>
                   <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray text-right">Acciones</th>
                 </tr>
@@ -299,6 +333,29 @@ export default function ProviderPaymentsList({
                           NO
                         </span>
                       )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="inline-flex flex-col items-start">
+                        {pay.metodoPago ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-enchanted-green/5 dark:bg-white/5 text-enchanted-green dark:text-light-ivory">
+                            {pay.metodoPago}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rocky-gray/10 dark:bg-white/5 text-rocky-gray italic">
+                            Sin especificar
+                          </span>
+                        )}
+                        {pay.metodoPago === 'PPD' && (
+                          <span className={`text-[9px] mt-1 px-1.5 py-0.5 rounded ${
+                            pay.complementoEmitido
+                              ? 'bg-enchanted-green/10 text-enchanted-green dark:text-light-ivory'
+                              : 'bg-rose-linen/30 text-cranberry font-semibold'
+                          }`}>
+                            {pay.complementoEmitido ? 'Con Compl.' : 'Sin Compl.'}
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="px-6 py-4">

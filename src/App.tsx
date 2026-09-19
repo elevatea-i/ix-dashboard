@@ -977,6 +977,8 @@ export default function App() {
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
     fecha_vencimiento?: string;
+    metodoPago?: 'PUE' | 'PPD';
+    complementoEmitido?: boolean;
   }) => {
     if (selectedProviderPayment) {
       // Edit mode
