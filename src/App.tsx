@@ -520,6 +520,7 @@ export default function App() {
     complementoEmitido?: boolean;
     fechaEmision: string;
     facturado_por?: 'IX' | 'Juan Carlos';
+    tieneFactura: boolean;
   }) => {
     const calculatedTotal = Number(
       (formData.subtotal + formData.iva - formData.retencionIsr - formData.retencionIva).toFixed(2)
@@ -537,6 +538,7 @@ export default function App() {
       complementoEmitido: formData.metodoPago === 'PPD' ? formData.complementoEmitido : undefined,
       fechaEmision: formData.fechaEmision,
       facturado_por: formData.facturado_por || 'IX',
+      tieneFactura: formData.tieneFactura,
     };
 
     if (selectedInvoice) {

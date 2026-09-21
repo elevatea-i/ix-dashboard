@@ -32,6 +32,7 @@ export interface Invoice {
   fechaEmision: string; // YYYY-MM-DD
   fechaPago?: string; // YYYY-MM-DD
   facturado_por?: 'IX' | 'Juan Carlos'; // Selector for who billed: default IX
+  tieneFactura: boolean; // true = tiene CFDI real (cuenta para IVA Trasladado); false = ingreso sin factura formal (cuenta para Rentabilidad y Reparto igual, pero NO para IVA Trasladado)
 }
 
 export type ExpenseCategory =

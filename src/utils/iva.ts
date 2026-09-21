@@ -41,7 +41,7 @@ export interface IvaMetrics {
  * Pure calculation function for VAT (IVA) Metrics.
  *
  * Calculations are based on Mexican fiscal rules specified for Fase 9:
- * - IVA Trasladado: Sum of VAT from all invoices (complete outlook, regardless of 'facturada' or 'pagada').
+ * - IVA Trasladado: Sum of VAT from invoices where `tieneFactura` is true (only real CFDIs count).
  * - IVA Acreditable (Gastos): Sum of VAT from expenses where `tieneFactura` is true.
  * - IVA Acreditable (Proveedores): Sum of VAT from provider payments where `tieneFactura` is true.
  * - Net result: IVA Trasladado - (IVA Acreditable Gastos + IVA Acreditable Proveedores).
@@ -56,8 +56,10 @@ export function calculateIvaMetrics(
   expenses: Expense[] = [],
   providerPayments: ProviderPayment[] = []
 ): IvaMetrics {
-  // 1. IVA Trasladado: Sum of IVA from ALL invoices
-  const ivaTrasladado = invoices.reduce((sum, inv) => sum + (inv.iva || 0), 0);
+  // 1. IVA Trasladado: Sum of IVA from invoices with a real CFDI (tieneFactura = true)
+  const ivaTrasladado = invoices
+    .filter(inv => inv.tieneFactura === true)
+    .reduce((sum, inv) => sum + (inv.iva || 0), 0);
 
   // 2. IVA Acreditable Gastos: Sum of IVA from expenses with invoice (tieneFactura = true)
   const ivaAcreditableGastos = expenses

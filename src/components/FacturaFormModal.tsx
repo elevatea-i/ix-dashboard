@@ -18,6 +18,7 @@ interface FacturaFormModalProps {
     complementoEmitido?: boolean;
     fechaEmision: string;
     facturado_por?: 'IX' | 'Juan Carlos';
+    tieneFactura: boolean;
   }) => void;
   onRevertToFacturada: (invoiceId: string) => Promise<boolean>;
   initialData: Invoice | null;
@@ -42,6 +43,7 @@ export default function FacturaFormModal({
   const [complementoEmitido, setComplementoEmitido] = useState<boolean>(false);
   const [fechaEmision, setFechaEmision] = useState('');
   const [facturadoPor, setFacturadoPor] = useState<'IX' | 'Juan Carlos'>('IX');
+  const [tieneFactura, setTieneFactura] = useState<boolean>(true);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [showRevertConfirm, setShowRevertConfirm] = useState(false);
@@ -80,6 +82,7 @@ export default function FacturaFormModal({
         setComplementoEmitido(initialData.complementoEmitido ?? false);
         setFechaEmision(initialData.fechaEmision);
         setFacturadoPor(initialData.facturado_por || 'IX');
+        setTieneFactura(initialData.tieneFactura);
       } else {
         setFolio('');
         setProyectoId(projects.length > 0 ? projects[0].id : '');
@@ -91,6 +94,7 @@ export default function FacturaFormModal({
         setComplementoEmitido(false);
         setFechaEmision('');
         setFacturadoPor('IX');
+        setTieneFactura(true);
       }
       setErrors({});
       setShowRevertConfirm(false);
@@ -144,7 +148,8 @@ export default function FacturaFormModal({
       metodoPago,
       complementoEmitido: metodoPago === 'PPD' ? complementoEmitido : undefined,
       fechaEmision,
-      facturado_por: facturadoPor
+      facturado_por: facturadoPor,
+      tieneFactura,
     });
   };
 
@@ -393,6 +398,20 @@ export default function FacturaFormModal({
                   </select>
                 </div>
               )}
+
+              {/* ¿Tiene Factura XML/PDF? */}
+              <div className="flex items-center justify-between p-2.5 bg-white/30 dark:bg-black/10 rounded border border-enchanted-green/5">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory">¿Tiene Factura XML/PDF?</span>
+                  <span className="text-[10px] text-rocky-gray">Comprobante fiscal recibido</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={tieneFactura}
+                  onChange={(e) => setTieneFactura(e.target.checked)}
+                  className="h-4 w-4 rounded border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green focus:ring-elevated-gold cursor-pointer"
+                />
+              </div>
 
               {/* Cifras Financieras */}
               <div className="pt-3 border-t border-enchanted-green/10 dark:border-white/10 space-y-4">

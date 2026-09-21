@@ -81,6 +81,7 @@ export function invoiceFromDb(row: Record<string, any>): Invoice {
     fechaEmision: row.fecha_emision,
     fechaPago: row.fecha_pago,
     facturado_por: row.facturado_por,
+    tieneFactura: row.tiene_factura,
   };
 }
 
@@ -100,6 +101,7 @@ export function invoiceToDb(obj: Partial<Invoice>): Record<string, any> {
   if (obj.fechaEmision !== undefined) out.fecha_emision = obj.fechaEmision;
   if (obj.fechaPago !== undefined) out.fecha_pago = obj.fechaPago;
   if (obj.facturado_por !== undefined) out.facturado_por = obj.facturado_por;
+  if (obj.tieneFactura !== undefined) out.tiene_factura = obj.tieneFactura;
   return out;
 }
 
