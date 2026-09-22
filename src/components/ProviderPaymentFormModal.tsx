@@ -163,7 +163,7 @@ export default function ProviderPaymentFormModal({
 
   return (
     <div id="provider-payment-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="provider-payment-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-2xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col">
+      <div id="provider-payment-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-2xl max-h-[calc(100vh-2rem)] rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between bg-white dark:bg-[#051A14]">
@@ -184,7 +184,7 @@ export default function ProviderPaymentFormModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="min-h-0 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5">
           {/* Project Picker */}
           <div>
             <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
