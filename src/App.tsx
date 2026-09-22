@@ -716,6 +716,7 @@ export default function App() {
     metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
     estatusPago: 'Pagado' | 'Pendiente';
     fecha: string;
+    fechaPago: string;
   }) => {
     const calculatedTotal = Number(
       (formData.subtotal + formData.iva - formData.isrRetenido - formData.ivaRetenido).toFixed(2)
@@ -978,6 +979,7 @@ export default function App() {
     tieneFactura: boolean;
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
+    fechaPago: string;
     fecha_vencimiento?: string;
     metodoPago?: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
