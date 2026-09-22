@@ -198,7 +198,7 @@ export default function IvaPanel({
           <div className="space-y-1">
             <h4 className="text-[11px] font-bold text-[#8C7853] dark:text-elevated-gold uppercase tracking-wider">Lineamiento Fiscal (SAT)</h4>
             <p className="text-[11px] text-rocky-gray leading-relaxed">
-              El IVA Trasladado se calcula sobre el 100% de lo facturado. El IVA Acreditable solo incluye gastos y pagos que ya tienen su factura (CFDI) registrada. Por ahora, este balance no considera retenciones de ISR o IVA.
+              <span style={{ color: 'rgb(17, 17, 17)' }}>El IVA Trasladado se calcula sobre el 100% de lo facturado. El IVA Acreditable solo incluye gastos y pagos que ya tienen su factura (CFDI) registrada.&nbsp;</span>
             </p>
           </div>
         </div>
