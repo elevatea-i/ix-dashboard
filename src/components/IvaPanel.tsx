@@ -9,7 +9,6 @@ import {
   ArrowRightLeft,
   AlertCircle,
   TriangleAlert,
-  CalendarDays,
 } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
@@ -70,7 +69,7 @@ export default function IvaPanel({
           <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
             Panel de IVA
           </h2>
-          <p className="text-xs text-rocky-gray mt-1">
+          <p className="text-xs text-[#051a14] dark:text-light-ivory mt-1">
             {vista === 'global'
               ? 'Resumen acumulado de IVA Trasladado vs. IVA Acreditable, basado en flujo de efectivo.'
               : `IVA del mes de ${formatPeriodo(periodoSeleccionado)}, basado en flujo de efectivo (fecha de pago).`}
@@ -108,7 +107,6 @@ export default function IvaPanel({
                   : 'bg-white dark:bg-[#051A14]/40 text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5'
               }`}
             >
-              <CalendarDays size={12} />
               Mensual
             </button>
           </div>
@@ -191,7 +189,7 @@ export default function IvaPanel({
           <div className="mt-4 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
             <span className="flex items-center gap-1">
               <TrendingDown size={12} className="text-rocky-gray" />
-              Suma de IVA con factura fiscal
+              Suma de IVA con factura.
             </span>
           </div>
         </div>
@@ -250,9 +248,9 @@ export default function IvaPanel({
       <div className="bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm p-6 space-y-6">
         <div>
           <h3 className="font-serif text-sm font-semibold text-enchanted-green dark:text-light-ivory">
-            Origen de IVA Acreditable
+            Origen de IVA "Acreditable"
           </h3>
-          <p className="text-[11px] text-rocky-gray mt-1">
+          <p className="text-[11px] text-[#070d0c] dark:text-light-ivory mt-1">
             Solo los gastos y pagos a proveedores ya pagados y con su factura (CFDI) suman al IVA acreditable.
           </p>
         </div>
@@ -329,10 +327,10 @@ export default function IvaPanel({
             <h4 className="text-[11px] font-bold text-[#8C7853] dark:text-elevated-gold uppercase tracking-wider">
               Lineamiento Fiscal (SAT)
             </h4>
-            <p className="text-[11px] text-rocky-gray leading-relaxed">
-              El IVA se calcula con base en flujo de efectivo: solo se consideran facturas efectivamente
+            <p className="text-[11px] text-[#051a14] dark:text-light-ivory leading-relaxed">
+              El IVA se calcula con base en flujo de efectivo: Solo se consideran facturas efectivamente
               cobradas, gastos efectivamente pagados y pagos a proveedores efectivamente liquidados,
-              todos con su CFDI registrado. Las retenciones de IVA de clientes se restan del balance.
+              todos con su CFDI registrado.
             </p>
           </div>
         </div>
