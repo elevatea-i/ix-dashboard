@@ -9,7 +9,6 @@ import {
   ArrowRightLeft,
   AlertCircle,
   TriangleAlert,
-  Globe,
   CalendarDays,
 } from 'lucide-react';
 import { formatCurrency } from '../utils';
@@ -98,7 +97,6 @@ export default function IvaPanel({
                   : 'bg-white dark:bg-[#051A14]/40 text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5'
               }`}
             >
-              <Globe size={12} />
               Global
             </button>
             <button
