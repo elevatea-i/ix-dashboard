@@ -5,6 +5,9 @@ import {
   Expense,
   ProviderPayment,
   ThirdPartyPayment,
+  Tercero,
+  DepositoTercero,
+  SaldoTercero,
   ProfitDistribution,
   PorImpactar,
   IvaWithdrawal,
@@ -196,38 +199,101 @@ export function providerPaymentToDb(obj: Partial<ProviderPayment>): Record<strin
 }
 
 // ============================================================
-// ThirdPartyPayment / pagos_terceros
+// ThirdPartyPayment / pagos_terceros (Concepto de cuenta corriente)
 // ============================================================
 export function thirdPartyPaymentFromDb(row: Record<string, any>): ThirdPartyPayment {
   return {
     id: row.id,
+    terceroId: row.tercero_id,
     proyectoId: row.proyecto_id,
+    facturaId: row.factura_id ?? null,
     concepto: row.concepto,
     saldoOriginal: Number(row.saldo_original),
     comisionIntermediario: Number(row.comision_intermediario),
     gananciaIxAdicional: Number(row.ganancia_ix_adicional),
     montoADepositar: Number(row.monto_a_depositar),
-    estatusPago: row.estatus_pago,
+    statusFac: row.status_fac,
+    esHistorico: row.es_historico,
     fecha: row.fecha,
-    dinero_recibido: row.dinero_recibido,
-    fecha_recibido: row.fecha_recibido,
+    creadoEn: row.creado_en,
   };
 }
 
 export function thirdPartyPaymentToDb(obj: Partial<ThirdPartyPayment>): Record<string, any> {
   const out: Record<string, any> = {};
   if (obj.id !== undefined) out.id = obj.id;
+  if (obj.terceroId !== undefined) out.tercero_id = obj.terceroId;
   if (obj.proyectoId !== undefined) out.proyecto_id = obj.proyectoId;
+  if (obj.facturaId !== undefined) out.factura_id = obj.facturaId;
   if (obj.concepto !== undefined) out.concepto = obj.concepto;
   if (obj.saldoOriginal !== undefined) out.saldo_original = obj.saldoOriginal;
   if (obj.comisionIntermediario !== undefined) out.comision_intermediario = obj.comisionIntermediario;
   if (obj.gananciaIxAdicional !== undefined) out.ganancia_ix_adicional = obj.gananciaIxAdicional;
   if (obj.montoADepositar !== undefined) out.monto_a_depositar = obj.montoADepositar;
-  if (obj.estatusPago !== undefined) out.estatus_pago = obj.estatusPago;
+  if (obj.statusFac !== undefined) out.status_fac = obj.statusFac;
   if (obj.fecha !== undefined) out.fecha = obj.fecha;
-  if (obj.dinero_recibido !== undefined) out.dinero_recibido = obj.dinero_recibido;
-  if (obj.fecha_recibido !== undefined) out.fecha_recibido = obj.fecha_recibido;
   return out;
+}
+
+// ============================================================
+// Tercero / terceros
+// ============================================================
+export function terceroFromDb(row: Record<string, any>): Tercero {
+  return {
+    id: row.id,
+    nombre: row.nombre,
+    intermediario: row.intermediario ?? null,
+    creadoEn: row.creado_en,
+  };
+}
+
+export function terceroToDb(obj: Partial<Tercero>): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (obj.id !== undefined) out.id = obj.id;
+  if (obj.nombre !== undefined) out.nombre = obj.nombre;
+  if (obj.intermediario !== undefined) out.intermediario = obj.intermediario;
+  return out;
+}
+
+// ============================================================
+// DepositoTercero / depositos_terceros
+// ============================================================
+export function depositoTerceroFromDb(row: Record<string, any>): DepositoTercero {
+  return {
+    id: row.id,
+    terceroId: row.tercero_id,
+    monto: Number(row.monto),
+    fecha: row.fecha,
+    nota: row.nota ?? null,
+    creadoEn: row.creado_en,
+  };
+}
+
+export function depositoTerceroToDb(obj: Partial<DepositoTercero>): Record<string, any> {
+  const out: Record<string, any> = {};
+  if (obj.id !== undefined) out.id = obj.id;
+  if (obj.terceroId !== undefined) out.tercero_id = obj.terceroId;
+  if (obj.monto !== undefined) out.monto = obj.monto;
+  if (obj.fecha !== undefined) out.fecha = obj.fecha;
+  if (obj.nota !== undefined) out.nota = obj.nota;
+  return out;
+}
+
+// ============================================================
+// SaldoTercero / saldos_terceros (vista, solo lectura)
+// ============================================================
+export function saldoTerceroFromDb(row: Record<string, any>): SaldoTercero {
+  return {
+    terceroId: row.tercero_id,
+    nombre: row.nombre,
+    totalSaldoOriginal: Number(row.total_saldo_original),
+    totalComision: Number(row.total_comision),
+    totalGanancia: Number(row.total_ganancia),
+    totalMontoADepositar: Number(row.total_monto_a_depositar),
+    totalMontoDisponible: Number(row.total_monto_disponible),
+    totalDepositado: Number(row.total_depositado),
+    restante: Number(row.restante),
+  };
 }
 
 // ============================================================

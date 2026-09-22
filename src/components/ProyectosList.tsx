@@ -723,7 +723,6 @@ export default function ProyectosList({
                               <div className="space-y-0.5">
                                 <span className="font-semibold text-enchanted-green dark:text-light-ivory">{pay.concepto}</span>
                                 <div className="text-[10px] text-rocky-gray space-y-0.5">
-                                  <span>{pay.fecha}</span>
                                   <div className="flex items-center space-x-1.5">
                                     <span>Saldo Orig: {formatCurrency(pay.saldoOriginal)}</span>
                                   </div>
@@ -733,10 +732,10 @@ export default function ProyectosList({
                                 <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
                                   {formatCurrency(pay.montoADepositar)}
                                 </span>
-                                {pay.estatusPago === 'Pagado' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
+                                {pay.statusFac === 'Disponible' ? (
+                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Disponible</span>
                                 ) : (
-                                  <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
+                                  <span className="text-[9px] uppercase font-bold text-[#8C7853] font-mono">Por pagar</span>
                                 )}
                               </div>
                             </div>

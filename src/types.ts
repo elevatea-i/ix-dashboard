@@ -89,16 +89,46 @@ export interface ProviderPayment {
 
 export interface ThirdPartyPayment {
   id: string;
+  terceroId: string;
   proyectoId: string | null;
+  facturaId: string | null;
   concepto: string;
   saldoOriginal: number;
   comisionIntermediario: number;
   gananciaIxAdicional: number;
   montoADepositar: number;
-  estatusPago: 'Pagado' | 'Pendiente';
-  fecha: string; // YYYY-MM-DD
-  dinero_recibido?: boolean;
-  fecha_recibido?: string | null;
+  statusFac: 'Disponible' | 'Por pagar';
+  esHistorico: boolean;
+  fecha: string | null;
+  creadoEn: string;
+}
+
+export interface Tercero {
+  id: string;
+  nombre: string;
+  intermediario: string | null;
+  creadoEn: string;
+}
+
+export interface DepositoTercero {
+  id: string;
+  terceroId: string;
+  monto: number;
+  fecha: string;
+  nota: string | null;
+  creadoEn: string;
+}
+
+export interface SaldoTercero {
+  terceroId: string;
+  nombre: string;
+  totalSaldoOriginal: number;
+  totalComision: number;
+  totalGanancia: number;
+  totalMontoADepositar: number;
+  totalMontoDisponible: number;
+  totalDepositado: number;
+  restante: number;
 }
 
 export interface ProfitDistribution {
@@ -154,4 +184,3 @@ export interface Module {
   disabled: boolean;
   tag?: string;
 }
-

@@ -19,10 +19,12 @@ import EliminarGastoModal from './components/EliminarGastoModal';
 import ProviderPaymentsList from './components/ProviderPaymentsList';
 import ProviderPaymentFormModal from './components/ProviderPaymentFormModal';
 import EliminarPagoProveedorModal from './components/EliminarPagoProveedorModal';
-import ThirdPartyPaymentsList from './components/ThirdPartyPaymentsList';
-import ThirdPartyPaymentFormModal from './components/ThirdPartyPaymentFormModal';
-import EliminarPagoTerceroModal from './components/EliminarPagoTerceroModal';
-import RecibirDineroModal from './components/RecibirDineroModal';
+import PagosTercerosModule from './components/PagosTercerosModule';
+import ConceptoTerceroFormModal from './components/ConceptoTerceroFormModal';
+import DepositoTerceroFormModal from './components/DepositoTerceroFormModal';
+import EliminarConceptoTerceroModal from './components/EliminarConceptoTerceroModal';
+import EliminarDepositoTerceroModal from './components/EliminarDepositoTerceroModal';
+import AgregarTerceroModal from './components/AgregarTerceroModal';
 import RepartoUtilidadesList from './components/RepartoUtilidadesList';
 import PorImpactarList from './components/PorImpactarList';
 import PorImpactarFormModal from './components/PorImpactarFormModal';
@@ -34,11 +36,11 @@ import ReportesPanel from './components/ReportesPanel';
 import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
-import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
+import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -80,6 +82,12 @@ export default function App() {
   // Pagos a Terceros CRUD State (starts EMPTY as requested)
   const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
   const [thirdPartyPaymentsLoading, setThirdPartyPaymentsLoading] = useState(true);
+
+  // Terceros (cuenta corriente)
+  const [terceros, setTerceros] = useState<Tercero[]>([]);
+  const [terceroActivo, setTerceroActivo] = useState<string | null>(null);
+  const [depositosTerceros, setDepositosTerceros] = useState<DepositoTercero[]>([]);
+  const [saldosTerceros, setSaldosTerceros] = useState<SaldoTercero[]>([]);
 
   // Reparto de Utilidades State (starts EMPTY as requested)
   const [profitDistributions, setProfitDistributions] = useState<ProfitDistribution[]>([]);
@@ -140,9 +148,16 @@ export default function App() {
   const [isProviderPaymentModalOpen, setIsProviderPaymentModalOpen] = useState(false);
   const [selectedProviderPayment, setSelectedProviderPayment] = useState<ProviderPayment | null>(null);
 
-  // Pagos a Terceros Modal controls
-  const [isThirdPartyPaymentModalOpen, setIsThirdPartyPaymentModalOpen] = useState(false);
-  const [selectedThirdPartyPayment, setSelectedThirdPartyPayment] = useState<ThirdPartyPayment | null>(null);
+  // Pagos a Terceros Modal controls (cuenta corriente)
+  const [isConceptoModalOpen, setIsConceptoModalOpen] = useState(false);
+  const [selectedConcepto, setSelectedConcepto] = useState<ThirdPartyPayment | null>(null);
+  const [isDepositoModalOpen, setIsDepositoModalOpen] = useState(false);
+  const [selectedDeposito, setSelectedDeposito] = useState<DepositoTercero | null>(null);
+  const [isAgregarTerceroModalOpen, setIsAgregarTerceroModalOpen] = useState(false);
+  const [isDeleteConceptoModalOpen, setIsDeleteConceptoModalOpen] = useState(false);
+  const [conceptoToDelete, setConceptoToDelete] = useState<ThirdPartyPayment | null>(null);
+  const [isDeleteDepositoModalOpen, setIsDeleteDepositoModalOpen] = useState(false);
+  const [depositoToDelete, setDepositoToDelete] = useState<DepositoTercero | null>(null);
 
   // Marcar como Pagada Modal controls
   const [isMarkAsPaidOpen, setIsMarkAsPaidOpen] = useState(false);
@@ -152,16 +167,9 @@ export default function App() {
   const [isDeleteInvoiceModalOpen, setIsDeleteInvoiceModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
 
-  // Marcar como Recibido (Dinero Recibido) Modal controls
-  const [isRecibirDineroOpen, setIsRecibirDineroOpen] = useState(false);
-  const [paymentToMarkAsReceived, setPaymentToMarkAsReceived] = useState<ThirdPartyPayment | null>(null);
-
   // New Delete Confirmation Modals state variables
   const [isDeleteProviderPaymentModalOpen, setIsDeleteProviderPaymentModalOpen] = useState(false);
   const [providerPaymentToDelete, setProviderPaymentToDelete] = useState<ProviderPayment | null>(null);
-
-  const [isDeleteThirdPartyPaymentModalOpen, setIsDeleteThirdPartyPaymentModalOpen] = useState(false);
-  const [thirdPartyPaymentToDelete, setThirdPartyPaymentToDelete] = useState<ThirdPartyPayment | null>(null);
 
   const [isDeletePorImpactarModalOpen, setIsDeletePorImpactarModalOpen] = useState(false);
   const [porImpactarToDelete, setPorImpactarToDelete] = useState<PorImpactar | null>(null);
@@ -273,15 +281,52 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch pagos_terceros from Supabase on mount
+  // Fetch pagos_terceros (conceptos) from Supabase on mount
   useEffect(() => {
-    supabase.from('pagos_terceros').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
+    supabase.from('pagos_terceros').select('*').order('creado_en', { ascending: true }).then(({ data, error }) => {
       if (error) {
         showToast(error.message, 'error');
       } else if (data) {
         setThirdPartyPayments(data.map(thirdPartyPaymentFromDb));
       }
       setThirdPartyPaymentsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch terceros from Supabase on mount
+  useEffect(() => {
+    supabase.from('terceros').select('*').order('creado_en', { ascending: true }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        const mapped = data.map(terceroFromDb);
+        setTerceros(mapped);
+        if (mapped.length > 0 && !terceroActivo) {
+          setTerceroActivo(mapped[0].id);
+        }
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch depositos_terceros from Supabase on mount
+  useEffect(() => {
+    supabase.from('depositos_terceros').select('*').order('fecha', { ascending: true }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setDepositosTerceros(data.map(depositoTerceroFromDb));
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch saldos_terceros (vista) from Supabase on mount
+  useEffect(() => {
+    supabase.from('saldos_terceros').select('*').then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setSaldosTerceros(data.map(saldoTerceroFromDb));
+      }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1054,120 +1099,143 @@ export default function App() {
     setIsProviderPaymentModalOpen(true);
   };
 
-  // CRUD actions for Third Party Payments
-  const handleAddOrEditThirdPartyPaymentSubmit = async (formData: {
-    proyectoId: string | null;
-    concepto: string;
-    saldoOriginal: number;
-    comisionIntermediario: number;
-    gananciaIxAdicional: number;
-    montoADepositar: number;
-    estatusPago: 'Pagado' | 'Pendiente';
-    fecha: string;
-  }) => {
-    if (selectedThirdPartyPayment) {
-      const dbPayload = thirdPartyPaymentToDb(formData as Partial<ThirdPartyPayment>);
+  // Helper: refresh saldos_terceros from DB
+  const refreshSaldosTerceros = async () => {
+    const { data, error } = await supabase.from('saldos_terceros').select('*');
+    if (!error && data) {
+      setSaldosTerceros(data.map(saldoTerceroFromDb));
+    }
+  };
+
+  // CRUD actions for Conceptos (pagos_terceros — cuenta corriente)
+  const handleConceptoSubmit = async (
+    formData: {
+      concepto: string;
+      facturaId: string | null;
+      proyectoId: string | null;
+      saldoOriginal: number;
+      comisionIntermediario: number;
+      gananciaIxAdicional: number;
+      montoADepositar: number;
+      statusFac: 'Disponible' | 'Por pagar';
+      fecha: string | null;
+    },
+    editId?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const payload = thirdPartyPaymentToDb({
+      ...formData,
+      terceroId: terceroActivo!,
+    });
+    delete payload.id;
+
+    if (editId) {
       const { data, error } = await supabase
         .from('pagos_terceros')
-        .update(dbPayload)
-        .eq('id', selectedThirdPartyPayment.id)
+        .update(payload)
+        .eq('id', editId)
         .select()
         .single();
-      if (error) {
-        showToast(error.message, 'error');
-        return;
-      }
-      setThirdPartyPayments(prev => prev.map(p =>
-        p.id === selectedThirdPartyPayment.id ? thirdPartyPaymentFromDb(data) : p
-      ));
+      if (error) return { success: false, error: error.message };
+      setThirdPartyPayments(prev => prev.map(p => p.id === editId ? thirdPartyPaymentFromDb(data) : p));
+      await refreshSaldosTerceros();
       showToast('Cambios guardados');
     } else {
-      const newObj: Partial<ThirdPartyPayment> = {
-        ...formData,
-        dinero_recibido: false,
-        fecha_recibido: null
-      };
-      const dbPayload = thirdPartyPaymentToDb(newObj);
       const { data, error } = await supabase
         .from('pagos_terceros')
-        .insert(dbPayload)
+        .insert(payload)
         .select()
         .single();
-      if (error) {
-        showToast(error.message, 'error');
-        return;
-      }
-      setThirdPartyPayments(prev => [thirdPartyPaymentFromDb(data), ...prev]);
-      showToast('Guardado con éxito');
+      if (error) return { success: false, error: error.message };
+      setThirdPartyPayments(prev => [...prev, thirdPartyPaymentFromDb(data)]);
+      await refreshSaldosTerceros();
+      showToast('Concepto registrado');
     }
-    setIsThirdPartyPaymentModalOpen(false);
-    setSelectedThirdPartyPayment(null);
+    setIsConceptoModalOpen(false);
+    setSelectedConcepto(null);
+    return { success: true };
   };
 
-  const handleDeleteThirdPartyPayment = (id: string) => {
-    const payment = thirdPartyPayments.find(p => p.id === id);
-    if (!payment) return;
-    setThirdPartyPaymentToDelete(payment);
-    setIsDeleteThirdPartyPaymentModalOpen(true);
-  };
-
-  const handleConfirmDeleteThirdPartyPayment = async (id: string) => {
+  const handleConfirmDeleteConcepto = async (id: string) => {
     const { error } = await supabase.from('pagos_terceros').delete().eq('id', id);
     if (error) {
       showToast(error.message, 'error');
       return;
     }
     setThirdPartyPayments(prev => prev.filter(p => p.id !== id));
-    setIsDeleteThirdPartyPaymentModalOpen(false);
-    setThirdPartyPaymentToDelete(null);
-    showToast('Eliminado con éxito');
+    await refreshSaldosTerceros();
+    setIsDeleteConceptoModalOpen(false);
+    setConceptoToDelete(null);
+    showToast('Concepto eliminado');
   };
 
-  const handleMarkThirdPartyPaymentAsPaid = async (id: string) => {
-    const { data, error } = await supabase
-      .from('pagos_terceros')
-      .update({ estatus_pago: 'Pagado' })
-      .eq('id', id)
-      .select()
-      .single();
+  // CRUD actions for Depósitos (depositos_terceros)
+  const handleDepositoSubmit = async (
+    formData: { monto: number; fecha: string; nota: string | null },
+    editId?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    const payload = depositoTerceroToDb({
+      ...formData,
+      terceroId: terceroActivo!,
+    });
+    delete payload.id;
+
+    if (editId) {
+      const { data, error } = await supabase
+        .from('depositos_terceros')
+        .update(payload)
+        .eq('id', editId)
+        .select()
+        .single();
+      if (error) return { success: false, error: error.message };
+      setDepositosTerceros(prev => prev.map(d => d.id === editId ? depositoTerceroFromDb(data) : d));
+      await refreshSaldosTerceros();
+      showToast('Cambios guardados');
+    } else {
+      const { data, error } = await supabase
+        .from('depositos_terceros')
+        .insert(payload)
+        .select()
+        .single();
+      if (error) return { success: false, error: error.message };
+      setDepositosTerceros(prev => [...prev, depositoTerceroFromDb(data)]);
+      await refreshSaldosTerceros();
+      showToast('Depósito registrado');
+    }
+    setIsDepositoModalOpen(false);
+    setSelectedDeposito(null);
+    return { success: true };
+  };
+
+  const handleConfirmDeleteDeposito = async (id: string) => {
+    const { error } = await supabase.from('depositos_terceros').delete().eq('id', id);
     if (error) {
       showToast(error.message, 'error');
       return;
     }
-    setThirdPartyPayments(prev => prev.map(p =>
-      p.id === id ? thirdPartyPaymentFromDb(data) : p
-    ));
-    showToast('Cambios guardados');
+    setDepositosTerceros(prev => prev.filter(d => d.id !== id));
+    await refreshSaldosTerceros();
+    setIsDeleteDepositoModalOpen(false);
+    setDepositoToDelete(null);
+    showToast('Depósito eliminado');
   };
 
-  const handleConfirmMarkAsReceived = async (fechaRecibido: string) => {
-    if (!paymentToMarkAsReceived) return;
-    const { data, error } = await supabase
-      .from('pagos_terceros')
-      .update({ dinero_recibido: true, fecha_recibido: fechaRecibido })
-      .eq('id', paymentToMarkAsReceived.id)
+  // CRUD for Terceros
+  const handleAddTercero = async (data: { nombre: string; intermediario: string | null }): Promise<{ success: boolean; error?: string }> => {
+    const payload = terceroToDb(data);
+    delete payload.id;
+    const { data: row, error } = await supabase
+      .from('terceros')
+      .insert(payload)
       .select()
       .single();
-    if (error) {
-      showToast(error.message, 'error');
-      return;
-    }
-    setThirdPartyPayments(prev => prev.map(p =>
-      p.id === paymentToMarkAsReceived.id ? thirdPartyPaymentFromDb(data) : p
-    ));
-    setIsRecibirDineroOpen(false);
-    setPaymentToMarkAsReceived(null);
-    showToast('Dinero marcado como recibido');
-  };
-
-  const handleOpenAddThirdPartyPaymentModal = () => {
-    setSelectedThirdPartyPayment(null);
-    setIsThirdPartyPaymentModalOpen(true);
-  };
-
-  const handleOpenEditThirdPartyPaymentModal = (payment: ThirdPartyPayment) => {
-    setSelectedThirdPartyPayment(payment);
-    setIsThirdPartyPaymentModalOpen(true);
+    if (error) return { success: false, error: error.message };
+    const newTercero = terceroFromDb(row);
+    setTerceros(prev => [...prev, newTercero]);
+    setTerceroActivo(newTercero.id);
+    await refreshSaldosTerceros();
+    setIsAgregarTerceroModalOpen(false);
+    showToast('Tercero agregado');
+    return { success: true };
   };
 
   // Bóveda de IVA handlers (Supabase)
@@ -1304,18 +1372,23 @@ export default function App() {
         );
       case 'pagos_terceros':
         return (
-          <ThirdPartyPaymentsList
-            payments={thirdPartyPayments}
+          <PagosTercerosModule
+            terceros={terceros}
+            terceroActivo={terceroActivo}
+            onTerceroChange={setTerceroActivo}
+            saldos={saldosTerceros}
+            conceptos={thirdPartyPayments.filter(c => terceroActivo ? c.terceroId === terceroActivo : false)}
+            depositos={depositosTerceros.filter(d => terceroActivo ? d.terceroId === terceroActivo : false)}
+            invoices={invoices}
             projects={projects}
             loading={thirdPartyPaymentsLoading}
-            onAddClick={handleOpenAddThirdPartyPaymentModal}
-            onEditClick={handleOpenEditThirdPartyPaymentModal}
-            onDeleteClick={handleDeleteThirdPartyPayment}
-            onMarkAsPaidClick={handleMarkThirdPartyPaymentAsPaid}
-            onMarkAsReceivedClick={(pay) => {
-              setPaymentToMarkAsReceived(pay);
-              setIsRecibirDineroOpen(true);
-            }}
+            onAddConcepto={() => { setSelectedConcepto(null); setIsConceptoModalOpen(true); }}
+            onEditConcepto={(c) => { setSelectedConcepto(c); setIsConceptoModalOpen(true); }}
+            onDeleteConcepto={(c) => { setConceptoToDelete(c); setIsDeleteConceptoModalOpen(true); }}
+            onAddDeposito={() => { setSelectedDeposito(null); setIsDepositoModalOpen(true); }}
+            onEditDeposito={(d) => { setSelectedDeposito(d); setIsDepositoModalOpen(true); }}
+            onDeleteDeposito={(d) => { setDepositoToDelete(d); setIsDeleteDepositoModalOpen(true); }}
+            onAddTercero={() => setIsAgregarTerceroModalOpen(true)}
           />
         );
       case 'reparto_utilidades':
@@ -1546,25 +1619,32 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Third Party Payment Form Modal (Add / Edit) */}
-      <ThirdPartyPaymentFormModal
-        isOpen={isThirdPartyPaymentModalOpen}
-        onClose={() => setIsThirdPartyPaymentModalOpen(false)}
-        onSubmit={handleAddOrEditThirdPartyPaymentSubmit}
-        initialData={selectedThirdPartyPayment}
-        projects={projects}
+      {/* Concepto Tercero Form Modal (Add / Edit) */}
+      <ConceptoTerceroFormModal
+        isOpen={isConceptoModalOpen}
+        onClose={() => { setIsConceptoModalOpen(false); setSelectedConcepto(null); }}
+        onSubmit={handleConceptoSubmit}
+        initialData={selectedConcepto}
         invoices={invoices}
+        projects={projects}
+        restanteActual={saldosTerceros.find(s => s.terceroId === terceroActivo)?.restante ?? 0}
+        intermediarioNombre={terceros.find(t => t.id === terceroActivo)?.intermediario ?? null}
       />
 
-      {/* Recibir Dinero Modal */}
-      <RecibirDineroModal
-        isOpen={isRecibirDineroOpen}
-        onClose={() => {
-          setIsRecibirDineroOpen(false);
-          setPaymentToMarkAsReceived(null);
-        }}
-        onConfirm={handleConfirmMarkAsReceived}
-        concepto={paymentToMarkAsReceived?.concepto || ''}
+      {/* Depósito Tercero Form Modal (Add / Edit) */}
+      <DepositoTerceroFormModal
+        isOpen={isDepositoModalOpen}
+        onClose={() => { setIsDepositoModalOpen(false); setSelectedDeposito(null); }}
+        onSubmit={handleDepositoSubmit}
+        initialData={selectedDeposito}
+        disponibleParaDepositar={saldosTerceros.find(s => s.terceroId === terceroActivo)?.restante ?? 0}
+      />
+
+      {/* Agregar Tercero Modal */}
+      <AgregarTerceroModal
+        isOpen={isAgregarTerceroModalOpen}
+        onClose={() => setIsAgregarTerceroModalOpen(false)}
+        onSubmit={handleAddTercero}
       />
 
       {/* Por Impactar Form Modal (Add / Edit) */}
@@ -1602,15 +1682,21 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteProviderPayment}
       />
 
-      {/* Eliminar Pago a Tercero Modal */}
-      <EliminarPagoTerceroModal
-        isOpen={isDeleteThirdPartyPaymentModalOpen}
-        onClose={() => {
-          setIsDeleteThirdPartyPaymentModalOpen(false);
-          setThirdPartyPaymentToDelete(null);
-        }}
-        payment={thirdPartyPaymentToDelete}
-        onConfirmDelete={handleConfirmDeleteThirdPartyPayment}
+      {/* Eliminar Concepto Tercero Modal */}
+      <EliminarConceptoTerceroModal
+        isOpen={isDeleteConceptoModalOpen}
+        onClose={() => { setIsDeleteConceptoModalOpen(false); setConceptoToDelete(null); }}
+        concepto={conceptoToDelete}
+        restanteActual={saldosTerceros.find(s => s.terceroId === terceroActivo)?.restante ?? 0}
+        onConfirmDelete={handleConfirmDeleteConcepto}
+      />
+
+      {/* Eliminar Depósito Tercero Modal */}
+      <EliminarDepositoTerceroModal
+        isOpen={isDeleteDepositoModalOpen}
+        onClose={() => { setIsDeleteDepositoModalOpen(false); setDepositoToDelete(null); }}
+        deposito={depositoToDelete}
+        onConfirmDelete={handleConfirmDeleteDeposito}
       />
 
       {/* Eliminar Por Impactar Modal */}
