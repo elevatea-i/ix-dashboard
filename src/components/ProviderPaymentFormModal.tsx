@@ -17,6 +17,7 @@ interface ProviderPaymentFormModalProps {
     tieneFactura: boolean;
     estatus: 'Pagado' | 'Pendiente';
     fecha: string;
+    fechaPago: string;
     fecha_vencimiento?: string;
     metodoPago?: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
@@ -48,6 +49,7 @@ export default function ProviderPaymentFormModal({
   const [tieneFactura, setTieneFactura] = useState<boolean>(false);
   const [estatus, setEstatus] = useState<'Pagado' | 'Pendiente'>('Pagado');
   const [fecha, setFecha] = useState<string>('');
+  const [fechaPago, setFechaPago] = useState<string>('');
   const [fecha_vencimiento, setFechaVencimiento] = useState<string>('');
   const [metodoPago, setMetodoPago] = useState<'PUE' | 'PPD' | ''>('PUE');
   const [complementoEmitido, setComplementoEmitido] = useState<boolean>(false);
@@ -67,6 +69,7 @@ export default function ProviderPaymentFormModal({
         setTieneFactura(initialData.tieneFactura);
         setEstatus(initialData.estatus);
         setFecha(initialData.fecha);
+        setFechaPago(initialData.fechaPago || '');
         setFechaVencimiento(initialData.fecha_vencimiento || '');
         setMetodoPago(initialData.metodoPago || '');
         setComplementoEmitido(initialData.complementoEmitido || false);
@@ -80,6 +83,7 @@ export default function ProviderPaymentFormModal({
         setTieneFactura(false);
         setEstatus('Pagado');
         setFecha(getMexicoCityDate());
+        setFechaPago('');
         setFechaVencimiento('');
         setMetodoPago('PUE');
         setComplementoEmitido(false);
@@ -148,6 +152,7 @@ export default function ProviderPaymentFormModal({
       tieneFactura,
       estatus,
       fecha,
+      fechaPago,
       fecha_vencimiento: fecha_vencimiento || undefined,
       metodoPago: metodoPago === '' ? undefined : metodoPago,
       complementoEmitido: metodoPago === 'PPD' ? complementoEmitido : undefined,
@@ -390,6 +395,21 @@ export default function ProviderPaymentFormModal({
                 className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
               />
             </div>
+
+            {estatus === 'Pagado' && (
+              <div>
+                <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
+                  <Calendar size={13} className="text-[#8C7853] dark:text-elevated-gold" />
+                  <span className="whitespace-nowrap">Fecha de pago</span>
+                </label>
+                <input
+                  type="date"
+                  value={fechaPago}
+                  onChange={(e) => setFechaPago(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">

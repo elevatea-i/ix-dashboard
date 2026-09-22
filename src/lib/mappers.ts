@@ -126,6 +126,7 @@ export function expenseFromDb(row: Record<string, any>): Expense {
     metodoPago: row.metodo_pago,
     estatusPago: row.estatus_pago,
     fecha: row.fecha,
+    fechaPago: row.fecha_pago,
   };
 }
 
@@ -147,6 +148,7 @@ export function expenseToDb(obj: Partial<Expense>): Record<string, any> {
   if (obj.metodoPago !== undefined) out.metodo_pago = obj.metodoPago;
   if (obj.estatusPago !== undefined) out.estatus_pago = obj.estatusPago;
   if (obj.fecha !== undefined) out.fecha = obj.fecha;
+  if (obj.fechaPago !== undefined) out.fecha_pago = obj.fechaPago === '' ? null : obj.fechaPago;
   return out;
 }
 
@@ -166,6 +168,7 @@ export function providerPaymentFromDb(row: Record<string, any>): ProviderPayment
     tieneFactura: row.tiene_factura,
     estatus: row.estatus,
     fecha: row.fecha,
+    fechaPago: row.fecha_pago,
     fecha_vencimiento: row.fecha_vencimiento,
     metodoPago: row.metodo_pago,
     complementoEmitido: row.complemento_emitido,
@@ -185,6 +188,7 @@ export function providerPaymentToDb(obj: Partial<ProviderPayment>): Record<strin
   if (obj.tieneFactura !== undefined) out.tiene_factura = obj.tieneFactura;
   if (obj.estatus !== undefined) out.estatus = obj.estatus;
   if (obj.fecha !== undefined) out.fecha = obj.fecha;
+  if (obj.fechaPago !== undefined) out.fecha_pago = obj.fechaPago === '' ? null : obj.fechaPago;
   if (obj.fecha_vencimiento !== undefined) out.fecha_vencimiento = obj.fecha_vencimiento;
   if (obj.metodoPago !== undefined) out.metodo_pago = obj.metodoPago;
   if (obj.complementoEmitido !== undefined) out.complemento_emitido = obj.complementoEmitido;

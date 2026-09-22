@@ -66,6 +66,7 @@ export interface Expense {
   metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
   estatusPago: 'Pagado' | 'Pendiente';
   fecha: string; // YYYY-MM-DD
+  fechaPago?: string; // YYYY-MM-DD (real date of payment; null when Pendiente or not yet set)
 }
 
 export interface ProviderPayment {
@@ -80,6 +81,7 @@ export interface ProviderPayment {
   tieneFactura: boolean;
   estatus: 'Pagado' | 'Pendiente';
   fecha: string; // YYYY-MM-DD
+  fechaPago?: string; // YYYY-MM-DD (real date of payment; null when Pendiente or not yet set)
   fecha_vencimiento?: string; // YYYY-MM-DD (optional)
   metodoPago?: 'PUE' | 'PPD'; // undefined = "Sin especificar" (pagos históricos)
   complementoEmitido?: boolean; // Solo relevante si metodoPago === 'PPD'

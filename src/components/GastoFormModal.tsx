@@ -21,6 +21,7 @@ interface GastoFormModalProps {
     metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
     estatusPago: 'Pagado' | 'Pendiente';
     fecha: string;
+    fechaPago: string;
   }) => void;
   initialData: Expense | null;
   projects: Project[];
@@ -67,6 +68,7 @@ export default function GastoFormModal({
   const [metodoPago, setMetodoPago] = useState<'Transferencia' | 'Tarjeta de Débito' | 'Efectivo'>('Transferencia');
   const [estatusPago, setEstatusPago] = useState<'Pagado' | 'Pendiente'>('Pagado');
   const [fecha, setFecha] = useState<string>('');
+  const [fechaPago, setFechaPago] = useState<string>('');
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -89,6 +91,7 @@ export default function GastoFormModal({
         setMetodoPago(initialData.metodoPago);
         setEstatusPago(initialData.estatusPago);
         setFecha(initialData.fecha);
+        setFechaPago(initialData.fechaPago || '');
       } else {
         setTipo('Operativo');
         setProyectoId(projects.length > 0 ? projects[0].id : '');
@@ -104,6 +107,7 @@ export default function GastoFormModal({
         setMetodoPago('Transferencia');
         setEstatusPago('Pagado');
         setFecha(getMexicoCityDate());
+        setFechaPago('');
       }
     }
   }, [isOpen, initialData, projects]);
@@ -171,7 +175,8 @@ export default function GastoFormModal({
       tieneFactura,
       metodoPago,
       estatusPago,
-      fecha
+      fecha,
+      fechaPago
     });
   };
 
@@ -477,6 +482,20 @@ export default function GastoFormModal({
                   className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
                 />
               </div>
+
+              {estatusPago === 'Pagado' && (
+                <div>
+                  <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Fecha de pago
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaPago}
+                    onChange={(e) => setFechaPago(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
+                  />
+                </div>
+              )}
 
               {/* Toggles & Checkboxes */}
               <div className="space-y-3 pt-1">
