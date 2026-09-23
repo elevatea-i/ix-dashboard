@@ -276,12 +276,12 @@ export default function PagosTercerosModule({
               <thead>
                 <tr className="border-b border-enchanted-green/10 dark:border-light-ivory/10 bg-enchanted-green/[0.02] dark:bg-white/[0.02]">
                   <th className="text-left px-4 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Proyecto</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Saldo original</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">
+                  <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Saldo original</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">
                     Comisión{intermediario ? ` ${intermediario}` : ''}
                   </th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Ganancia</th>
-                  <th className="text-right px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">A depositar</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Ganancia</th>
+                  <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">A depositar</th>
                   <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Status Fac</th>
                   <th className="text-center px-3 py-2.5 font-semibold text-rocky-gray uppercase tracking-wider">Acciones</th>
                 </tr>
