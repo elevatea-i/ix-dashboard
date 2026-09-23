@@ -105,7 +105,7 @@ export default function Sidebar({
         <div className="flex-1 flex flex-col min-h-0">
           {/* Sidebar Header */}
           <div className="h-16 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
-            <span className="font-serif text-2xl tracking-wider font-bold flex-1 text-center">IX Dashboard.</span>
+            <span className="font-serif text-[31px] tracking-wider font-bold flex-1 text-center text-[#bbbcbc]">IX Dashboard.</span>
 
             <button 
               onClick={() => setIsOpen(false)}
@@ -156,10 +156,10 @@ export default function Sidebar({
 
         {/* Sidebar Footer with Editorial Branding */}
         <div className="p-4 border-t border-white/10 bg-[#07241B] shrink-0">
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-3 text-center opacity-60">
             <div className="w-4 h-4 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-serif font-semibold text-light-ivory">Eleva. Expande. Impacta. </p>
+              <p className="text-[13px] font-serif font-semibold text-light-ivory">Eleva | Expande | Impacta.</p>
             </div>
           </div>
         </div>
