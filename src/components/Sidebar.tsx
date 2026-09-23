@@ -36,33 +36,35 @@ export default function Sidebar({
   ];
 
   const getIcon = (id: ModuleId) => {
+    const iconProps = { size: 18, strokeWidth: 1.8 };
+
     switch (id) {
       case 'clientes':
-        return <Users size={18} />;
+        return <Users {...iconProps} />;
       case 'proyectos':
-        return <FolderGit2 size={18} />;
+        return <FolderGit2 {...iconProps} />;
       case 'facturacion':
-        return <Receipt size={18} />;
+        return <Receipt {...iconProps} />;
       case 'gastos':
-        return <TrendingDown size={18} />;
+        return <TrendingDown {...iconProps} />;
       case 'cuenta_juan_carlos':
-        return <ArrowRightLeft size={18} />;
+        return <ArrowRightLeft {...iconProps} />;
       case 'pagos_proveedores':
-        return <HandCoins size={18} />;
+        return <HandCoins {...iconProps} />;
       case 'pagos_terceros':
-        return <UsersRound size={18} />;
+        return <UsersRound {...iconProps} />;
       case 'reparto_utilidades':
-        return <Coins size={18} />;
+        return <Coins {...iconProps} />;
       case 'por_impactar':
-        return <Repeat size={18} />;
+        return <Repeat {...iconProps} />;
       case 'rentabilidad':
-        return <TrendingUp size={18} />;
+        return <TrendingUp {...iconProps} />;
       case 'iva':
-        return <Percent size={18} />;
+        return <Percent {...iconProps} />;
       case 'reportes':
-        return <BarChart3 size={18} />;
+        return <BarChart3 {...iconProps} />;
       case 'boveda_iva':
-        return <Vault size={18} />;
+        return <Vault {...iconProps} />;
     }
   };
 
@@ -114,7 +116,7 @@ export default function Sidebar({
           </div>
 
           {/* Module Navigation */}
-          <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto">
+          <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
             <p className="px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-rose-linen/60">
               Navegación Interna
             </p>
@@ -127,15 +129,15 @@ export default function Sidebar({
                   disabled={mod.disabled}
                   onClick={() => handleModuleClick(mod)}
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive 
-                      ? 'bg-elevated-gold text-[#070D0C] font-semibold shadow-sm'
+                    isActive
+                      ? 'border-l-2 border-elevated-gold rounded-l-sm bg-elevated-gold/90 text-[#070D0C] font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)]'
                       : mod.disabled
-                        ? 'opacity-40 cursor-not-allowed hover:bg-transparent'
-                        : 'hover:bg-white/5 text-light-ivory/80 hover:text-light-ivory'
+                        ? 'border-l-2 border-transparent opacity-40 cursor-not-allowed hover:bg-transparent'
+                        : 'border-l-2 border-transparent hover:border-rose-linen/30 hover:bg-white/[0.07] text-light-ivory/80 hover:text-light-ivory'
                   }`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className={isActive ? 'text-[#070D0C]' : 'text-rose-linen/80'}>
+                  <div className="flex items-center gap-3">
+                    <span className={`w-5 flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-[#070D0C]' : 'text-rose-linen/80'}`}>
                       {getIcon(mod.id)}
                     </span>
                     <span>{mod.label}</span>
