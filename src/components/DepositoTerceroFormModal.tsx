@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Banknote, AlertCircle } from 'lucide-react';
-import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput } from '../utils';
+import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput, formatCurrency } from '../utils';
+
+function formatDbErrorMessage(message: string): string {
+  return message.replace(
+    /(disponible|depositado)(:\s*)(\d+(?:\.\d{1,2})?)/gi,
+    (_match, label: string, separator: string, amount: string) =>
+      `${label}${separator}${formatCurrency(Number(amount))}`
+  );
+}
 
 interface DepositoTerceroFormModalProps {
   isOpen: boolean;
@@ -169,7 +177,7 @@ export default function DepositoTerceroFormModal({
               {dbError && (
                 <div className="p-3.5 bg-cranberry/10 dark:bg-cranberry/15 text-cranberry dark:text-cranberry border border-cranberry/30 dark:border-cranberry/40 rounded text-xs flex items-start gap-2 font-medium">
                   <AlertCircle size={16} className="shrink-0 mt-0.5 text-cranberry" />
-                  <span>{dbError}</span>
+                  <span>{formatDbErrorMessage(dbError)}</span>
                 </div>
               )}
 
