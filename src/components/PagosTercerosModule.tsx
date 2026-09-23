@@ -332,7 +332,7 @@ export default function PagosTercerosModule({
                         <span
                           className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
                             c.statusFac === 'Disponible'
-                              ? 'bg-enchanted-green/10 text-enchanted-green dark:bg-enchanted-green/25 dark:text-emerald-200'
+                              ? 'bg-enchanted-green/10 text-enchanted-green dark:bg-enchanted-green/25 dark:text-[#f2e9df]'
                               : 'bg-elevated-gold/15 text-elevated-gold dark:bg-elevated-gold/25 dark:text-amber-200'
                           }`}
                         >
