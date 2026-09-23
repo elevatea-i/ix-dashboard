@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Project, Client, Invoice, Expense, ProviderPayment } from '../types';
+import { Project, Client, Invoice, Expense, ProviderPayment, ThirdPartyPayment } from '../types';
 import { generarReporteProyecto } from '../utils/reports';
 import { 
   FileSpreadsheet, 
@@ -21,6 +21,7 @@ interface ReportesPanelProps {
   invoices: Invoice[];
   expenses: Expense[];
   providerPayments: ProviderPayment[];
+  thirdPartyPayments: ThirdPartyPayment[];
 }
 
 /**
@@ -32,7 +33,8 @@ export default function ReportesPanel({
   clients = [],
   invoices = [],
   expenses = [],
-  providerPayments = []
+  providerPayments = [],
+  thirdPartyPayments = []
 }: ReportesPanelProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -194,7 +196,8 @@ export default function ReportesPanel({
                       clientName,
                       invoices,
                       expenses,
-                      providerPayments
+                      providerPayments,
+                      thirdPartyPayments
                     );
                   }}
                   className="sm:self-center shrink-0 flex items-center justify-center space-x-2 bg-enchanted-green hover:bg-[#0C4E3A] dark:bg-elevated-gold dark:text-[#051A14] dark:hover:bg-elevated-gold/90 text-white py-2 px-5 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer"

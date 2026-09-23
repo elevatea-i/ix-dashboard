@@ -829,7 +829,8 @@ export default function ProyectosList({
                       getClientName(selectedProject.clienteId),
                       invoices,
                       providerPayments,
-                      expenses
+                      expenses,
+                      thirdPartyPayments
                     );
                     const isProfitNegative = metrics.ganancia < 0;
                     return (
@@ -857,6 +858,12 @@ export default function ProyectosList({
                             <span className="text-rocky-gray">Gastos Proveedor Vinc.:</span>
                             <span className="font-mono text-rocky-gray dark:text-light-ivory/80">
                               {formatCurrency(metrics.gastosProveedorVinculados)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-0.5">
+                            <span className="text-rocky-gray">Pagos a Terceros:</span>
+                            <span className="font-mono text-rocky-gray dark:text-light-ivory/80">
+                              {formatCurrency(metrics.costoTerceros)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between border-t border-rocky-gray/5 pt-1 mt-1 font-bold">

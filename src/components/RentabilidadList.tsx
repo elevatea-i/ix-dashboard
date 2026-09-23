@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Project, Client, Invoice, ProviderPayment, Expense } from '../types';
+import { Project, Client, Invoice, ProviderPayment, Expense, ThirdPartyPayment } from '../types';
 import { 
   calculateProjectProfitability, 
   calculateClientsProfitability,
@@ -24,6 +24,7 @@ interface RentabilidadListProps {
   invoices: Invoice[];
   providerPayments: ProviderPayment[];
   expenses: Expense[];
+  thirdPartyPayments: ThirdPartyPayment[];
 }
 
 /**
@@ -35,7 +36,8 @@ export default function RentabilidadList({
   clients = [],
   invoices = [],
   providerPayments = [],
-  expenses = []
+  expenses = [],
+  thirdPartyPayments = []
 }: RentabilidadListProps) {
   const [activeTab, setActiveTab] = useState<'proyectos' | 'clientes'>('proyectos');
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +51,8 @@ export default function RentabilidadList({
       clientName,
       invoices,
       providerPayments,
-      expenses
+      expenses,
+      thirdPartyPayments
     );
   });
 
@@ -59,7 +62,8 @@ export default function RentabilidadList({
     projects,
     invoices,
     providerPayments,
-    expenses
+    expenses,
+    thirdPartyPayments
   );
 
   // 3. KPI calculations (aggregrated from project calculations)
@@ -226,6 +230,7 @@ export default function RentabilidadList({
                     <th className="px-6 py-3.5 text-right">Costo Cliente (Facturado)</th>
                     <th className="px-6 py-3.5 text-right">Costo Proveedor</th>
                     <th className="px-6 py-3.5 text-right">Gastos Proveedor Vinc.</th>
+                    <th className="px-6 py-3.5 text-right">Pagos a Terceros</th>
                     <th className="px-6 py-3.5 text-right">Ganancia</th>
                     <th className="px-6 py-3.5 text-right">Rentabilidad</th>
                   </tr>
@@ -255,6 +260,9 @@ export default function RentabilidadList({
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-rocky-gray dark:text-light-ivory/80">
                           {formatCurrency(item.gastosProveedorVinculados)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono text-rocky-gray dark:text-light-ivory/80">
+                          {formatCurrency(item.costoTerceros)}
                         </td>
                         <td className={`px-6 py-4 text-right font-mono font-semibold ${isProfitNegative ? 'text-cranberry' : 'text-enchanted-green dark:text-light-ivory'}`}>
                           {formatCurrency(item.ganancia)}
@@ -310,6 +318,7 @@ export default function RentabilidadList({
                     <th className="px-6 py-3.5 text-right">Costo Cliente Acumulado</th>
                     <th className="px-6 py-3.5 text-right">Costo Proveedor Acumulado</th>
                     <th className="px-6 py-3.5 text-right">Gastos Proveedor Vinc. Acumulado</th>
+                    <th className="px-6 py-3.5 text-right">Pagos a Terceros Acumulado</th>
                     <th className="px-6 py-3.5 text-right">Ganancia Total Acumulada</th>
                     <th className="px-6 py-3.5 text-right">Rentabilidad Acumulada</th>
                   </tr>
@@ -336,6 +345,9 @@ export default function RentabilidadList({
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-rocky-gray dark:text-light-ivory/80">
                           {formatCurrency(item.gastosProveedorVinculadosTotal)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-mono text-rocky-gray dark:text-light-ivory/80">
+                          {formatCurrency(item.costoTercerosTotal)}
                         </td>
                         <td className={`px-6 py-4 text-right font-mono font-semibold ${isProfitNegative ? 'text-cranberry' : 'text-enchanted-green dark:text-light-ivory'}`}>
                           {formatCurrency(item.gananciaTotal)}

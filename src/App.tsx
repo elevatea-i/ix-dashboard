@@ -1419,6 +1419,7 @@ export default function App() {
             invoices={invoices}
             providerPayments={providerPayments}
             expenses={expenses}
+            thirdPartyPayments={thirdPartyPayments}
           />
         );
       case 'iva':
@@ -1437,6 +1438,7 @@ export default function App() {
             invoices={invoices}
             expenses={expenses}
             providerPayments={providerPayments}
+            thirdPartyPayments={thirdPartyPayments}
           />
         );
       case 'boveda_iva':

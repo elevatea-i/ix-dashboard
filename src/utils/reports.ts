@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { Project, Invoice, Expense, ProviderPayment } from '../types';
+import { Project, Invoice, Expense, ProviderPayment, ThirdPartyPayment } from '../types';
 import { calculateProjectProfitability } from './profitability';
 
 export interface ProjectIvaMetrics {
@@ -82,7 +82,8 @@ export function generarReporteProyecto(
   clientName: string,
   invoices: Invoice[] = [],
   expenses: Expense[] = [],
-  providerPayments: ProviderPayment[] = []
+  providerPayments: ProviderPayment[] = [],
+  thirdPartyPayments: ThirdPartyPayment[] = []
 ): void {
   // 1. Calculate Rentabilidad metrics
   const metricsRentabilidad = calculateProjectProfitability(
@@ -90,7 +91,8 @@ export function generarReporteProyecto(
     clientName,
     invoices,
     providerPayments,
-    expenses
+    expenses,
+    thirdPartyPayments
   );
 
   // 2. Calculate IVA metrics
@@ -120,6 +122,7 @@ export function generarReporteProyecto(
     ["Costo Cliente (Facturado)", metricsRentabilidad.costoCliente],
     ["Costo Proveedor", metricsRentabilidad.costoProveedor],
     ["Gastos Proveedor Vinculados", metricsRentabilidad.gastosProveedorVinculados],
+    ["Pagos a Terceros", metricsRentabilidad.costoTerceros],
     ["Ganancia Neta", metricsRentabilidad.ganancia],
     ["Porcentaje de Rentabilidad", typeof metricsRentabilidad.porcentajeRentabilidad === 'number' ? metricsRentabilidad.porcentajeRentabilidad / 100 : "N/A"],
     ["", ""],
@@ -253,6 +256,7 @@ function formatResumenSheet(ws: XLSX.WorkSheet): void {
     "Costo Cliente (Facturado)",
     "Costo Proveedor",
     "Gastos Proveedor Vinculados",
+    "Pagos a Terceros",
     "Ganancia Neta",
     "IVA Trasladado (Clientes)",
     "IVA Acreditable (Gastos)",
