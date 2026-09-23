@@ -42,7 +42,7 @@ export default function ConceptoTerceroFormModal({
   const [montoADepositar, setMontoADepositar] = useState('');
   const [comisionIntermediario, setComisionIntermediario] = useState('');
   const [gananciaIxAdicional, setGananciaIxAdicional] = useState('');
-  const [statusFac, setStatusFac] = useState<'Disponible' | 'Por pagar'>('Disponible');
+  const [statusFac, setStatusFac] = useState<'Disponible' | 'Por pagar'>('Por pagar');
   const [fecha, setFecha] = useState('');
   const [saving, setSaving] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export default function ConceptoTerceroFormModal({
       setConcepto(''); setFacturaId(null); setProyectoId(null);
       setSaldoOriginal(''); setMontoADepositar('');
       setComisionIntermediario(''); setGananciaIxAdicional('');
-      setStatusFac('Disponible'); setFecha('');
+      setStatusFac('Por pagar'); setFecha('');
     }
     setDbError(null); setSaving(false);
     setInvoiceOpen(false); setInvoiceSearch('');
@@ -325,7 +325,7 @@ export default function ConceptoTerceroFormModal({
                   <label className={labelCls}>Status Fac</label>
                   {selectedInvoice ? (
                     <div className="flex items-center gap-2">
-                      <span className={`inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded ${statusFac === 'Disponible' ? 'bg-enchanted-green/10 text-enchanted-green dark:bg-enchanted-green/20 dark:text-emerald-300' : 'bg-elevated-gold/15 text-elevated-gold'}`}>
+                      <span className={`inline-block text-xs font-bold uppercase tracking-wider px-2.5 py-1.5 rounded ${statusFac === 'Disponible' ? 'bg-enchanted-green/10 text-enchanted-green dark:bg-enchanted-green/20 dark:text-emerald-300' : 'bg-elevated-gold/15 text-elevated-gold dark:text-amber-200'}`}>
                         {statusFac}
                       </span>
                       <span className="text-[10px] text-rocky-gray">Automático según la factura</span>

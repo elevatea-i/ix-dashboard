@@ -733,9 +733,9 @@ export default function ProyectosList({
                                   {formatCurrency(pay.montoADepositar)}
                                 </span>
                                 {pay.statusFac === 'Disponible' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Disponible</span>
+                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-emerald-200">Disponible</span>
                                 ) : (
-                                  <span className="text-[9px] uppercase font-bold text-[#8C7853] font-mono">Por pagar</span>
+                                  <span className="text-[9px] uppercase font-bold text-[#8C7853] dark:text-amber-200 font-mono">Por pagar</span>
                                 )}
                               </div>
                             </div>
