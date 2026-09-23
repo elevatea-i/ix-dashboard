@@ -105,7 +105,7 @@ export default function Sidebar({
         <div className="flex-1 flex flex-col min-h-0">
           {/* Sidebar Header */}
           <div className="h-16 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
-            <span className="font-serif text-[31px] tracking-wider font-bold flex-1 text-center text-[#bbbcbc]">IX Dashboard.</span>
+            <span className="font-serif text-[25px] tracking-wider font-bold flex-1 text-center text-[#bbbcbc]">IX Dashboard.</span>
 
             <button 
               onClick={() => setIsOpen(false)}
