@@ -84,6 +84,16 @@ export default function ProyectosList({
     setClampedTop(Math.max(top, HEADER_OFFSET));
   }, [panelTop, isDesktop, selectedProject, colRect]);
 
+  useEffect(() => {
+    if (!selectedProject) return;
+    const fresh = projects.find(p => p.id === selectedProject.id);
+    if (fresh) {
+      if (fresh !== selectedProject) setSelectedProject(fresh);
+    } else {
+      setSelectedProject(null);
+    }
+  }, [projects]);
+
   const renderBillingStatusBadge = (projId: string) => {
     const status = calculateProjectBillingStatus(projId, invoices);
     switch (status) {
