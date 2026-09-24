@@ -5,6 +5,7 @@ import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution,
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
 import { generarReporteProyecto } from '../utils/reports';
+import { supabase } from '../lib/supabase';
 
 interface ProyectosListProps {
   projects: Project[];
@@ -52,6 +53,37 @@ export default function ProyectosList({
   const isDesktop = useIsDesktop();
   const colRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  const [resumenVivo, setResumenVivo] = useState<{ gananciaTotal: number; yaRepartido: number; pendiente: number } | null>(null);
+  const [loadingResumen, setLoadingResumen] = useState(false);
+
+  const projectInvoicesForResumen = selectedProject
+    ? invoices.filter(inv => inv.proyectoId === selectedProject.id)
+    : [];
+  const resumenInvoiceKey = projectInvoicesForResumen.map(i => `${i.id}:${i.estado}`).join(',');
+
+  useEffect(() => {
+    if (!selectedProject || selectedProject.cerrado) {
+      setResumenVivo(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingResumen(true);
+    supabase.rpc('calcular_resumen_cierre', { p_proyecto_id: selectedProject.id }).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) { setLoadingResumen(false); return; }
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) {
+        setResumenVivo({
+          gananciaTotal: Number(row.ganancia_total),
+          yaRepartido: Number(row.ya_repartido),
+          pendiente: Number(row.pendiente_por_repartir),
+        });
+      }
+      setLoadingResumen(false);
+    });
+    return () => { cancelled = true; };
+  }, [selectedProject?.id, selectedProject?.cerrado, resumenInvoiceKey]);
 
   const measureCol = useCallback(() => {
     if (!colRef.current || !isDesktop) return;
@@ -927,6 +959,65 @@ export default function ProyectosList({
                             )}
                           </div>
                         </div>
+                      </div>
+                    );
+                  })()}
+
+                  {!selectedProject.cerrado && (() => {
+                    if (loadingResumen) {
+                      return (
+                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3.5 border border-enchanted-green/10 dark:border-white/5 animate-pulse">
+                          <div className="h-3 w-40 bg-rocky-gray/20 rounded mb-3" />
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="h-14 bg-rocky-gray/10 rounded" />
+                            <div className="h-14 bg-rocky-gray/10 rounded" />
+                            <div className="h-14 bg-rocky-gray/10 rounded" />
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (!resumenVivo) return null;
+                    const hayFacturasSinCobrar = invoices.some(
+                      inv => inv.proyectoId === selectedProject.id && inv.estado !== 'pagada'
+                    );
+                    return (
+                      <div className="bg-white/50 dark:bg-black/20 rounded border border-rocky-gray/20 dark:border-white/10 p-3 space-y-2">
+                        <div className="flex items-center gap-1.5 border-b border-rocky-gray/10 pb-1.5 mb-1">
+                          <TrendingUp size={14} className="text-rocky-gray" />
+                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Ganado vs. Repartido</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
+                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Ganancia hasta hoy</p>
+                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                              {formatCurrency(resumenVivo.gananciaTotal)}
+                            </p>
+                          </div>
+                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
+                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Ya repartido</p>
+                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                              {formatCurrency(resumenVivo.yaRepartido)}
+                            </p>
+                          </div>
+                          <div className={`rounded-lg p-3 border ${
+                            resumenVivo.pendiente > 0
+                              ? 'bg-elevated-gold/10 border-elevated-gold/30'
+                              : 'bg-enchanted-green/5 border-enchanted-green/10 dark:bg-white/5 dark:border-light-ivory/10'
+                          }`}>
+                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Pendiente</p>
+                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                              {formatCurrency(resumenVivo.pendiente)}
+                            </p>
+                          </div>
+                        </div>
+                        {hayFacturasSinCobrar && (
+                          <div className="flex items-start gap-1.5 mt-1">
+                            <AlertTriangle size={12} className="text-[#8C7853] dark:text-elevated-gold mt-0.5 shrink-0" />
+                            <p className="text-[10px] text-[#8C7853] dark:text-elevated-gold leading-relaxed">
+                              Cifra parcial: hay facturas sin cobrar que no se han sumado.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
