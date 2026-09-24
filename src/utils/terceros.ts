@@ -1,15 +1,15 @@
 /**
- * Calcula el desglose financiero de un concepto de pago a tercero
- * a partir del saldo original.
+ * Calculates the financial breakdown of a third-party payment concept
+ * from the original balance.
  *
- * Fórmula:
- *   montoADepositar  = saldo ÷ 1.16, redondeado a centavos
- *   comisión         = montoADepositar × 0.08, redondeada a centavos
- *   ganancia         = saldo − montoADepositar − comisión  (residual exacto)
+ * Formula:
+ *   depositAmount  = balance ÷ 1.16, rounded to cents
+ *   commission      = depositAmount × 0.08, rounded to cents
+ *   profit          = balance − depositAmount − commission  (exact residual)
  *
- * Trabaja internamente en centavos enteros para evitar errores de punto flotante.
+ * Works internally in integer cents to avoid floating-point errors.
  *
- * Ejemplos verificados:
+ * Verified examples:
  *   2600   → 2241.38 / 179.31 / 179.31
  *   17175  → 14806.03 / 1184.48 / 1184.49
  */

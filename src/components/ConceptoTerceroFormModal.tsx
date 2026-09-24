@@ -34,7 +34,6 @@ export default function ConceptoTerceroFormModal({
   isOpen, onClose, onSubmit, initialData, invoices, projects,
   restanteActual, intermediarioNombre,
 }: ConceptoTerceroFormModalProps) {
-  /* ── Form state ─────────────────────────────────────────── */
   const [concepto, setConcepto] = useState('');
   const [facturaId, setFacturaId] = useState<string | null>(null);
   const [proyectoId, setProyectoId] = useState<string | null>(null);
@@ -47,12 +46,10 @@ export default function ConceptoTerceroFormModal({
   const [saving, setSaving] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
 
-  /* ── Invoice dropdown state ─────────────────────────────── */
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  /* ── Helpers ────────────────────────────────────────────── */
   const num = (v: string) => parseFloat(parseCurrencyInput(v)) || 0;
   const isEditing = !!initialData;
 
@@ -60,7 +57,6 @@ export default function ConceptoTerceroFormModal({
 
   const projectForInvoice = (inv: Invoice) => projects.find(p => p.id === inv.proyectoId);
 
-  /* ── Reset on open ──────────────────────────────────────── */
   useEffect(() => {
     if (!isOpen) return;
     if (initialData) {
@@ -83,7 +79,6 @@ export default function ConceptoTerceroFormModal({
     setInvoiceOpen(false); setInvoiceSearch('');
   }, [isOpen, initialData]);
 
-  /* ── Close dropdown on outside click ────────────────────── */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setInvoiceOpen(false);
@@ -92,12 +87,10 @@ export default function ConceptoTerceroFormModal({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  /* ── Auto-fill proyecto from factura ────────────────────── */
   useEffect(() => {
     if (selectedInvoice) setProyectoId(selectedInvoice.proyectoId);
   }, [selectedInvoice]);
 
-  /* ── Recalculate derived fields from saldoOriginal ──────── */
   const recalcular = (saldoStr: string) => {
     const saldo = num(saldoStr);
     if (saldo <= 0) { setMontoADepositar(''); setComisionIntermediario(''); setGananciaIxAdicional(''); return; }
@@ -115,7 +108,6 @@ export default function ConceptoTerceroFormModal({
 
   const handleCurrencyField = (setter: (v: string) => void) => (v: string) => { setter(formatLiveCurrency(v)); setDbError(null); };
 
-  /* ── Warnings ───────────────────────────────────────────── */
   const nMonto = num(montoADepositar);
   const nComision = num(comisionIntermediario);
   const nGanancia = num(gananciaIxAdicional);
@@ -124,7 +116,7 @@ export default function ConceptoTerceroFormModal({
   const diffParts = Math.abs(sumaParts - nSaldo);
   const showSumWarning = nSaldo > 0 && diffParts > 0.01;
 
-  // Negative-restante warning
+  // Negative restante warning
   const computeImpact = () => {
     const newDisp = statusFac === 'Disponible' ? nMonto : 0;
     const oldDisp = initialData && initialData.statusFac === 'Disponible' ? initialData.montoADepositar : 0;
@@ -133,7 +125,6 @@ export default function ConceptoTerceroFormModal({
   const nuevoRestante = restanteActual + computeImpact();
   const showNegativeWarning = nuevoRestante < -0.01;
 
-  /* ── Submit ─────────────────────────────────────────────── */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!concepto.trim() || nSaldo <= 0) return;
@@ -153,7 +144,6 @@ export default function ConceptoTerceroFormModal({
     if (!result.success) setDbError(result.error ?? 'Error desconocido al guardar.');
   };
 
-  /* ── Invoice search filter ──────────────────────────────── */
   const filteredInvoices = invoices.filter(inv => {
     if (!invoiceSearch) return true;
     const q = invoiceSearch.toLowerCase();
@@ -163,7 +153,6 @@ export default function ConceptoTerceroFormModal({
 
   if (!isOpen) return null;
 
-  /* ════════════════ RENDER ════════════════════════════════ */
   return (
     <AnimatePresence>
       {isOpen && (
@@ -180,7 +169,6 @@ export default function ConceptoTerceroFormModal({
             transition={{ duration: 0.18 }}
             className="bg-light-ivory dark:bg-[#051A14] w-full max-w-2xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]"
           >
-            {/* ── Header ─────────────────────────────────── */}
             <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
               <h3 className="font-serif text-lg font-bold text-enchanted-green dark:text-light-ivory">
                 {isEditing ? 'Editar concepto' : 'Nuevo concepto'}
@@ -190,15 +178,12 @@ export default function ConceptoTerceroFormModal({
               </button>
             </div>
 
-            {/* ── Body ───────────────────────────────────── */}
             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-              {/* Concepto */}
               <div>
                 <label className={labelCls}>Concepto <span className="text-cranberry font-bold">*</span></label>
                 <input type="text" required value={concepto} onChange={e => { setConcepto(e.target.value); setDbError(null); }} placeholder="Ej. Diseño editorial catálogo" className={inputCls} />
               </div>
 
-              {/* Factura vinculada — custom searchable dropdown */}
               <div ref={dropdownRef} className="relative">
                 <label className={labelCls}>Factura vinculada</label>
                 <button
@@ -218,7 +203,6 @@ export default function ConceptoTerceroFormModal({
 
                 {invoiceOpen && (
                   <div className="absolute z-30 mt-1 w-full bg-white dark:bg-[#070D0C] border border-enchanted-green/30 dark:border-light-ivory/20 rounded-lg shadow-xl max-h-60 flex flex-col overflow-hidden">
-                    {/* Search */}
                     <div className="flex items-center px-3 py-2 border-b border-enchanted-green/10 dark:border-light-ivory/10">
                       <Search size={14} className="text-rocky-gray shrink-0 mr-2" />
                       <input
@@ -228,9 +212,7 @@ export default function ConceptoTerceroFormModal({
                         className="flex-1 bg-transparent text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/60 outline-none"
                       />
                     </div>
-                    {/* Options */}
                     <div className="overflow-y-auto flex-1">
-                      {/* Clear option */}
                       <button type="button" onClick={() => { setFacturaId(null); setInvoiceOpen(false); setInvoiceSearch(''); setDbError(null); }}
                         className="w-full text-left px-3.5 py-2.5 text-sm text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors italic">
                         Sin factura vinculada
@@ -262,7 +244,6 @@ export default function ConceptoTerceroFormModal({
                 )}
               </div>
 
-              {/* Proyecto */}
               <div>
                 <label className={labelCls}>Proyecto</label>
                 {selectedInvoice ? (
@@ -278,17 +259,14 @@ export default function ConceptoTerceroFormModal({
                 )}
               </div>
 
-              {/* ── Cifras financieras ────────────────────── */}
               <div className="pt-3 border-t border-enchanted-green/10 dark:border-white/10 space-y-4">
                 <p className="text-xs uppercase font-bold tracking-wider text-elevated-gold">Desglose financiero</p>
 
-                {/* Saldo original */}
                 <div>
                   <label className={labelCls}>Saldo original <span className="text-cranberry font-bold">*</span></label>
                   <input type="text" required value={saldoOriginal} onChange={e => handleSaldoChange(e.target.value)} placeholder="$0.00" className={`${inputCls} font-mono`} />
                 </div>
 
-                {/* Three derived fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className={labelCls}>Monto a depositar</label>
@@ -304,13 +282,11 @@ export default function ConceptoTerceroFormModal({
                   </div>
                 </div>
 
-                {/* Recalcular link */}
                 <button type="button" onClick={() => recalcular(saldoOriginal)}
                   className="inline-flex items-center gap-1.5 text-xs text-elevated-gold hover:text-elevated-gold/80 font-semibold transition-colors">
                   <RefreshCw size={12} /> Recalcular desde saldo original
                 </button>
 
-                {/* Sum mismatch warning */}
                 {showSumWarning && (
                   <div className="p-3 border border-elevated-gold/30 bg-elevated-gold/5 rounded-lg text-xs text-elevated-gold leading-relaxed">
                     La suma de las partes ({formatCurrency(sumaParts)}) no coincide con el saldo original ({formatCurrency(nSaldo)}).
@@ -319,7 +295,6 @@ export default function ConceptoTerceroFormModal({
                 )}
               </div>
 
-              {/* Status Fac + Fecha */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-enchanted-green/10 dark:border-white/10">
                 <div>
                   <label className={labelCls}>Status Fac</label>
@@ -344,21 +319,18 @@ export default function ConceptoTerceroFormModal({
                 </div>
               </div>
 
-              {/* Negative restante warning */}
               {showNegativeWarning && (
                 <div className="p-3 border border-cranberry/25 bg-cranberry/5 rounded-lg text-xs text-cranberry leading-relaxed">
                   Al guardar, el saldo restante del tercero quedaría en <strong>{formatCurrency(nuevoRestante)}</strong> (negativo). Esto significa que se ha depositado más de lo disponible.
                 </div>
               )}
 
-              {/* DB error */}
               {dbError && (
                 <div className="p-3 border border-cranberry/25 bg-cranberry/5 rounded-lg text-xs text-cranberry font-medium">
                   {dbError}
                 </div>
               )}
 
-              {/* ── Footer buttons ───────────────────────── */}
               <div className="pt-5 border-t border-rocky-gray/20 dark:border-white/10 flex justify-end space-x-3">
                 <button type="button" onClick={onClose}
                   className="px-4 py-2 bg-transparent text-sm font-medium text-enchanted-green dark:text-light-ivory border border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-colors">

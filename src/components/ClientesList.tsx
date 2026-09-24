@@ -72,7 +72,6 @@ export default function ClientesList({
           </div>
         </div>
       ) : totalClients === 0 ? (
-        /* GORGEOUS EMPTY STATE (Designed strictly as requested) */
         <div className="max-w-2xl mx-auto my-12 text-center p-8 md:p-12 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
           
@@ -100,11 +99,8 @@ export default function ClientesList({
           </div>
         </div>
       ) : (
-        /* DATA STATE WITH KPIs & TABLE */
         <div className="space-y-6">
-          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* KPI 1 */}
             <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
               <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-enchanted-green dark:bg-elevated-gold"></div>
               <div className="flex items-center justify-between">
@@ -122,7 +118,6 @@ export default function ClientesList({
               </div>
             </div>
 
-            {/* KPI 2 */}
             <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
               <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-elevated-gold"></div>
               <div className="flex items-center justify-between">
@@ -140,7 +135,6 @@ export default function ClientesList({
               </div>
             </div>
 
-            {/* KPI 3 */}
             <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
               <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-rose-linen"></div>
               <div className="flex items-center justify-between">
@@ -159,9 +153,7 @@ export default function ClientesList({
             </div>
           </div>
 
-          {/* Table Container */}
           <div className="bg-white/30 dark:bg-[#0E1A16]/30 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg overflow-hidden shadow-md">
-            {/* Table Search Header */}
             <div className="p-4 border-b border-rocky-gray/20 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="relative w-full sm:max-w-xs">
                 <Search size={14} className="absolute left-1 top-1/2 -translate-y-1/2 text-rocky-gray" />
@@ -180,7 +172,6 @@ export default function ClientesList({
               </div>
             </div>
 
-            {/* Table Render */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -205,17 +196,14 @@ export default function ClientesList({
                         key={client.id}
                         className="hover:bg-enchanted-green/[0.02] dark:hover:bg-white/[0.02] transition-colors"
                       >
-                        {/* Nombre */}
                         <td className="px-6 py-4 font-serif text-base font-semibold text-enchanted-green dark:text-light-ivory">
                           {client.nombre}
                         </td>
 
-                        {/* Razón Social */}
                         <td className="px-6 py-4 text-xs text-enchanted-green/80 dark:text-light-ivory/80 max-w-[200px] truncate">
                           {client.razonSocial || <span className="text-rocky-gray italic">No registrada</span>}
                         </td>
 
-                        {/* RFC */}
                         <td className="px-6 py-4 font-mono text-xs tracking-wider">
                           {client.rfc ? (
                             <span className="bg-rose-linen/25 dark:bg-rose-linen/10 text-[#543b35] dark:text-[#f3d9d3] px-2 py-0.5 rounded border border-rose-linen/20">
@@ -226,7 +214,6 @@ export default function ClientesList({
                           )}
                         </td>
 
-                        {/* Contacto */}
                         <td className="px-6 py-4 text-xs">
                           {client.contacto ? (
                             <span className="text-enchanted-green/90 dark:text-light-ivory/90 font-medium">
@@ -237,7 +224,6 @@ export default function ClientesList({
                           )}
                         </td>
 
-                        {/* Acciones */}
                         <td className="px-6 py-4 text-right">
                           {deleteConfirmId === client.id ? (
                             <div className="flex items-center justify-end space-x-2 animate-pulse">

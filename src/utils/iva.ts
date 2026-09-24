@@ -1,56 +1,56 @@
 import { Invoice, Expense, ProviderPayment } from '../types';
 
 /**
- * Métricas de IVA calculadas a partir de facturas, gastos y pagos a proveedores.
- * Todos los campos existentes se mantienen para compatibilidad con BovedaIva.
+ * IVA metrics calculated from invoices, expenses, and provider payments.
+ * All existing fields are kept for compatibility with BovedaIva.
  */
 export interface IvaMetrics {
-  /** Suma de IVA de facturas cobradas con CFDI (tieneFactura && estado === 'pagada'). */
+  /** Sum of IVA from collected invoices with CFDI (tieneFactura && estado === 'pagada'). */
   ivaTrasladado: number;
 
-  /** Suma de IVA de gastos pagados con factura (tieneFactura && estatusPago === 'Pagado'). */
+  /** Sum of IVA from paid expenses with invoice (tieneFactura && estatusPago === 'Pagado'). */
   ivaAcreditableGastos: number;
 
-  /** Suma de IVA de pagos a proveedores pagados con factura (tieneFactura && estatus === 'Pagado'). */
+  /** Sum of IVA from paid provider payments with invoice (tieneFactura && estatus === 'Pagado'). */
   ivaAcreditableProveedores: number;
 
-  /** Total acreditable: ivaAcreditableGastos + ivaAcreditableProveedores. */
+  /** Total creditable: ivaAcreditableGastos + ivaAcreditableProveedores. */
   ivaAcreditableTotal: number;
 
-  /** Suma de retención de IVA de las facturas que pasaron el filtro de IVA Trasladado. */
+  /** Sum of IVA retention from invoices that passed the IVA Trasladado filter. */
   retencionesClientes: number;
 
-  /** Diferencia neta: ivaTrasladado - ivaAcreditableTotal - retencionesClientes. */
+  /** Net difference: ivaTrasladado - ivaAcreditableTotal - retencionesClientes. */
   diferencia: number;
 
-  /** true si diferencia > 0 (obligación de pago). */
+  /** true if diferencia > 0 (payment obligation). */
   esAPagar: boolean;
 
-  /** Valor absoluto de diferencia, para mostrar en la UI. */
+  /** Absolute value of diferencia, for UI display. */
   montoResultante: number;
 
-  /** Registros pagados con factura que NO tienen fechaPago (afectan global pero ningún mes). */
+  /** Paid records with invoice that have NO fechaPago (affect global but no specific month). */
   sinFechaPago: { registros: number; iva: number };
 }
 
 /**
- * Calcula las métricas de IVA con base en flujo de efectivo (fechaPago).
+ * Calculates IVA metrics based on cash flow (fechaPago).
  *
- * - Sin `periodo`: cálculo GLOBAL (todos los registros que cumplen filtros de inclusión).
- * - Con `periodo` ('YYYY-MM'): solo registros cuya fechaPago cae en ese mes exacto.
+ * - Without `periodo`: GLOBAL calculation (all records meeting inclusion filters).
+ * - With `periodo` ('YYYY-MM'): only records whose fechaPago falls in that exact month.
  *
- * Filtros de inclusión (aplican siempre):
- * - IVA Trasladado: facturas con tieneFactura === true Y estado === 'pagada'.
- * - IVA Acreditable Gastos: gastos con tieneFactura === true Y estatusPago === 'Pagado'.
- * - IVA Acreditable Proveedores: pagos con tieneFactura === true Y estatus === 'Pagado'.
+ * Inclusion filters (always apply):
+ * - IVA Trasladado: invoices with tieneFactura === true AND estado === 'pagada'.
+ * - IVA Acreditable Gastos: expenses with tieneFactura === true AND estatusPago === 'Pagado'.
+ * - IVA Acreditable Proveedores: payments with tieneFactura === true AND estatus === 'Pagado'.
  *
- * Usa el campo `iva` almacenado de cada registro; nunca lo recalcula desde subtotal.
+ * Uses the stored `iva` field from each record; never recalculates from subtotal.
  *
- * @param invoices      Lista de todas las facturas.
- * @param expenses      Lista de todos los gastos.
- * @param providerPayments Lista de todos los pagos a proveedores.
- * @param periodo       Opcional. Formato 'YYYY-MM'. Filtra por mes de fechaPago.
- * @returns Métricas de IVA completas.
+ * @param invoices      List of all invoices.
+ * @param expenses      List of all expenses.
+ * @param providerPayments List of all provider payments.
+ * @param periodo       Optional. Format 'YYYY-MM'. Filters by fechaPago month.
+ * @returns Complete IVA metrics.
  */
 export function calculateIvaMetrics(
   invoices: Invoice[] = [],
@@ -58,7 +58,7 @@ export function calculateIvaMetrics(
   providerPayments: ProviderPayment[] = [],
   periodo?: string
 ): IvaMetrics {
-  // --- Filtros de inclusión base (sin considerar fecha) ---
+  // --- Base inclusion filters (without date) ---
   const facturasBase = invoices.filter(
     inv => inv.tieneFactura === true && inv.estado === 'pagada'
   );
@@ -69,7 +69,7 @@ export function calculateIvaMetrics(
     pay => pay.tieneFactura === true && pay.estatus === 'Pagado'
   );
 
-  // --- sinFechaPago: siempre se calcula, sin importar el periodo ---
+  // --- sinFechaPago: always calculated, regardless of periodo ---
   const facturasSinFecha = facturasBase.filter(inv => !inv.fechaPago);
   const gastosSinFecha = gastosBase.filter(exp => !exp.fechaPago);
   const proveedoresSinFecha = proveedoresBase.filter(pay => !pay.fechaPago);
@@ -82,7 +82,7 @@ export function calculateIvaMetrics(
       proveedoresSinFecha.reduce((s, pay) => s + (pay.iva || 0), 0),
   };
 
-  // --- Filtro por periodo (si se provee) ---
+  // --- Filter by periodo (if provided) ---
   const matchPeriodo = (fechaPago: string | undefined | null): boolean => {
     if (!periodo) return true;
     if (!fechaPago) return false;
@@ -93,7 +93,7 @@ export function calculateIvaMetrics(
   const gastosFiltrados = gastosBase.filter(exp => matchPeriodo(exp.fechaPago));
   const proveedoresFiltrados = proveedoresBase.filter(pay => matchPeriodo(pay.fechaPago));
 
-  // --- Sumas ---
+  // --- Sums ---
   const ivaTrasladado = facturasFiltradas.reduce((s, inv) => s + (inv.iva || 0), 0);
   const ivaAcreditableGastos = gastosFiltrados.reduce((s, exp) => s + (exp.iva || 0), 0);
   const ivaAcreditableProveedores = proveedoresFiltrados.reduce((s, pay) => s + (pay.iva || 0), 0);
@@ -123,9 +123,9 @@ const MESES = [
 ];
 
 /**
- * Formatea un periodo 'YYYY-MM' a etiqueta legible en español.
- * Ejemplo: '2026-09' -> 'Septiembre 2026'.
- * No usa Date ni Intl para evitar desplazamientos de zona horaria.
+ * Formats a 'YYYY-MM' period into a human-readable Spanish label.
+ * Example: '2026-09' -> 'Septiembre 2026'.
+ * Does not use Date or Intl to avoid timezone shifts.
  */
 export function formatPeriodo(periodo: string): string {
   const [anio, mes] = periodo.split('-');
@@ -134,15 +134,15 @@ export function formatPeriodo(periodo: string): string {
 }
 
 /**
- * Devuelve los meses 'YYYY-MM' que tienen al menos un registro incluido en el cálculo
- * de IVA (facturas cobradas, gastos pagados o pagos a proveedores pagados, todos con factura).
- * Ordenados del más reciente al más antiguo.
- * No incluye meses sin datos. Usa fechaPago.slice(0,7), sin new Date().
+ * Returns the 'YYYY-MM' months that have at least one record included in the IVA
+ * calculation (collected invoices, paid expenses, or paid provider payments, all with invoice).
+ * Sorted from most recent to oldest.
+ * Excludes months with no data. Uses fechaPago.slice(0,7), without new Date().
  *
- * @param invoices      Lista de todas las facturas.
- * @param expenses      Lista de todos los gastos.
- * @param providerPayments Lista de todos los pagos a proveedores.
- * @returns Array de strings 'YYYY-MM' ordenados descendentemente.
+ * @param invoices      List of all invoices.
+ * @param expenses      List of all expenses.
+ * @param providerPayments List of all provider payments.
+ * @returns Array of 'YYYY-MM' strings sorted descending.
  */
 export function getMesesDisponibles(
   invoices: Invoice[] = [],

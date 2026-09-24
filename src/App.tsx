@@ -47,39 +47,26 @@ export default function App() {
   const { session, profile, loading, signIn, signOut } = useAuth();
   const isAuthenticated = !!session;
 
-  // Dark Mode State
   const [darkMode, setDarkMode] = useState<boolean>(false);
-
-  // Sidebar toggle for mobile responsive layouts
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // Sidebar collapse for desktop layouts
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  // Active module state
   const [activeModule, setActiveModule] = useState<ModuleId>('clientes');
 
-  // Clientes CRUD State (Starts EMPTY as requested)
   const [clients, setClients] = useState<Client[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
 
-  // Proyectos CRUD State (Starts EMPTY as requested)
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
 
-  // Facturas CRUD State (Starts EMPTY as requested)
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(true);
 
-  // Gastos CRUD State (Starts EMPTY as requested)
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(true);
 
-  // Pagos a Proveedores CRUD State (starts EMPTY as requested)
   const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>([]);
   const [providerPaymentsLoading, setProviderPaymentsLoading] = useState(true);
 
-  // Pagos a Terceros CRUD State (starts EMPTY as requested)
   const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
   const [thirdPartyPaymentsLoading, setThirdPartyPaymentsLoading] = useState(true);
 
@@ -89,18 +76,14 @@ export default function App() {
   const [depositosTerceros, setDepositosTerceros] = useState<DepositoTercero[]>([]);
   const [saldosTerceros, setSaldosTerceros] = useState<SaldoTercero[]>([]);
 
-  // Reparto de Utilidades State (starts EMPTY as requested)
   const [profitDistributions, setProfitDistributions] = useState<ProfitDistribution[]>([]);
 
-  // Por Impactar CRUD State (starts EMPTY as requested)
   const [porImpactar, setPorImpactar] = useState<PorImpactar[]>([]);
   const [porImpactarLoading, setPorImpactarLoading] = useState(true);
 
-  // Bóveda de IVA Withdrawals State (starts EMPTY as requested)
   const [ivaWithdrawals, setIvaWithdrawals] = useState<IvaWithdrawal[]>([]);
   const [ivaWithdrawalsLoading, setIvaWithdrawalsLoading] = useState(true);
 
-  // Modal controls
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isDeleteClientModalOpen, setIsDeleteClientModalOpen] = useState(false);
@@ -114,13 +97,11 @@ export default function App() {
     profitDistributions: number;
   } | null>(null);
 
-  // Por Impactar Modal controls
   const [isPorImpactarFormOpen, setIsPorImpactarFormOpen] = useState(false);
   const [selectedPorImpactar, setSelectedPorImpactar] = useState<PorImpactar | null>(null);
   const [isPorImpactarResolverOpen, setIsPorImpactarResolverOpen] = useState(false);
   const [porImpactarToResolve, setPorImpactarToResolve] = useState<PorImpactar | null>(null);
 
-  // Proyectos Modal controls
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] = useState(false);
@@ -133,22 +114,18 @@ export default function App() {
     profitDistributions: number;
   } | null>(null);
 
-  // Facturas Modal controls
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-  // Gastos Modal controls
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
   const [isDeleteExpenseModalOpen, setIsDeleteExpenseModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [porImpactarToRevert, setPorImpactarToRevert] = useState<PorImpactar | null>(null);
 
-  // Pagos a Proveedores Modal controls
   const [isProviderPaymentModalOpen, setIsProviderPaymentModalOpen] = useState(false);
   const [selectedProviderPayment, setSelectedProviderPayment] = useState<ProviderPayment | null>(null);
 
-  // Pagos a Terceros Modal controls (cuenta corriente)
   const [isConceptoModalOpen, setIsConceptoModalOpen] = useState(false);
   const [selectedConcepto, setSelectedConcepto] = useState<ThirdPartyPayment | null>(null);
   const [isDepositoModalOpen, setIsDepositoModalOpen] = useState(false);
@@ -159,15 +136,12 @@ export default function App() {
   const [isDeleteDepositoModalOpen, setIsDeleteDepositoModalOpen] = useState(false);
   const [depositoToDelete, setDepositoToDelete] = useState<DepositoTercero | null>(null);
 
-  // Marcar como Pagada Modal controls
   const [isMarkAsPaidOpen, setIsMarkAsPaidOpen] = useState(false);
   const [invoiceToMarkAsPaid, setInvoiceToMarkAsPaid] = useState<Invoice | null>(null);
 
-  // Eliminar Factura Modal controls
   const [isDeleteInvoiceModalOpen, setIsDeleteInvoiceModalOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
 
-  // New Delete Confirmation Modals state variables
   const [isDeleteProviderPaymentModalOpen, setIsDeleteProviderPaymentModalOpen] = useState(false);
   const [providerPaymentToDelete, setProviderPaymentToDelete] = useState<ProviderPayment | null>(null);
 
@@ -177,7 +151,6 @@ export default function App() {
   const [isDeleteIvaWithdrawalModalOpen, setIsDeleteIvaWithdrawalModalOpen] = useState(false);
   const [ivaWithdrawalToDelete, setIvaWithdrawalToDelete] = useState<IvaWithdrawal | null>(null);
 
-  // Apply dark mode theme class
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -186,7 +159,6 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Fetch clients from Supabase on mount
   useEffect(() => {
     supabase.from('clientes').select('*').then(({ data, error }) => {
       if (error) {
@@ -198,7 +170,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch IVA withdrawals from Supabase on mount
   useEffect(() => {
     supabase.from('retiros_iva').select('*').then(({ data, error }) => {
       if (error) {
@@ -210,7 +181,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch provider payments from Supabase on mount
   useEffect(() => {
     supabase.from('pagos_proveedores').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
       if (error) {
@@ -222,7 +192,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch projects from Supabase on mount
   useEffect(() => {
     supabase.from('proyectos').select('*').order('codigo', { ascending: false }).then(({ data, error }) => {
       if (error) {
@@ -234,7 +203,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch gastos from Supabase on mount
   useEffect(() => {
     supabase.from('gastos').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
       if (error) {
@@ -246,7 +214,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch por_impactar from Supabase on mount
   useEffect(() => {
     supabase.from('por_impactar').select('*').order('fecha', { ascending: false }).then(({ data, error }) => {
       if (error) {
@@ -258,7 +225,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch facturas from Supabase on mount
   useEffect(() => {
     supabase.from('facturas').select('*').order('fecha_emision', { ascending: false }).then(({ data, error }) => {
       if (error) {
@@ -270,7 +236,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch repartos_utilidad from Supabase on mount (read-only)
   useEffect(() => {
     supabase.from('repartos_utilidad').select('*').then(({ data, error }) => {
       if (error) {
@@ -281,7 +246,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch pagos_terceros (conceptos) from Supabase on mount
   useEffect(() => {
     supabase.from('pagos_terceros').select('*').order('creado_en', { ascending: true }).then(({ data, error }) => {
       if (error) {
@@ -293,7 +257,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch terceros from Supabase on mount
   useEffect(() => {
     supabase.from('terceros').select('*').order('creado_en', { ascending: true }).then(({ data, error }) => {
       if (error) {
@@ -308,7 +271,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch depositos_terceros from Supabase on mount
   useEffect(() => {
     supabase.from('depositos_terceros').select('*').order('fecha', { ascending: true }).then(({ data, error }) => {
       if (error) {
@@ -319,7 +281,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch saldos_terceros (vista) from Supabase on mount
   useEffect(() => {
     supabase.from('saldos_terceros').select('*').then(({ data, error }) => {
       if (error) {
@@ -330,7 +291,6 @@ export default function App() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle Auth via Supabase
   const handleLogin = async (email: string, password: string) => {
     await signIn(email, password);
   };
@@ -339,7 +299,6 @@ export default function App() {
     signOut();
   };
 
-  // CRUD actions for Clients (Supabase)
   const handleAddOrEditClientSubmit = async (formData: { 
     nombre: string; 
     razonSocial: string; 
@@ -347,7 +306,6 @@ export default function App() {
     contacto: string; 
   }) => {
     if (selectedClient) {
-      // Edit mode
       const updates = clientToDb(formData);
       const { data, error } = await supabase
         .from('clientes')
@@ -363,7 +321,6 @@ export default function App() {
       setClients(prev => prev.map(c => c.id === selectedClient.id ? updated : c));
       showToast('Cambios guardados');
     } else {
-      // Add mode — no id, Postgres generates it
       const insertData = clientToDb(formData);
       delete insertData.id;
       delete insertData.created_at;
@@ -385,7 +342,6 @@ export default function App() {
   };
 
   const handleDeleteClient = (id: string) => {
-    // Find all project ids for this client
     const clientProjects = projects.filter(p => p.clienteId === id);
     const clientProjectIds = clientProjects.map(p => p.id);
 
@@ -425,7 +381,6 @@ export default function App() {
 
     setClients(prev => prev.filter(c => c.id !== id));
 
-    // Close and reset states
     setIsDeleteClientModalOpen(false);
     setClientToDeleteId(null);
     setClientDeleteCounts(null);
@@ -443,7 +398,6 @@ export default function App() {
     setIsFormModalOpen(true);
   };
 
-  // CRUD actions for Projects (Supabase)
   const handleAddOrEditProjectSubmit = async (formData: {
     nombre: string;
     codigo: string;
@@ -451,7 +405,7 @@ export default function App() {
     ejecutivoId: 'San' | 'Ale';
   }) => {
     if (selectedProject) {
-      // Edit mode — only fields that changed, never estadoFacturacion
+      // Never update estadoFacturacion or fecha_creacion on edit
       const updates = projectToDb(formData);
       delete updates.id;
       delete updates.estado_facturacion;
@@ -470,7 +424,6 @@ export default function App() {
       setProjects(prev => prev.map(p => p.id === selectedProject.id ? updated : p));
       showToast('Cambios guardados');
     } else {
-      // Add mode — Postgres generates id, fecha_creacion, estado_facturacion
       const insertData = projectToDb(formData);
       delete insertData.id;
       delete insertData.estado_facturacion;
@@ -553,7 +506,6 @@ export default function App() {
     setIsProjectModalOpen(true);
   };
 
-  // CRUD actions for Invoices
   const handleAddOrEditInvoiceSubmit = async (formData: {
     folio: string;
     proyectoId: string;
@@ -745,7 +697,6 @@ export default function App() {
     return true;
   };
 
-  // CRUD actions for Expenses (Supabase)
   const handleAddOrEditExpenseSubmit = async (formData: {
     tipo: 'Operativo' | 'Proveedor por Proyecto';
     proyectoId: string | null;
@@ -768,7 +719,6 @@ export default function App() {
     );
 
     if (selectedExpense) {
-      // Edit mode
       const updates = expenseToDb({ ...formData, total: calculatedTotal });
       delete updates.id;
       const { data, error } = await supabase
@@ -785,7 +735,6 @@ export default function App() {
       setExpenses(prev => prev.map(exp => exp.id === selectedExpense.id ? updated : exp));
       showToast('Cambios guardados');
     } else {
-      // Add mode — no id, Postgres generates it
       const insertData = expenseToDb({ ...formData, total: calculatedTotal });
       delete insertData.id;
       const { data, error } = await supabase
@@ -847,7 +796,6 @@ export default function App() {
     setPorImpactarToRevert(null);
   };
 
-  // CRUD and Resolve actions for Por Impactar
   const handleAddOrEditPorImpactarSubmit = async (formData: {
     descripcion: string;
     monto: number;
@@ -856,7 +804,6 @@ export default function App() {
     fecha: string;
   }) => {
     if (selectedPorImpactar) {
-      // Edit mode
       const updates = porImpactarToDb(formData);
       delete updates.id;
       const { data, error } = await supabase
@@ -873,7 +820,6 @@ export default function App() {
       setPorImpactar(prev => prev.map(rec => rec.id === selectedPorImpactar.id ? updated : rec));
       showToast('Cambios guardados');
     } else {
-      // Add mode — no id, Postgres generates it; estatus defaults to 'pendiente'
       const insertData = porImpactarToDb(formData);
       delete insertData.id;
       const { data, error } = await supabase
@@ -1012,7 +958,6 @@ export default function App() {
     setIsExpenseModalOpen(true);
   };
 
-  // CRUD actions for Provider Payments
   const handleAddOrEditProviderPaymentSubmit = async (formData: {
     proyectoId: string;
     proveedor: string;
@@ -1030,7 +975,6 @@ export default function App() {
     complementoEmitido?: boolean;
   }) => {
     if (selectedProviderPayment) {
-      // Edit mode
       const updates = providerPaymentToDb(formData);
       delete updates.id;
       const { data, error } = await supabase
@@ -1047,7 +991,6 @@ export default function App() {
       setProviderPayments(prev => prev.map(p => p.id === selectedProviderPayment.id ? updated : p));
       showToast('Cambios guardados');
     } else {
-      // Add mode — no id, Postgres generates it
       const insertData = providerPaymentToDb(formData);
       delete insertData.id;
       const { data, error } = await supabase
@@ -1099,7 +1042,6 @@ export default function App() {
     setIsProviderPaymentModalOpen(true);
   };
 
-  // Helper: refresh saldos_terceros from DB
   const refreshSaldosTerceros = async () => {
     const { data, error } = await supabase.from('saldos_terceros').select('*');
     if (!error && data) {
@@ -1107,7 +1049,6 @@ export default function App() {
     }
   };
 
-  // CRUD actions for Conceptos (pagos_terceros — cuenta corriente)
   const handleConceptoSubmit = async (
     formData: {
       concepto: string;
@@ -1168,7 +1109,6 @@ export default function App() {
     showToast('Concepto eliminado');
   };
 
-  // CRUD actions for Depósitos (depositos_terceros)
   const handleDepositoSubmit = async (
     formData: { monto: number; fecha: string; nota: string | null },
     editId?: string
@@ -1219,7 +1159,6 @@ export default function App() {
     showToast('Depósito eliminado');
   };
 
-  // CRUD for Terceros
   const handleAddTercero = async (data: { nombre: string; intermediario: string | null }): Promise<{ success: boolean; error?: string }> => {
     const payload = terceroToDb(data);
     delete payload.id;
@@ -1238,7 +1177,6 @@ export default function App() {
     return { success: true };
   };
 
-  // Bóveda de IVA handlers (Supabase)
   const handleAddIvaWithdrawal = async (withdrawalData: { concepto: string; monto: number; fecha: string }) => {
     const insertData = ivaWithdrawalToDb(withdrawalData);
     delete insertData.id;
@@ -1278,7 +1216,6 @@ export default function App() {
     showToast('Retiro de IVA eliminado');
   };
 
-  // Render placeholder module view (strictly following user constraints)
   const renderPlaceholderModule = (moduleName: string) => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-8 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-sm">
@@ -1458,7 +1395,6 @@ export default function App() {
     }
   };
 
-  // 1. Render Login page if not authenticated (show spinner while checking session)
   if (loading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-light-ivory dark:bg-[#051A14]">
@@ -1479,10 +1415,8 @@ export default function App() {
     );
   }
 
-  // 2. Render Main Application Dashboard
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-light-ivory dark:bg-[#051A14] text-enchanted-green dark:text-light-ivory transition-colors duration-300 font-sans">
-      {/* Sidebar navigation */}
       <Sidebar 
         activeModule={activeModule} 
         setActiveModule={setActiveModule}
@@ -1491,9 +1425,7 @@ export default function App() {
         isCollapsed={isSidebarCollapsed}
       />
 
-      {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Top Header */}
         <Header 
           onLogout={handleLogout}
           darkMode={darkMode}
@@ -1506,16 +1438,13 @@ export default function App() {
           onToggleSidebarCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
 
-        {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
           <div className="max-w-7xl mx-auto space-y-6">
-            {/* Active module dynamic loader */}
             {renderModuleContent()}
           </div>
         </main>
       </div>
 
-      {/* Shared Client Form Modal (Add / Edit) */}
       <ClienteFormModal 
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
@@ -1523,7 +1452,6 @@ export default function App() {
         initialData={selectedClient}
       />
 
-      {/* Eliminar Cliente Modal */}
       <EliminarClienteModal
         isOpen={isDeleteClientModalOpen}
         onClose={() => {
@@ -1536,7 +1464,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteClient}
       />
 
-      {/* Shared Project Form Modal (Add / Edit) */}
       <ProyectoFormModal
         isOpen={isProjectModalOpen}
         onClose={() => setIsProjectModalOpen(false)}
@@ -1545,7 +1472,6 @@ export default function App() {
         clients={clients}
       />
 
-      {/* Eliminar Proyecto Modal */}
       <EliminarProyectoModal
         isOpen={isDeleteProjectModalOpen}
         onClose={() => {
@@ -1558,7 +1484,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteProject}
       />
 
-      {/* Shared Invoice Form Modal (Add / Edit) */}
       <FacturaFormModal
         isOpen={isInvoiceModalOpen}
         onClose={() => setIsInvoiceModalOpen(false)}
@@ -1568,7 +1493,6 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Shared Expense Form Modal (Add / Edit) */}
       <GastoFormModal
         isOpen={isExpenseModalOpen}
         onClose={() => setIsExpenseModalOpen(false)}
@@ -1577,7 +1501,6 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Marcar como Pagada Date Picker Modal */}
       <MarcarPagadaModal
         isOpen={isMarkAsPaidOpen}
         onClose={() => setIsMarkAsPaidOpen(false)}
@@ -1586,7 +1509,6 @@ export default function App() {
         facturadoPor={invoiceToMarkAsPaid?.facturado_por}
       />
 
-      {/* Eliminar Factura Modal (Con control de cascada y bloqueo) */}
       <EliminarFacturaModal
         isOpen={isDeleteInvoiceModalOpen}
         onClose={() => {
@@ -1599,7 +1521,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteInvoice}
       />
 
-      {/* Eliminar Gasto Modal */}
       <EliminarGastoModal
         isOpen={isDeleteExpenseModalOpen}
         onClose={() => {
@@ -1612,7 +1533,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteExpense}
       />
 
-      {/* Provider Payment Form Modal (Add / Edit) */}
       <ProviderPaymentFormModal
         isOpen={isProviderPaymentModalOpen}
         onClose={() => setIsProviderPaymentModalOpen(false)}
@@ -1621,7 +1541,6 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Concepto Tercero Form Modal (Add / Edit) */}
       <ConceptoTerceroFormModal
         isOpen={isConceptoModalOpen}
         onClose={() => { setIsConceptoModalOpen(false); setSelectedConcepto(null); }}
@@ -1633,7 +1552,6 @@ export default function App() {
         intermediarioNombre={terceros.find(t => t.id === terceroActivo)?.intermediario ?? null}
       />
 
-      {/* Depósito Tercero Form Modal (Add / Edit) */}
       <DepositoTerceroFormModal
         isOpen={isDepositoModalOpen}
         onClose={() => { setIsDepositoModalOpen(false); setSelectedDeposito(null); }}
@@ -1642,14 +1560,12 @@ export default function App() {
         disponibleParaDepositar={saldosTerceros.find(s => s.terceroId === terceroActivo)?.restante ?? 0}
       />
 
-      {/* Agregar Tercero Modal */}
       <AgregarTerceroModal
         isOpen={isAgregarTerceroModalOpen}
         onClose={() => setIsAgregarTerceroModalOpen(false)}
         onSubmit={handleAddTercero}
       />
 
-      {/* Por Impactar Form Modal (Add / Edit) */}
       <PorImpactarFormModal
         isOpen={isPorImpactarFormOpen}
         onClose={() => {
@@ -1661,7 +1577,6 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Por Impactar Resolver Modal */}
       <PorImpactarResolverModal
         isOpen={isPorImpactarResolverOpen}
         onClose={() => {
@@ -1673,7 +1588,6 @@ export default function App() {
         projects={projects}
       />
 
-      {/* Eliminar Pago a Proveedor Modal */}
       <EliminarPagoProveedorModal
         isOpen={isDeleteProviderPaymentModalOpen}
         onClose={() => {
@@ -1684,7 +1598,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteProviderPayment}
       />
 
-      {/* Eliminar Concepto Tercero Modal */}
       <EliminarConceptoTerceroModal
         isOpen={isDeleteConceptoModalOpen}
         onClose={() => { setIsDeleteConceptoModalOpen(false); setConceptoToDelete(null); }}
@@ -1693,7 +1606,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteConcepto}
       />
 
-      {/* Eliminar Depósito Tercero Modal */}
       <EliminarDepositoTerceroModal
         isOpen={isDeleteDepositoModalOpen}
         onClose={() => { setIsDeleteDepositoModalOpen(false); setDepositoToDelete(null); }}
@@ -1701,7 +1613,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeleteDeposito}
       />
 
-      {/* Eliminar Por Impactar Modal */}
       <EliminarPorImpactarModal
         isOpen={isDeletePorImpactarModalOpen}
         onClose={() => {
@@ -1712,7 +1623,6 @@ export default function App() {
         onConfirmDelete={handleConfirmDeletePorImpactar}
       />
 
-      {/* Eliminar Retiro de IVA Modal */}
       <EliminarRetiroIVAModal
         isOpen={isDeleteIvaWithdrawalModalOpen}
         onClose={() => {

@@ -13,21 +13,21 @@ export interface ProjectIvaMetrics {
 }
 
 /**
- * Calcula el IVA Trasladado e IVA Acreditable para un proyecto específico.
- * 
- * - IVA Trasladado: suma de 'iva' de todas las Facturas del proyecto.
- * - IVA Acreditable Gastos: suma de 'iva' de los Gastos vinculados al proyecto
- *   donde 'tieneFactura === true'.
- * - IVA Acreditable Proveedores: suma de 'iva' de los Pagos a Proveedores vinculados
- *   al proyecto donde 'tieneFactura === true'.
- * - IVA Acreditable Total: suma de ambos acreditables.
+ * Calculates IVA Trasladado and IVA Acreditable for a specific project.
+ *
+ * - IVA Trasladado: sum of 'iva' from all invoices for this project.
+ * - IVA Acreditable Gastos: sum of 'iva' from expenses linked to the project
+ *   where 'tieneFactura === true'.
+ * - IVA Acreditable Proveedores: sum of 'iva' from provider payments linked
+ *   to the project where 'tieneFactura === true'.
+ * - IVA Acreditable Total: sum of both creditable amounts.
  * - Diferencia: IVA Trasladado - IVA Acreditable Total.
- * 
- * @param project El proyecto a evaluar.
- * @param invoices Listado completo de facturas.
- * @param expenses Listado completo de gastos.
- * @param providerPayments Listado completo de pagos a proveedores.
- * @returns Métricas de IVA específicas de este proyecto.
+ *
+ * @param project The project to evaluate.
+ * @param invoices Full list of invoices.
+ * @param expenses Full list of expenses.
+ * @param providerPayments Full list of provider payments.
+ * @returns IVA metrics specific to this project.
  */
 export function calcularIVAPorProyecto(
   project: Project,
@@ -68,14 +68,14 @@ export function calcularIVAPorProyecto(
 }
 
 /**
- * Genera y descarga un archivo Excel (.xlsx) con múltiples hojas detalladas
- * conteniendo el resumen, facturas, gastos y pagos a proveedores de un proyecto.
- * 
- * @param project El proyecto del cual se generará el reporte.
- * @param clientName El nombre del cliente del proyecto.
- * @param invoices Listado de facturas.
- * @param expenses Listado de gastos.
- * @param providerPayments Listado de pagos a proveedores.
+ * Generates and downloads an Excel (.xlsx) file with multiple detailed sheets
+ * containing the summary, invoices, expenses, and provider payments of a project.
+ *
+ * @param project The project to generate the report for.
+ * @param clientName The client name of the project.
+ * @param invoices List of invoices.
+ * @param expenses List of expenses.
+ * @param providerPayments List of provider payments.
  */
 export function generarReporteProyecto(
   project: Project,
@@ -85,7 +85,7 @@ export function generarReporteProyecto(
   providerPayments: ProviderPayment[] = [],
   thirdPartyPayments: ThirdPartyPayment[] = []
 ): void {
-  // 1. Calculate Rentabilidad metrics
+  // 1. Calculate profitability metrics
   const metricsRentabilidad = calculateProjectProfitability(
     project,
     clientName,
@@ -103,7 +103,6 @@ export function generarReporteProyecto(
     providerPayments
   );
 
-  // Create empty workbook
   const wb = XLSX.utils.book_new();
 
   // --- SHEET 1: RESUMEN ---
@@ -241,12 +240,11 @@ export function generarReporteProyecto(
   applyAutofit(wsPagos);
   XLSX.utils.book_append_sheet(wb, wsPagos, "Pagos a Proveedores");
 
-  // Trigger browser-side compilation and file download
   XLSX.writeFile(wb, `Reporte_${project.codigo}_${project.nombre.replace(/[^a-zA-Z0-9_-]/g, "_")}.xlsx`);
 }
 
 /**
- * Formatea la hoja Resumen aplicando formato de moneda a los montos y de porcentaje a la rentabilidad.
+ * Formats the Resumen sheet by applying currency format to amounts and percentage format to profitability.
  */
 function formatResumenSheet(ws: XLSX.WorkSheet): void {
   if (!ws['!ref']) return;
@@ -290,13 +288,13 @@ function formatResumenSheet(ws: XLSX.WorkSheet): void {
 }
 
 /**
- * Formatea columnas con cantidades de dinero en hojas tabulares basado en sufijos "($)" en las cabeceras.
+ * Formats columns with monetary amounts in tabular sheets based on "($)" suffixes in headers.
  */
 function formatTableSheet(ws: XLSX.WorkSheet): void {
   if (!ws['!ref']) return;
   const range = XLSX.utils.decode_range(ws['!ref']);
   
-  // Identifica columnas con montos
+  // Identify columns with monetary amounts
   const moneyCols = new Set<number>();
   for (let C = range.s.c; C <= range.e.c; ++C) {
     const headerAddress = XLSX.utils.encode_cell({ r: 0, c: C });
@@ -306,7 +304,7 @@ function formatTableSheet(ws: XLSX.WorkSheet): void {
     }
   }
   
-  // Aplica formato de moneda
+  // Apply currency format
   for (let R = range.s.r + 1; R <= range.e.r; ++R) {
     for (let C = range.s.c; C <= range.e.c; ++C) {
       if (moneyCols.has(C)) {
@@ -322,7 +320,7 @@ function formatTableSheet(ws: XLSX.WorkSheet): void {
 }
 
 /**
- * Ajusta automáticamente el ancho de cada columna según su contenido más largo.
+ * Auto-adjusts the width of each column based on its longest content.
  */
 function applyAutofit(ws: XLSX.WorkSheet): void {
   if (!ws['!ref']) return;
@@ -330,7 +328,7 @@ function applyAutofit(ws: XLSX.WorkSheet): void {
   const colWidths: { wch: number }[] = [];
   
   for (let C = range.s.c; C <= range.e.c; ++C) {
-    let maxLength = 10; // ancho mínimo por defecto
+    let maxLength = 10; // minimum default width
     for (let R = range.s.r; R <= range.e.r; ++R) {
       const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
       const cell = ws[cellAddress];
@@ -351,7 +349,7 @@ function applyAutofit(ws: XLSX.WorkSheet): void {
         }
       }
     }
-    colWidths.push({ wch: maxLength + 3 }); // margen de holgura
+    colWidths.push({ wch: maxLength + 3 }); // padding margin
   }
   ws['!cols'] = colWidths;
 }

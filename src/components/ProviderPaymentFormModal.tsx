@@ -40,7 +40,6 @@ export default function ProviderPaymentFormModal({
   const [proyectoId, setProyectoId] = useState<string>('');
   const [proveedor, setProveedor] = useState<string>('');
   
-  // Fiscal Breakdown States
   const [subtotal, setSubtotal] = useState<string>('');
   const [iva, setIva] = useState<string>('');
   const [isrRetenido, setIsrRetenido] = useState<string>('0.00');
@@ -165,7 +164,6 @@ export default function ProviderPaymentFormModal({
     <div id="provider-payment-modal-overlay" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div id="provider-payment-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-2xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
         
-        {/* Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between bg-white dark:bg-[#051A14]">
           <div>
             <h3 className="text-lg font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
@@ -183,9 +181,7 @@ export default function ProviderPaymentFormModal({
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Project Picker */}
           <div>
             <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
               <Layers size={13} className="text-[#8C7853] dark:text-elevated-gold" />
@@ -216,7 +212,6 @@ export default function ProviderPaymentFormModal({
             )}
           </div>
 
-          {/* Supplier Name */}
           <div>
             <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
               Nombre del Proveedor <span className="text-cranberry font-bold">*</span>
@@ -235,7 +230,6 @@ export default function ProviderPaymentFormModal({
             )}
           </div>
 
-          {/* Fiscal Breakdown Grid */}
           <div className="bg-white/50 dark:bg-[#070D0C]/30 p-4 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
               <Calculator size={14} />
@@ -243,7 +237,6 @@ export default function ProviderPaymentFormModal({
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Subtotal */}
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   Subtotal <span className="text-cranberry font-bold">*</span>
@@ -264,7 +257,6 @@ export default function ProviderPaymentFormModal({
                 )}
               </div>
 
-              {/* IVA (Auto + Editable) */}
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   IVA (16% Autocalculado)
@@ -288,7 +280,6 @@ export default function ProviderPaymentFormModal({
                 )}
               </div>
 
-              {/* Retención ISR */}
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   Retención ISR (Opcional, manual)
@@ -312,7 +303,6 @@ export default function ProviderPaymentFormModal({
                 )}
               </div>
 
-              {/* Retención IVA */}
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                   Retención IVA (Opcional, manual)
@@ -337,7 +327,6 @@ export default function ProviderPaymentFormModal({
               </div>
             </div>
 
-            {/* Computed Total View */}
             <div className="p-3 bg-enchanted-green/5 dark:bg-white/5 rounded border border-enchanted-green/15 dark:border-white/10 flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory block">Monto Total Calculado</span>
@@ -352,7 +341,6 @@ export default function ProviderPaymentFormModal({
             </div>
           </div>
 
-          {/* Invoice Verification, Status & Date */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
@@ -425,7 +413,6 @@ export default function ProviderPaymentFormModal({
             </div>
           </div>
 
-          {/* Método de Pago y Complemento */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
@@ -465,7 +452,6 @@ export default function ProviderPaymentFormModal({
             </div>
           )}
 
-          {/* Footer actions */}
           <div className="pt-4 border-t border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-end space-x-3">
             <button
               type="button"

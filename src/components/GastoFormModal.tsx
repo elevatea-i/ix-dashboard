@@ -72,7 +72,6 @@ export default function GastoFormModal({
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Reset form or populate with initialData
   useEffect(() => {
     if (isOpen) {
       setErrors({});
@@ -112,7 +111,7 @@ export default function GastoFormModal({
     }
   }, [isOpen, initialData, projects]);
 
-  // Handle automatic IVA calculation (16% of subtotal)
+  // Auto-calculate IVA at 16% of subtotal
   const handleSubtotalChange = (val: string) => {
     const formatted = formatLiveCurrency(val);
     setSubtotal(formatted);
@@ -126,7 +125,6 @@ export default function GastoFormModal({
     }
   };
 
-  // Live total calculation
   const cleanSubtotal = parseCurrencyInput(subtotal);
   const numSubtotal = parseFloat(cleanSubtotal) || 0;
   const numIva = parseFloat(iva) || 0;
@@ -186,7 +184,6 @@ export default function GastoFormModal({
     <div id="gasto-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div id="gasto-form-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-3xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
         
-        {/* Modal Header */}
         <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
@@ -204,10 +201,8 @@ export default function GastoFormModal({
           </button>
         </div>
 
-        {/* Modal Body / Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           
-          {/* 1. Tipo de Gasto & Proyecto */}
           <div className="bg-white/90 dark:bg-black/20 rounded-lg p-4 border border-enchanted-green/20 dark:border-light-ivory/10 space-y-4 shadow-xs">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
               <Layers size={14} />
@@ -268,7 +263,6 @@ export default function GastoFormModal({
             </div>
           </div>
 
-          {/* 2. Detalles Generales */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
@@ -306,7 +300,6 @@ export default function GastoFormModal({
             </div>
           </div>
 
-          {/* 3. Desglose Financiero */}
           <div className="bg-white/95 dark:bg-black/20 rounded-lg p-4 border border-enchanted-green/20 dark:border-light-ivory/10 space-y-4 shadow-xs">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
               <Calculator size={14} />
@@ -394,7 +387,6 @@ export default function GastoFormModal({
               </div>
             </div>
 
-            {/* Total Display Block */}
             <div className="flex items-center justify-between p-3.5 bg-enchanted-green/5 dark:bg-white/5 rounded-lg border border-enchanted-green/10 dark:border-white/5">
               <div>
                 <p className="text-xs font-semibold text-[#111111] dark:text-[#111111]">Total Recalculado en Tiempo Real</p>
@@ -409,7 +401,6 @@ export default function GastoFormModal({
             </div>
           </div>
 
-          {/* 4. Cuenta Origen & Opciones de Pago */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
@@ -497,7 +488,6 @@ export default function GastoFormModal({
                 </div>
               )}
 
-              {/* Toggles & Checkboxes */}
               <div className="space-y-3 pt-1">
                 <div className="flex items-center justify-between p-2.5 bg-white/30 dark:bg-black/10 rounded border border-enchanted-green/5">
                   <div className="flex flex-col">
@@ -535,7 +525,6 @@ export default function GastoFormModal({
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="pt-4 border-t border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-end space-x-3">
             <button
               type="button"

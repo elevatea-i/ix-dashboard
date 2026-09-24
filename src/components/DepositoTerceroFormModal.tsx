@@ -38,7 +38,6 @@ export default function DepositoTerceroFormModal({
 
   const isEdit = initialData !== null;
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       setErrors({});
@@ -137,10 +136,8 @@ export default function DepositoTerceroFormModal({
             exit={{ opacity: 0, y: 12, scale: 0.97, transition: { duration: 0.12 } }}
             className="bg-white dark:bg-[#051A14] w-full max-w-lg rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col"
           >
-            {/* Top accent bar */}
             <div className="h-[3px] bg-elevated-gold" />
 
-            {/* Header */}
             <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between bg-white dark:bg-[#051A14]">
               <div className="flex items-center space-x-2">
                 <Banknote className="text-elevated-gold" size={18} />
@@ -156,9 +153,7 @@ export default function DepositoTerceroFormModal({
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-5 font-sans">
-              {/* Disponible para depositar */}
               <div className="flex items-center justify-between p-3.5 bg-enchanted-green/5 dark:bg-white/5 rounded border border-enchanted-green/15 dark:border-white/10">
                 <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory">
                   Disponible para depositar
@@ -173,7 +168,6 @@ export default function DepositoTerceroFormModal({
                 </div>
               </div>
 
-              {/* DB Error - shown exactly as returned */}
               {dbError && (
                 <div className="p-3.5 bg-cranberry/10 dark:bg-cranberry/15 text-cranberry dark:text-cranberry border border-cranberry/30 dark:border-cranberry/40 rounded text-xs flex items-start gap-2 font-medium">
                   <AlertCircle size={16} className="shrink-0 mt-0.5 text-cranberry" />
@@ -181,7 +175,6 @@ export default function DepositoTerceroFormModal({
                 </div>
               )}
 
-              {/* Monto */}
               <div>
                 <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                   Monto <span className="text-cranberry font-bold">*</span>
@@ -203,7 +196,6 @@ export default function DepositoTerceroFormModal({
                 )}
               </div>
 
-              {/* Fecha */}
               <div>
                 <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                   Fecha <span className="text-cranberry font-bold">*</span>
@@ -223,7 +215,6 @@ export default function DepositoTerceroFormModal({
                 )}
               </div>
 
-              {/* Nota */}
               <div>
                 <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                   Nota{' '}
@@ -240,7 +231,6 @@ export default function DepositoTerceroFormModal({
                 />
               </div>
 
-              {/* Footer actions */}
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-enchanted-green/10 dark:border-light-ivory/10">
                 <button
                   type="button"

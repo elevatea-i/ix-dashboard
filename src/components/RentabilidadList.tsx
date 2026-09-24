@@ -28,8 +28,8 @@ interface RentabilidadListProps {
 }
 
 /**
- * Módulo de Rentabilidad (Fase 8).
- * Vista de solo lectura y calculado de la salud financiera por Proyecto y por Cliente.
+ * Profitability module (Phase 8).
+ * Read-only view of financial health per Project and per Client.
  */
 export default function RentabilidadList({
   projects = [],
@@ -42,7 +42,6 @@ export default function RentabilidadList({
   const [activeTab, setActiveTab] = useState<'proyectos' | 'clientes'>('proyectos');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 1. Calculate metrics for all projects
   const projectsData: ProjectProfitability[] = projects.map(project => {
     const client = clients.find(c => c.id === project.clienteId);
     const clientName = client ? client.nombre : 'Cliente Desconocido';
@@ -56,7 +55,6 @@ export default function RentabilidadList({
     );
   });
 
-  // 2. Calculate metrics for all clients
   const clientsData: ClientProfitability[] = calculateClientsProfitability(
     clients,
     projects,
@@ -66,17 +64,15 @@ export default function RentabilidadList({
     thirdPartyPayments
   );
 
-  // 3. KPI calculations (aggregrated from project calculations)
   const totalCostoCliente = projectsData.reduce((sum, p) => sum + p.costoCliente, 0);
   const totalGanancia = projectsData.reduce((sum, p) => sum + p.ganancia, 0);
   
-  // Average profitability percentage across all projects that have a client cost > 0
+  // Average profitability across projects with revenue (costoCliente > 0)
   const projectsWithRevenue = projectsData.filter(p => p.costoCliente > 0);
   const averageRentabilidad = projectsWithRevenue.length > 0
     ? Number((projectsWithRevenue.reduce((sum, p) => sum + (typeof p.porcentajeRentabilidad === 'number' ? p.porcentajeRentabilidad : 0), 0) / projectsWithRevenue.length).toFixed(1))
     : 0;
 
-  // 4. Filtering logic
   const filteredProjects = projectsData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     return (

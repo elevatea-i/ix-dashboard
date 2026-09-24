@@ -25,8 +25,8 @@ interface ReportesPanelProps {
 }
 
 /**
- * Módulo de Reportes (Fase 10).
- * Punto de acceso centralizado para generar reportes estructurados en Excel de proyectos.
+ * Reports module (Phase 10).
+ * Centralized access point for generating structured Excel reports of projects.
  */
 export default function ReportesPanel({
   projects = [],
@@ -39,13 +39,11 @@ export default function ReportesPanel({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  // Helper: Find client name by ID
   const getClientName = (clientId: string): string => {
     const client = clients.find(c => c.id === clientId);
     return client ? client.nombre : 'Cliente Desconocido';
   };
 
-  // Filter projects by search term (code, name, client name)
   const filteredProjects = projects.filter(project => {
     const searchLower = searchTerm.toLowerCase();
     const clientName = getClientName(project.clienteId).toLowerCase();
@@ -56,7 +54,6 @@ export default function ReportesPanel({
     );
   });
 
-  // Empty state if no projects are registered
   if (projects.length === 0) {
     return (
       <div id="reportes-panel-container" className="space-y-6 animate-fade-in">
@@ -88,7 +85,6 @@ export default function ReportesPanel({
 
   return (
     <div id="reportes-panel-container" className="space-y-6 animate-fade-in">
-      {/* Title & Header */}
       <div>
         <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
           Reportes Operativos
@@ -99,14 +95,12 @@ export default function ReportesPanel({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Side: Search & Selection List */}
         <div className="lg:col-span-1 space-y-4">
           <div className="bg-white dark:bg-[#051A14]/60 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm p-4 space-y-4">
             <h3 className="text-xs uppercase tracking-wider font-bold text-enchanted-green dark:text-light-ivory">
               Buscar Proyecto
             </h3>
             
-            {/* Search Input */}
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-rocky-gray" />
               <input
@@ -126,7 +120,6 @@ export default function ReportesPanel({
               )}
             </div>
 
-            {/* Matching Projects List */}
             <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
               {filteredProjects.length === 0 ? (
                 <p className="text-center text-[11px] text-rocky-gray py-6 italic">
@@ -165,13 +158,11 @@ export default function ReportesPanel({
           </div>
         </div>
 
-        {/* Right Side: Selected Project Overview & Export Section */}
         <div className="lg:col-span-2">
           {selectedProject ? (
             <div className="bg-white dark:bg-[#051A14]/60 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm p-6 space-y-6 relative overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-enchanted-green dark:bg-elevated-gold"></div>
 
-              {/* Project Card Header */}
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -209,7 +200,6 @@ export default function ReportesPanel({
 
               <hr className="border-enchanted-green/5 dark:border-white/5" />
 
-              {/* Report Structure / Documentation of sheets */}
               <div className="space-y-4">
                 <h4 className="text-xs uppercase tracking-wider font-bold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
                   <BookOpen size={13} className="text-rocky-gray" />
@@ -263,7 +253,6 @@ export default function ReportesPanel({
                 </div>
               </div>
 
-              {/* Technical Specifications metadata summary card */}
               <div className="bg-enchanted-green/[0.03] dark:bg-white/[0.02] border border-enchanted-green/5 dark:border-white/5 rounded-lg p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                 <div>
                   <span className="text-rocky-gray block text-[10px] uppercase font-semibold">Código</span>

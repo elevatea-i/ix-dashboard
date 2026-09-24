@@ -80,7 +80,6 @@ export default function ProyectosList({
     setClampedTop(Math.max(top, HEADER_OFFSET));
   }, [panelTop, isDesktop, selectedProject, colRect]);
 
-  // Helper to render dynamic, color-coded billing status badge
   const renderBillingStatusBadge = (projId: string) => {
     const status = calculateProjectBillingStatus(projId, invoices);
     switch (status) {
@@ -105,18 +104,15 @@ export default function ProyectosList({
     }
   };
 
-  // Helper to resolve client name by ID
   const getClientName = (clientId: string): string => {
     const client = clients.find(c => c.id === clientId);
     return client ? client.nombre : 'Cliente Desconocido';
   };
 
-  // Helper to resolve client details by ID
   const getClient = (clientId: string): Client | undefined => {
     return clients.find(c => c.id === clientId);
   };
 
-  // Filtering projects based on search criteria (nombre, codigo, or client's name)
   const filteredProjects = projects.filter((project) => {
     const searchLower = searchTerm.toLowerCase();
     const clientName = getClientName(project.clienteId).toLowerCase();
@@ -163,7 +159,6 @@ export default function ProyectosList({
           </div>
         </div>
       ) : totalProjects === 0 ? (
-        /* GORGEOUS EMPTY STATE */
         <div className="max-w-2xl mx-auto my-12 text-center p-8 md:p-12 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
           
@@ -191,13 +186,10 @@ export default function ProyectosList({
           </div>
         </div>
       ) : (
-        /* CONTENT LAYOUT */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          {/* Main Table Side (Left/Center) */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* KPI Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
                 <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-enchanted-green dark:bg-elevated-gold"></div>
@@ -233,9 +225,7 @@ export default function ProyectosList({
               </div>
             </div>
 
-            {/* Table Container */}
             <div className="bg-white/30 dark:bg-[#0E1A16]/30 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg overflow-hidden shadow-md">
-              {/* Table Search Header */}
               <div className="p-4 border-b border-rocky-gray/20 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="relative w-full sm:max-w-xs">
                   <Search size={14} className="absolute left-1 top-1/2 -translate-y-1/2 text-rocky-gray" />
@@ -254,7 +244,6 @@ export default function ProyectosList({
                 </div>
               </div>
 
-              {/* Responsive List & Table */}
               {filteredProjects.length === 0 ? (
                 <div className="p-12 text-center text-rocky-gray italic text-xs">
                   Ningún proyecto coincide con la búsqueda.
@@ -372,7 +361,6 @@ export default function ProyectosList({
             </div>
           </div>
 
-          {/* Details Column (Right Side) */}
           <div className="lg:col-span-1" ref={colRef}>
             <div
               ref={panelRef}
@@ -390,7 +378,6 @@ export default function ProyectosList({
               <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden p-6 space-y-6">
                 <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
                 
-                {/* Detail Header */}
                 <div className="flex items-start justify-between">
                   <div>
                     <span className="text-[10px] text-elevated-gold uppercase tracking-wider font-bold">Ficha de Proyecto</span>
@@ -409,7 +396,6 @@ export default function ProyectosList({
 
                 <hr className="border-rocky-gray/20 dark:border-white/5" />
 
-                {/* Core Specifications */}
                 <div className="space-y-3.5">
                   <div>
                     <p className="text-[10px] text-rocky-gray dark:text-rose-linen uppercase tracking-wider font-bold">Cliente Contratante</p>
@@ -445,7 +431,6 @@ export default function ProyectosList({
                     </div>
                   </div>
 
-                  {/* Descargar Reporte Button */}
                   <div className="pt-2">
                     <button
                       onClick={() => {
@@ -468,13 +453,11 @@ export default function ProyectosList({
 
                 <hr className="border-rocky-gray/20 dark:border-white/5" />
 
-                {/* Reserved Sections "Próximamente" */}
                 <div className="space-y-4">
                   <h4 className="text-xs uppercase tracking-wider font-bold text-enchanted-green dark:text-light-ivory">
                     Integración y Métricas
                   </h4>
 
-                  {/* Facturas vinculadas */}
                   {(() => {
                     const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
                     if (projectInvoices.length === 0) {
@@ -522,7 +505,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Gastos de proveedor vinculados */}
                   {(() => {
                     const projectExpenses = expenses.filter(
                       exp => exp.proyectoId === selectedProject.id && exp.tipo === 'Proveedor por Proyecto'
@@ -572,7 +554,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Pagos a Proveedores vinculados */}
                   {(() => {
                     const projectProviderPayments = (providerPayments || []).filter(
                       pay => pay.proyectoId === selectedProject.id
@@ -645,7 +626,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Por Impactar resueltos vinculados */}
                   {(() => {
                     const projectPorImpactar = (porImpactar || []).filter(
                       pay => pay.proyectoDestinoId === selectedProject.id && pay.estatus === 'resuelto'
@@ -691,7 +671,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Pagos a Terceros vinculados */}
                   {(() => {
                     const projectThirdPartyPayments = (thirdPartyPayments || []).filter(
                       pay => pay.proyectoId === selectedProject.id
@@ -745,7 +724,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Reparto de Utilidades */}
                   {(() => {
                     const projectDists = (profitDistributions || []).filter(
                       pd => pd.proyectoId === selectedProject.id
@@ -822,7 +800,6 @@ export default function ProyectosList({
                     );
                   })()}
 
-                  {/* Rentabilidad */}
                   {(() => {
                     const metrics = calculateProjectProfitability(
                       selectedProject,
