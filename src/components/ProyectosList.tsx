@@ -491,7 +491,7 @@ export default function ProyectosList({
                             ? 'Todas las facturas deben estar pagadas para cerrar el proyecto'
                             : 'Cerrar proyecto definitivamente'
                         }
-                        className="w-full flex items-center justify-center space-x-2 mt-2 bg-rocky-gray/80 hover:bg-rocky-gray dark:bg-rocky-gray/60 dark:hover:bg-rocky-gray/80 text-white py-2 px-4 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center space-x-2 mt-2 bg-rocky-gray/80 hover:bg-rocky-gray dark:bg-rocky-gray/60 dark:hover:bg-rocky-gray/80 text-[#070d0c] py-2 px-4 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Lock size={14} />
                         <span>Cerrar Proyecto</span>
