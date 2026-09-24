@@ -599,6 +599,7 @@ export default function App() {
   const handleConfirmDeleteInvoice = async (invoiceId: string, _distributionIdsToDelete?: string[]) => {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return;
+    if (isProjectClosed(inv.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); setIsDeleteInvoiceModalOpen(false); setInvoiceToDelete(null); return; }
     const projId = inv.proyectoId;
 
     const { error } = await supabase.from('facturas').delete().eq('id', invoiceId);
@@ -789,6 +790,8 @@ export default function App() {
   };
 
   const handleConfirmDeleteExpense = async (expenseId: string, revertPorImpactarId: string | null) => {
+    const expense = expenses.find(exp => exp.id === expenseId);
+    if (expense && isProjectClosed(expense.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); setIsDeleteExpenseModalOpen(false); setExpenseToDelete(null); setPorImpactarToRevert(null); return; }
     const { error } = await supabase
       .from('gastos')
       .delete()
@@ -1043,6 +1046,8 @@ export default function App() {
   };
 
   const handleConfirmDeleteProviderPayment = async (id: string) => {
+    const payment = providerPayments.find(p => p.id === id);
+    if (payment && isProjectClosed(payment.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); setIsDeleteProviderPaymentModalOpen(false); setProviderPaymentToDelete(null); return; }
     const { error } = await supabase
       .from('pagos_proveedores')
       .delete()
