@@ -15,6 +15,19 @@ export interface Project {
   ejecutivoId: 'San' | 'Ale';
   estadoFacturacion?: 'Sin facturar' | 'Facturado' | 'Pagado';
   fechaCreacion: string;
+  cerrado: boolean;
+  fechaCierre?: string | null;
+  gananciaAlCierre?: number | null;
+  yaRepartidoAntes?: number | null;
+}
+
+export interface RepartoCierre {
+  id: string;
+  proyectoId: string;
+  destino: string;
+  porcentaje: number;
+  monto: number;
+  creadoEn: string;
 }
 
 export interface Invoice {

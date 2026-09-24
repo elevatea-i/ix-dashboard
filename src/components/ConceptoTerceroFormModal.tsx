@@ -254,7 +254,7 @@ export default function ConceptoTerceroFormModal({
                 ) : (
                   <select value={proyectoId ?? ''} onChange={e => { setProyectoId(e.target.value || null); setDbError(null); }} className={inputCls}>
                     <option value="">Sin proyecto</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>[{p.codigo}] {p.nombre}</option>)}
+                    {projects.filter(p => !p.cerrado || p.id === initialData?.proyectoId).map(p => <option key={p.id} value={p.id}>[{p.codigo}] {p.nombre}</option>)}
                   </select>
                 )}
               </div>

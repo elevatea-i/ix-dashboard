@@ -1,6 +1,7 @@
 import {
   Client,
   Project,
+  RepartoCierre,
   Invoice,
   Expense,
   ProviderPayment,
@@ -50,6 +51,10 @@ export function projectFromDb(row: Record<string, any>): Project {
     ejecutivoId: row.ejecutivo_id,
     estadoFacturacion: row.estado_facturacion,
     fechaCreacion: row.fecha_creacion,
+    cerrado: row.cerrado ?? false,
+    fechaCierre: row.fecha_cierre ?? null,
+    gananciaAlCierre: row.ganancia_al_cierre != null ? Number(row.ganancia_al_cierre) : null,
+    yaRepartidoAntes: row.ya_repartido_antes != null ? Number(row.ya_repartido_antes) : null,
   };
 }
 
@@ -348,6 +353,20 @@ export function porImpactarToDb(obj: Partial<PorImpactar>): Record<string, any> 
 // ============================================================
 // IvaWithdrawal / retiros_iva
 // ============================================================
+// ============================================================
+// RepartoCierre / repartos_cierre (read-only)
+// ============================================================
+export function repartoCierreFromDb(row: Record<string, any>): RepartoCierre {
+  return {
+    id: row.id,
+    proyectoId: row.proyecto_id,
+    destino: row.destino,
+    porcentaje: Number(row.porcentaje),
+    monto: Number(row.monto),
+    creadoEn: row.creado_en,
+  };
+}
+
 export function ivaWithdrawalFromDb(row: Record<string, any>): IvaWithdrawal {
   return {
     id: row.id,

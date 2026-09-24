@@ -220,7 +220,7 @@ export default function PorImpactarResolverModal({
                 } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs`}
               >
                 <option value="">-- Seleccionar proyecto --</option>
-                {projects.map((proj) => (
+                {projects.filter(p => !p.cerrado).map((proj) => (
                   <option key={proj.id} value={proj.id}>
                     [{proj.codigo}] {proj.nombre}
                   </option>

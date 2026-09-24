@@ -36,11 +36,12 @@ import ReportesPanel from './components/ReportesPanel';
 import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
-import { Client, Project, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
+import CerrarProyectoModal from './components/CerrarProyectoModal';
+import { Client, Project, RepartoCierre, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb, repartoCierreFromDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -150,6 +151,15 @@ export default function App() {
 
   const [isDeleteIvaWithdrawalModalOpen, setIsDeleteIvaWithdrawalModalOpen] = useState(false);
   const [ivaWithdrawalToDelete, setIvaWithdrawalToDelete] = useState<IvaWithdrawal | null>(null);
+
+  const [repartosCierre, setRepartosCierre] = useState<RepartoCierre[]>([]);
+  const [isCerrarProyectoModalOpen, setIsCerrarProyectoModalOpen] = useState(false);
+  const [proyectoToCerrar, setProyectoToCerrar] = useState<Project | null>(null);
+
+  const isProjectClosed = (proyectoId: string | null | undefined): boolean => {
+    if (!proyectoId) return false;
+    return projects.find(p => p.id === proyectoId)?.cerrado === true;
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -287,6 +297,14 @@ export default function App() {
         showToast(error.message, 'error');
       } else if (data) {
         setSaldosTerceros(data.map(saldoTerceroFromDb));
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    supabase.from('repartos_cierre').select('*').then(({ data, error }) => {
+      if (!error && data) {
+        setRepartosCierre(data.map(repartoCierreFromDb));
       }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -573,7 +591,7 @@ export default function App() {
   const handleDeleteInvoice = (id: string) => {
     const inv = invoices.find(i => i.id === id);
     if (!inv) return;
-    
+    if (isProjectClosed(inv.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setInvoiceToDelete(inv);
     setIsDeleteInvoiceModalOpen(true);
   };
@@ -614,11 +632,13 @@ export default function App() {
   };
 
   const handleOpenEditInvoiceModal = (invoice: Invoice) => {
+    if (isProjectClosed(invoice.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setSelectedInvoice(invoice);
     setIsInvoiceModalOpen(true);
   };
 
   const handleOpenMarkAsPaidModal = (invoice: Invoice) => {
+    if (isProjectClosed(invoice.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setInvoiceToMarkAsPaid(invoice);
     setIsMarkAsPaidOpen(true);
   };
@@ -662,6 +682,7 @@ export default function App() {
   const handleRevertInvoiceToFacturada = async (invoiceId: string): Promise<boolean> => {
     const inv = invoices.find(i => i.id === invoiceId);
     if (!inv) return false;
+    if (isProjectClosed(inv.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return false; }
     const projId = inv.proyectoId;
 
     const { data: updated, error } = await supabase
@@ -757,6 +778,7 @@ export default function App() {
   const handleDeleteExpense = (id: string) => {
     const expense = expenses.find(exp => exp.id === id);
     if (!expense) return;
+    if (isProjectClosed(expense.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
 
     // Check if there is a linked Por Impactar record
     const linkedRecord = (porImpactar || []).find(rec => rec.gastoIdGenerado === id);
@@ -898,6 +920,7 @@ export default function App() {
       fecha: string;
     }
   ) => {
+    if (isProjectClosed(expenseData.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     const calculatedTotal = Number(
       (expenseData.subtotal + expenseData.iva - expenseData.isrRetenido - expenseData.ivaRetenido).toFixed(2)
     );
@@ -954,6 +977,7 @@ export default function App() {
   };
 
   const handleOpenEditExpenseModal = (expense: Expense) => {
+    if (isProjectClosed(expense.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setSelectedExpense(expense);
     setIsExpenseModalOpen(true);
   };
@@ -1013,6 +1037,7 @@ export default function App() {
   const handleDeleteProviderPayment = (id: string) => {
     const payment = providerPayments.find(p => p.id === id);
     if (!payment) return;
+    if (isProjectClosed(payment.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setProviderPaymentToDelete(payment);
     setIsDeleteProviderPaymentModalOpen(true);
   };
@@ -1034,10 +1059,12 @@ export default function App() {
 
   const handleOpenAddProviderPaymentModal = () => {
     setSelectedProviderPayment(null);
+
     setIsProviderPaymentModalOpen(true);
   };
 
   const handleOpenEditProviderPaymentModal = (payment: ProviderPayment) => {
+    if (isProjectClosed(payment.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
     setSelectedProviderPayment(payment);
     setIsProviderPaymentModalOpen(true);
   };
@@ -1097,6 +1124,13 @@ export default function App() {
   };
 
   const handleConfirmDeleteConcepto = async (id: string) => {
+    const concepto = thirdPartyPayments.find(p => p.id === id);
+    if (concepto && isProjectClosed(concepto.proyectoId)) {
+      showToast('Este proyecto est\u00e1 cerrado y no se puede modificar.', 'error');
+      setIsDeleteConceptoModalOpen(false);
+      setConceptoToDelete(null);
+      return;
+    }
     const { error } = await supabase.from('pagos_terceros').delete().eq('id', id);
     if (error) {
       showToast(error.message, 'error');
@@ -1259,9 +1293,11 @@ export default function App() {
             profitDistributions={profitDistributions}
             porImpactar={porImpactar}
             thirdPartyPayments={thirdPartyPayments}
+            repartosCierre={repartosCierre}
             onAddClick={handleOpenAddProjectModal}
             onEditClick={handleOpenEditProjectModal}
             onDeleteClick={handleDeleteProject}
+            onCerrarClick={(project) => { setProyectoToCerrar(project); setIsCerrarProyectoModalOpen(true); }}
           />
         );
       case 'facturacion':
@@ -1320,8 +1356,8 @@ export default function App() {
             projects={projects}
             loading={thirdPartyPaymentsLoading}
             onAddConcepto={() => { setSelectedConcepto(null); setIsConceptoModalOpen(true); }}
-            onEditConcepto={(c) => { setSelectedConcepto(c); setIsConceptoModalOpen(true); }}
-            onDeleteConcepto={(c) => { setConceptoToDelete(c); setIsDeleteConceptoModalOpen(true); }}
+            onEditConcepto={(c) => { if (isProjectClosed(c.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; } setSelectedConcepto(c); setIsConceptoModalOpen(true); }}
+            onDeleteConcepto={(c) => { if (isProjectClosed(c.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; } setConceptoToDelete(c); setIsDeleteConceptoModalOpen(true); }}
             onAddDeposito={() => { setSelectedDeposito(null); setIsDepositoModalOpen(true); }}
             onEditDeposito={(d) => { setSelectedDeposito(d); setIsDepositoModalOpen(true); }}
             onDeleteDeposito={(d) => { setDepositoToDelete(d); setIsDeleteDepositoModalOpen(true); }}
@@ -1622,6 +1658,24 @@ export default function App() {
         record={porImpactarToDelete}
         onConfirmDelete={handleConfirmDeletePorImpactar}
       />
+
+      {proyectoToCerrar && (
+        <CerrarProyectoModal
+          isOpen={isCerrarProyectoModalOpen}
+          onClose={() => { setIsCerrarProyectoModalOpen(false); setProyectoToCerrar(null); }}
+          project={proyectoToCerrar}
+          invoices={invoices}
+          onSuccess={async () => {
+            const { data: freshProj } = await supabase.from('proyectos').select('*').eq('id', proyectoToCerrar.id).single();
+            if (freshProj) setProjects(prev => prev.map(p => p.id === proyectoToCerrar.id ? projectFromDb(freshProj) : p));
+            const { data: freshDists } = await supabase.from('repartos_utilidad').select('*');
+            if (freshDists) setProfitDistributions(freshDists.map(profitDistributionFromDb));
+            const { data: freshCierre } = await supabase.from('repartos_cierre').select('*');
+            if (freshCierre) setRepartosCierre(freshCierre.map(repartoCierreFromDb));
+          }}
+          showToast={showToast}
+        />
+      )}
 
       <EliminarRetiroIVAModal
         isOpen={isDeleteIvaWithdrawalModalOpen}

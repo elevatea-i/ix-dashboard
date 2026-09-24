@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useIsDesktop } from '../hooks/useIsDesktop';
-import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound } from 'lucide-react';
-import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment } from '../types';
+import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound, Lock, Ban } from 'lucide-react';
+import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment, RepartoCierre } from '../types';
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
 import { generarReporteProyecto } from '../utils/reports';
@@ -16,9 +16,11 @@ interface ProyectosListProps {
   profitDistributions?: ProfitDistribution[];
   porImpactar?: PorImpactar[];
   thirdPartyPayments?: ThirdPartyPayment[];
+  repartosCierre?: RepartoCierre[];
   onAddClick: () => void;
   onEditClick: (project: Project) => void;
   onDeleteClick: (id: string) => void;
+  onCerrarClick?: (project: Project) => void;
 }
 
 /**
@@ -34,9 +36,11 @@ export default function ProyectosList({
   profitDistributions = [],
   porImpactar = [],
   thirdPartyPayments = [],
+  repartosCierre = [],
   onAddClick,
   onEditClick,
-  onDeleteClick
+  onDeleteClick,
+  onCerrarClick
 }: ProyectosListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -271,8 +275,16 @@ export default function ProyectosList({
                             }`}
                           >
                             <td className="px-6 py-4">
-                              <div className="font-mono text-sm font-semibold text-enchanted-green dark:text-light-ivory tracking-tight">
-                                {project.codigo}
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm font-semibold text-enchanted-green dark:text-light-ivory tracking-tight">
+                                  {project.codigo}
+                                </span>
+                                {project.cerrado && (
+                                  <span className="inline-flex items-center gap-1 bg-rocky-gray/15 dark:bg-white/10 text-rocky-gray dark:text-rose-linen/70 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                                    <Lock size={9} />
+                                    Cerrado
+                                  </span>
+                                )}
                               </div>
                               <div className="text-xs text-rocky-gray mt-0.5">
                                 {project.nombre}
@@ -334,20 +346,24 @@ export default function ProyectosList({
                                   >
                                     <Eye size={14} />
                                   </button>
-                                  <button
-                                    onClick={() => onEditClick(project)}
-                                    className="p-1.5 text-elevated-gold hover:text-elevated-gold/80 hover:bg-elevated-gold/10 rounded transition-all"
-                                    title="Editar"
-                                  >
-                                    <Edit size={14} />
-                                  </button>
-                                  <button
-                                    onClick={() => setDeleteConfirmId(project.id)}
-                                    className="p-1.5 text-cranberry/70 hover:text-cranberry hover:bg-cranberry/10 rounded transition-all"
-                                    title="Eliminar"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+                                  {!project.cerrado && (
+                                    <button
+                                      onClick={() => onEditClick(project)}
+                                      className="p-1.5 text-elevated-gold hover:text-elevated-gold/80 hover:bg-elevated-gold/10 rounded transition-all"
+                                      title="Editar"
+                                    >
+                                      <Edit size={14} />
+                                    </button>
+                                  )}
+                                  {!project.cerrado && (
+                                    <button
+                                      onClick={() => setDeleteConfirmId(project.id)}
+                                      className="p-1.5 text-cranberry/70 hover:text-cranberry hover:bg-cranberry/10 rounded transition-all"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  )}
                                 </div>
                               )}
                             </td>
@@ -380,11 +396,24 @@ export default function ProyectosList({
                 
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-[10px] text-elevated-gold uppercase tracking-wider font-bold">Ficha de Proyecto</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-elevated-gold uppercase tracking-wider font-bold">Ficha de Proyecto</span>
+                      {selectedProject.cerrado && (
+                        <span className="inline-flex items-center gap-1 bg-rocky-gray/15 dark:bg-white/10 text-rocky-gray dark:text-rose-linen/70 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
+                          <Lock size={9} />
+                          Cerrado
+                        </span>
+                      )}
+                    </div>
                     <h3 className="text-lg font-serif font-semibold text-enchanted-green dark:text-light-ivory mt-0.5">
                       {selectedProject.nombre}
                     </h3>
                     <p className="text-xs font-mono text-rocky-gray mt-1">{selectedProject.codigo}</p>
+                    {selectedProject.cerrado && selectedProject.fechaCierre && (
+                      <p className="text-[10px] text-rocky-gray/70 mt-0.5">
+                        Cerrado el {selectedProject.fechaCierre}
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={() => { setSelectedProject(null); setPanelTop(null); }}
@@ -448,6 +477,26 @@ export default function ProyectosList({
                       <FileSpreadsheet size={14} />
                       <span>Descargar Reporte Excel</span>
                     </button>
+                    {!selectedProject.cerrado && onCerrarClick && (
+                      <button
+                        onClick={() => {
+                          const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
+                          const hasUnpaid = projectInvoices.some(inv => inv.estado !== 'pagada');
+                          if (hasUnpaid) return;
+                          onCerrarClick(selectedProject);
+                        }}
+                        disabled={invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')}
+                        title={
+                          invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')
+                            ? 'Todas las facturas deben estar pagadas para cerrar el proyecto'
+                            : 'Cerrar proyecto definitivamente'
+                        }
+                        className="w-full flex items-center justify-center space-x-2 mt-2 bg-rocky-gray/80 hover:bg-rocky-gray dark:bg-rocky-gray/60 dark:hover:bg-rocky-gray/80 text-white py-2 px-4 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Lock size={14} />
+                        <span>Cerrar Proyecto</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -867,6 +916,68 @@ export default function ProyectosList({
                               </span>
                             )}
                           </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {selectedProject.cerrado && (() => {
+                    const projectRepartos = repartosCierre.filter(r => r.proyectoId === selectedProject.id);
+                    if (projectRepartos.length === 0 && !selectedProject.gananciaAlCierre) {
+                      return (
+                        <div className="bg-rocky-gray/5 dark:bg-white/5 rounded p-3.5 border border-rocky-gray/20 dark:border-white/10 relative overflow-hidden">
+                          <div className="flex items-start space-x-2.5">
+                            <Lock size={16} className="text-rocky-gray mt-0.5" />
+                            <div>
+                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Reparto de Cierre</p>
+                              <p className="text-[10px] text-rocky-gray mt-1">
+                                Proyecto cerrado sin reparto de utilidades pendientes.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="bg-white/50 dark:bg-black/20 rounded border border-rocky-gray/20 dark:border-white/10 p-3 space-y-2">
+                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
+                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
+                            <Lock size={14} className="text-rocky-gray" />
+                            <span>Reparto de Cierre</span>
+                          </p>
+                        </div>
+                        <div className="space-y-1 text-xs">
+                          {selectedProject.gananciaAlCierre != null && (
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-rocky-gray">Ganancia al cierre:</span>
+                              <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">
+                                {formatCurrency(selectedProject.gananciaAlCierre)}
+                              </span>
+                            </div>
+                          )}
+                          {selectedProject.yaRepartidoAntes != null && selectedProject.yaRepartidoAntes > 0 && (
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-rocky-gray">Ya repartido antes:</span>
+                              <span className="font-mono text-rocky-gray">
+                                {formatCurrency(selectedProject.yaRepartidoAntes)}
+                              </span>
+                            </div>
+                          )}
+                          {projectRepartos.length > 0 && (
+                            <>
+                              <div className="border-t border-rocky-gray/10 pt-1.5 mt-1.5">
+                                <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold mb-1">Distribucion al cierre</p>
+                              </div>
+                              {projectRepartos.map(r => (
+                                <div key={r.id} className="flex items-center justify-between py-0.5">
+                                  <span className="text-rocky-gray">{r.destino} ({r.porcentaje}%):</span>
+                                  <span className="font-mono font-semibold text-enchanted-green dark:text-light-ivory">
+                                    {formatCurrency(r.monto)}
+                                  </span>
+                                </div>
+                              ))}
+                            </>
+                          )}
                         </div>
                       </div>
                     );

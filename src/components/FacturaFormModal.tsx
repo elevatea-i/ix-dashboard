@@ -322,7 +322,7 @@ export default function FacturaFormModal({
                     onChange={(e) => setProyectoId(e.target.value)}
                     className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
                   >
-                    {projects.map((proj) => (
+                    {projects.filter(p => !p.cerrado || p.id === initialData?.proyectoId).map((proj) => (
                       <option key={proj.id} value={proj.id} className="bg-light-ivory dark:bg-[#051A14]">
                         [{proj.codigo}] {proj.nombre}
                       </option>

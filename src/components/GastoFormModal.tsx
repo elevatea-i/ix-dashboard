@@ -248,7 +248,7 @@ export default function GastoFormModal({
                         errors.proyectoId ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                       }`}
                     >
-                      {projects.map((p) => (
+                      {projects.filter(p => !p.cerrado || p.id === initialData?.proyectoId).map((p) => (
                         <option key={p.id} value={p.id} className="bg-light-ivory dark:bg-[#051A14]">
                           [{p.codigo}] {p.nombre}
                         </option>
