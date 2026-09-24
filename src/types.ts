@@ -144,6 +144,13 @@ export interface SaldoTercero {
   restante: number;
 }
 
+export interface ResumenRepartoDestino {
+  destino: string;
+  totalHistorico: number;
+  totalCierres: number;
+  totalCombinado: number;
+}
+
 export interface ProfitDistribution {
   id: string;
   proyectoId: string;

@@ -37,11 +37,11 @@ import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import CerrarProyectoModal from './components/CerrarProyectoModal';
-import { Client, Project, RepartoCierre, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
+import { Client, Project, RepartoCierre, ResumenRepartoDestino, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb, repartoCierreFromDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb, repartoCierreFromDb, resumenRepartoDestinoFromDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -153,6 +153,7 @@ export default function App() {
   const [ivaWithdrawalToDelete, setIvaWithdrawalToDelete] = useState<IvaWithdrawal | null>(null);
 
   const [repartosCierre, setRepartosCierre] = useState<RepartoCierre[]>([]);
+  const [resumenRepartos, setResumenRepartos] = useState<ResumenRepartoDestino[]>([]);
   const [isCerrarProyectoModalOpen, setIsCerrarProyectoModalOpen] = useState(false);
   const [proyectoToCerrar, setProyectoToCerrar] = useState<Project | null>(null);
 
@@ -305,6 +306,14 @@ export default function App() {
     supabase.from('repartos_cierre').select('*').then(({ data, error }) => {
       if (!error && data) {
         setRepartosCierre(data.map(repartoCierreFromDb));
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    supabase.from('resumen_repartos_por_destino').select('*').then(({ data, error }) => {
+      if (!error && data) {
+        setResumenRepartos(data.map(resumenRepartoDestinoFromDb));
       }
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1373,6 +1382,8 @@ export default function App() {
         return (
           <RepartoUtilidadesList
             distributions={profitDistributions}
+            repartosCierre={repartosCierre}
+            resumenRepartos={resumenRepartos}
             projects={projects}
             clients={clients}
           />
@@ -1677,6 +1688,8 @@ export default function App() {
             if (freshDists) setProfitDistributions(freshDists.map(profitDistributionFromDb));
             const { data: freshCierre } = await supabase.from('repartos_cierre').select('*');
             if (freshCierre) setRepartosCierre(freshCierre.map(repartoCierreFromDb));
+            const { data: freshResumen } = await supabase.from('resumen_repartos_por_destino').select('*');
+            if (freshResumen) setResumenRepartos(freshResumen.map(resumenRepartoDestinoFromDb));
           }}
           showToast={showToast}
         />

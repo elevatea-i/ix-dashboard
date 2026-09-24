@@ -2,6 +2,7 @@ import {
   Client,
   Project,
   RepartoCierre,
+  ResumenRepartoDestino,
   Invoice,
   Expense,
   ProviderPayment,
@@ -298,6 +299,18 @@ export function saldoTerceroFromDb(row: Record<string, any>): SaldoTercero {
     totalMontoDisponible: Number(row.total_monto_disponible),
     totalDepositado: Number(row.total_depositado),
     restante: Number(row.restante),
+  };
+}
+
+// ============================================================
+// ResumenRepartoDestino / resumen_repartos_por_destino (vista, solo lectura)
+// ============================================================
+export function resumenRepartoDestinoFromDb(row: Record<string, any>): ResumenRepartoDestino {
+  return {
+    destino: row.destino,
+    totalHistorico: Number(row.total_historico),
+    totalCierres: Number(row.total_cierres),
+    totalCombinado: Number(row.total_combinado),
   };
 }
 
