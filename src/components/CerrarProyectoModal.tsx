@@ -193,32 +193,32 @@ export default function CerrarProyectoModal({
           {!loadingResumen && resumen && step === 'resumen' && (
             <>
               {/* Summary cards */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
-                  <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">
+              <div className="grid grid-cols-3 gap-2 items-stretch">
+                <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
+                  <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">
                     Ganancia total
                   </p>
-                  <p className="text-lg font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                  <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
                     {formatCurrency(resumen.gananciaTotal)}
                   </p>
                 </div>
-                <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
-                  <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">
+                <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
+                  <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">
                     Ya repartido
                   </p>
-                  <p className="text-lg font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                  <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
                     {formatCurrency(resumen.yaRepartido)}
                   </p>
                 </div>
-                <div className={`rounded-lg p-3 border ${
+                <div className={`rounded-lg p-2.5 border flex flex-col min-w-0 ${
                   resumen.pendientePorRepartir > 0
                     ? 'bg-elevated-gold/10 border-elevated-gold/30'
                     : 'bg-cranberry/10 border-cranberry/20'
                 }`}>
-                  <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">
+                  <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">
                     Pendiente
                   </p>
-                  <p className={`text-lg font-mono font-bold mt-1 ${
+                  <p className={`text-sm font-mono font-bold mt-1 break-all leading-tight ${
                     resumen.pendientePorRepartir > 0
                       ? 'text-enchanted-green dark:text-light-ivory'
                       : 'text-cranberry'

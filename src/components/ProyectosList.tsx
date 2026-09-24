@@ -986,26 +986,26 @@ export default function ProyectosList({
                           <TrendingUp size={14} className="text-rocky-gray" />
                           <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Ganado vs. Repartido</p>
                         </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
-                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Ganancia hasta hoy</p>
-                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                        <div className="grid grid-cols-3 gap-2 items-stretch">
+                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
+                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Ganancia hasta hoy</p>
+                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
                               {formatCurrency(resumenVivo.gananciaTotal)}
                             </p>
                           </div>
-                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-3 border border-enchanted-green/10 dark:border-light-ivory/10">
-                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Ya repartido</p>
-                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
+                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Ya repartido</p>
+                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
                               {formatCurrency(resumenVivo.yaRepartido)}
                             </p>
                           </div>
-                          <div className={`rounded-lg p-3 border ${
+                          <div className={`rounded-lg p-2.5 border flex flex-col min-w-0 ${
                             resumenVivo.pendiente > 0
                               ? 'bg-elevated-gold/10 border-elevated-gold/30'
                               : 'bg-enchanted-green/5 border-enchanted-green/10 dark:bg-white/5 dark:border-light-ivory/10'
                           }`}>
-                            <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold">Pendiente</p>
-                            <p className="text-sm font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1">
+                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Pendiente</p>
+                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
                               {formatCurrency(resumenVivo.pendiente)}
                             </p>
                           </div>
