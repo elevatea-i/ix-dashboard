@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Invoice, Expense, ProviderPayment } from '../types';
+import { Invoice, Expense, ProviderPayment, PorImpactar } from '../types';
 import { calculateIvaMetrics, getMesesDisponibles, formatPeriodo } from '../utils/iva';
 import IvaMonthSelector from './IvaMonthSelector';
 import {
@@ -16,6 +16,7 @@ interface IvaPanelProps {
   invoices: Invoice[];
   expenses: Expense[];
   providerPayments: ProviderPayment[];
+  porImpactar: PorImpactar[];
 }
 
 function getMesCDMX(): string {
@@ -32,12 +33,13 @@ export default function IvaPanel({
   invoices = [],
   expenses = [],
   providerPayments = [],
+  porImpactar = [],
 }: IvaPanelProps) {
   const [vista, setVista] = useState<'global' | 'mensual'>('global');
 
   const mesesDisponibles = useMemo(
-    () => getMesesDisponibles(invoices, expenses, providerPayments),
-    [invoices, expenses, providerPayments]
+    () => getMesesDisponibles(invoices, expenses, providerPayments, porImpactar),
+    [invoices, expenses, providerPayments, porImpactar]
   );
 
   const mesCDMX = getMesCDMX();
@@ -49,14 +51,15 @@ export default function IvaPanel({
 
   const periodo = vista === 'mensual' ? periodoSeleccionado : undefined;
   const metrics = useMemo(
-    () => calculateIvaMetrics(invoices, expenses, providerPayments, periodo),
-    [invoices, expenses, providerPayments, periodo]
+    () => calculateIvaMetrics(invoices, expenses, providerPayments, periodo, porImpactar),
+    [invoices, expenses, providerPayments, periodo, porImpactar]
   );
 
   const hasNoActivity =
     invoices.length === 0 &&
     expenses.length === 0 &&
-    providerPayments.length === 0;
+    providerPayments.length === 0 &&
+    porImpactar.length === 0;
 
   const showSinFechaPago =
     vista === 'mensual' && metrics.sinFechaPago.registros > 0;
@@ -179,7 +182,7 @@ export default function IvaPanel({
                 IVA Acreditable Total
               </p>
               <div className="text-enchanted-green dark:text-light-ivory bg-enchanted-green/10 px-2 py-0.5 rounded text-[8px] font-semibold uppercase tracking-tight">
-                Pagos y Gastos
+                Pagos, Gastos y Por Impactar
               </div>
             </div>
             <p className="text-2xl font-mono font-bold text-[#0B3D2E] dark:text-[#EAE3D2] mt-2">
@@ -251,13 +254,13 @@ export default function IvaPanel({
             Origen de IVA "Acreditable"
           </h3>
           <p className="text-[11px] text-[#070d0c] dark:text-light-ivory mt-1">
-            Solo los gastos y pagos a proveedores ya pagados y con su factura (CFDI) suman al IVA acreditable.
+            Solo los gastos, pagos a proveedores y registros Por Impactar ya pagados y con factura (CFDI) suman al IVA acreditable.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Gastos */}
-          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex items-center justify-between">
+          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-rocky-gray uppercase tracking-wider block">
                 IVA Acreditable de Gastos
@@ -277,7 +280,7 @@ export default function IvaPanel({
           </div>
 
           {/* Proveedores */}
-          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex items-center justify-between">
+          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-rocky-gray uppercase tracking-wider block">
                 IVA Acreditable de Proveedores
@@ -296,8 +299,28 @@ export default function IvaPanel({
             </div>
           </div>
 
+          {/* Por Impactar */}
+          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-rocky-gray uppercase tracking-wider block">
+                IVA Acreditable de Por Impactar
+              </span>
+              <span className="text-xs text-rocky-gray/80 dark:text-light-ivory/60 block">
+                Pagados con factura, aún sin resolver
+              </span>
+            </div>
+            <div className="text-right">
+              <p className="text-base font-mono font-bold text-[#0B3D2E] dark:text-[#EAE3D2]">
+                {formatCurrency(metrics.ivaAcreditablePorImpactar)}
+              </p>
+              <span className="text-[9px] text-rocky-gray bg-rocky-gray/10 px-1.5 py-0.5 rounded font-medium">
+                Deducible
+              </span>
+            </div>
+          </div>
+
           {/* Retenciones de IVA de Clientes */}
-          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex items-center justify-between">
+          <div className="bg-enchanted-green/[0.02] dark:bg-white/[0.02] rounded-lg border border-enchanted-green/5 dark:border-white/5 p-4 flex flex-wrap items-center justify-between gap-2">
             <div className="space-y-1">
               <span className="text-[10px] font-bold text-rocky-gray uppercase tracking-wider block">
                 Retenciones de IVA de Clientes

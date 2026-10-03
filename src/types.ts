@@ -196,6 +196,11 @@ export interface PorImpactar {
   estatus: 'pendiente' | 'resuelto';
   proyectoDestinoId: string | null;
   gastoIdGenerado: string | null;
+  estatusPago: 'Pagado' | 'Pendiente';
+  fechaPago: string | null; // YYYY-MM-DD, required when estatusPago is 'Pagado'
+  tieneFactura: boolean;
+  fechaVencimiento: string | null; // YYYY-MM-DD
+  iva: number;
 }
 
 export interface Module {

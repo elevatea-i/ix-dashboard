@@ -25,6 +25,7 @@ interface PorImpactarResolverModalProps {
       tieneFactura: boolean;
       metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
       estatusPago: 'Pagado' | 'Pendiente';
+      fechaPago: string | null;
       fecha: string;
     }
   ) => void;
@@ -71,7 +72,8 @@ export default function PorImpactarResolverModal({
   const [esReembolsable, setEsReembolsable] = useState<boolean>(false);
   const [tieneFactura, setTieneFactura] = useState<boolean>(false);
   const [metodoPago, setMetodoPago] = useState<'Transferencia' | 'Tarjeta de Débito' | 'Efectivo'>('Transferencia');
-  const [estatusPago, setEstatusPago] = useState<'Pagado' | 'Pendiente'>('Pagado');
+  const [estatusPago, setEstatusPago] = useState<'Pagado' | 'Pendiente'>('Pendiente');
+  const [fechaPago, setFechaPago] = useState<string | null>(null);
   const [fecha, setFecha] = useState<string>('');
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -84,20 +86,27 @@ export default function PorImpactarResolverModal({
       setCategoriaId('Pago a proveedores');
       setConcepto(recordToResolve.descripcion);
       setSubtotal(recordToResolve.monto.toString());
-      const computedIva = Number((recordToResolve.monto * 0.16).toFixed(2));
-      setIva(computedIva.toString());
+      const recordIsPaid = recordToResolve.estatusPago === 'Pagado';
+      // Paid records keep their stored VAT so it stays in the month of payment
+      const initialIva = recordIsPaid || recordToResolve.iva > 0
+        ? recordToResolve.iva
+        : Number((recordToResolve.monto * 0.16).toFixed(2));
+      setIva(initialIva.toString());
       setIsrRetenido('0');
       setIvaRetenido('0');
       setCuentaOrigen(recordToResolve.socioResponsable);
       setEsReembolsable(false);
-      setTieneFactura(false);
+      setTieneFactura(recordToResolve.tieneFactura);
       setMetodoPago('Transferencia');
-      setEstatusPago('Pagado');
+      setEstatusPago(recordToResolve.estatusPago);
+      setFechaPago(recordIsPaid ? recordToResolve.fechaPago : null);
       setFecha(getMexicoCityDate());
     }
   }, [isOpen, recordToResolve, projects]);
 
   if (!isOpen || !recordToResolve) return null;
+
+  const isPagado = recordToResolve.estatusPago === 'Pagado';
 
   // Auto-calculate 16% IVA when the user clicks the helper button
   const handleAutoCalculateIva = () => {
@@ -141,6 +150,9 @@ export default function PorImpactarResolverModal({
     if (!fecha) {
       newErrors.fecha = 'La fecha es requerida';
     }
+    if (isPagado && !fechaPago) {
+      newErrors.fecha = 'El registro está Pagado pero no tiene fecha de pago; edítalo antes de resolver';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -151,15 +163,16 @@ export default function PorImpactarResolverModal({
       proyectoId,
       categoriaId,
       concepto: concepto.trim(),
-      subtotal: subVal,
-      iva: ivaVal,
+      subtotal: isPagado ? recordToResolve.monto : subVal,
+      iva: isPagado ? recordToResolve.iva : ivaVal,
       isrRetenido: isrRetVal,
       ivaRetenido: ivaRetVal,
       cuentaOrigen,
       esReembolsable,
-      tieneFactura,
+      tieneFactura: isPagado ? recordToResolve.tieneFactura : tieneFactura,
       metodoPago,
-      estatusPago,
+      estatusPago: isPagado ? 'Pagado' : 'Pendiente',
+      fechaPago: isPagado ? fechaPago : null,
       fecha
     });
   };
@@ -282,6 +295,11 @@ export default function PorImpactarResolverModal({
               <Calculator size={14} className="text-elevated-gold" />
               <span>Desglose Fiscal (MXN)</span>
             </h4>
+            {isPagado && (
+              <p className="text-[11px] font-semibold text-enchanted-green dark:text-light-ivory bg-elevated-gold/10 border border-elevated-gold/30 rounded px-3 py-2 mb-3">
+                Heredado del registro Por Impactar: el IVA se queda en el mes de su pago
+              </p>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Subtotal */}
               <div>
@@ -293,7 +311,8 @@ export default function PorImpactarResolverModal({
                   step="0.01"
                   value={subtotal}
                   onChange={(e) => setSubtotal(e.target.value)}
-                  className={`w-full bg-white dark:bg-[#0E1A16] border ${
+                  readOnly={isPagado}
+                  className={`w-full ${isPagado ? 'bg-rocky-gray/10 dark:bg-white/5 cursor-not-allowed' : 'bg-white dark:bg-[#0E1A16]'} border ${
                     errors.subtotal ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                   } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
@@ -305,21 +324,24 @@ export default function PorImpactarResolverModal({
                   <label className="block text-[10px] uppercase tracking-wider font-bold text-rocky-gray dark:text-rose-linen/80">
                     IVA *
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleAutoCalculateIva}
-                    className="text-[9px] text-elevated-gold hover:underline focus:outline-none"
-                    title="Calcular 16% IVA"
-                  >
-                    +16%
-                  </button>
+                  {!isPagado && (
+                    <button
+                      type="button"
+                      onClick={handleAutoCalculateIva}
+                      className="text-[9px] text-elevated-gold hover:underline focus:outline-none"
+                      title="Calcular 16% IVA"
+                    >
+                      +16%
+                    </button>
+                  )}
                 </div>
                 <input
                   type="number"
                   step="0.01"
                   value={iva}
                   onChange={(e) => setIva(e.target.value)}
-                  className={`w-full bg-white dark:bg-[#0E1A16] border ${
+                  readOnly={isPagado}
+                  className={`w-full ${isPagado ? 'bg-rocky-gray/10 dark:bg-white/5 cursor-not-allowed' : 'bg-white dark:bg-[#0E1A16]'} border ${
                     errors.iva ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
                   } text-xs rounded px-2.5 py-1.5 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs`}
                 />
@@ -403,16 +425,31 @@ export default function PorImpactarResolverModal({
               <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Estatus de Pago
               </label>
-              <select
+              <input
+                type="text"
                 value={estatusPago}
-                onChange={(e) => setEstatusPago(e.target.value as 'Pagado' | 'Pendiente')}
-                className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs"
-              >
-                <option value="Pagado">Pagado</option>
-                <option value="Pendiente">Pendiente</option>
-              </select>
+                readOnly
+                className="w-full bg-rocky-gray/10 dark:bg-white/5 cursor-not-allowed border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs"
+              />
+              <p className="text-[10px] text-rocky-gray dark:text-rose-linen/60 mt-1">
+                {isPagado ? 'Heredado del registro Por Impactar' : 'El gasto nace Pendiente; márcalo pagado después en Gastos'}
+              </p>
             </div>
           </div>
+
+          {isPagado && (
+            <div>
+              <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                Fecha de Pago (heredada)
+              </label>
+              <input
+                type="date"
+                value={fechaPago ?? ''}
+                readOnly
+                className="w-full md:w-1/3 bg-rocky-gray/10 dark:bg-white/5 cursor-not-allowed border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs [color-scheme:light] dark:[color-scheme:dark]"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
             {/* Fecha del Gasto */}
@@ -427,7 +464,7 @@ export default function PorImpactarResolverModal({
                   onChange={(e) => setFecha(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
                     errors.fecha ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
-                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs`}
+                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none shadow-xs [color-scheme:light] dark:[color-scheme:dark]`}
                 />
               </div>
               {errors.fecha && (
@@ -445,7 +482,8 @@ export default function PorImpactarResolverModal({
                 id="tieneFacturaResolve"
                 checked={tieneFactura}
                 onChange={(e) => setTieneFactura(e.target.checked)}
-                className="w-4 h-4 text-enchanted-green border-rocky-gray/40 rounded focus:ring-elevated-gold"
+                disabled={isPagado}
+                className="w-4 h-4 text-enchanted-green border-rocky-gray/40 rounded focus:ring-elevated-gold disabled:opacity-60 disabled:cursor-not-allowed"
               />
               <label htmlFor="tieneFacturaResolve" className="text-xs font-bold text-enchanted-green dark:text-light-ivory select-none">
                 ¿Tiene Factura CFDI?

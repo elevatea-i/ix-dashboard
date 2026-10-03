@@ -346,6 +346,11 @@ export function porImpactarFromDb(row: Record<string, any>): PorImpactar {
     estatus: row.estatus,
     proyectoDestinoId: row.proyecto_destino_id,
     gastoIdGenerado: row.gasto_id_generado,
+    estatusPago: row.estatus_pago,
+    fechaPago: row.fecha_pago,
+    tieneFactura: row.tiene_factura,
+    fechaVencimiento: row.fecha_vencimiento,
+    iva: Number(row.iva),
   };
 }
 
@@ -360,6 +365,11 @@ export function porImpactarToDb(obj: Partial<PorImpactar>): Record<string, any> 
   if (obj.estatus !== undefined) out.estatus = obj.estatus;
   if (obj.proyectoDestinoId !== undefined) out.proyecto_destino_id = obj.proyectoDestinoId;
   if (obj.gastoIdGenerado !== undefined) out.gasto_id_generado = obj.gastoIdGenerado;
+  if (obj.estatusPago !== undefined) out.estatus_pago = obj.estatusPago;
+  if (obj.fechaPago !== undefined) out.fecha_pago = obj.fechaPago === '' ? null : obj.fechaPago;
+  if (obj.tieneFactura !== undefined) out.tiene_factura = obj.tieneFactura;
+  if (obj.fechaVencimiento !== undefined) out.fecha_vencimiento = obj.fechaVencimiento === '' ? null : obj.fechaVencimiento;
+  if (obj.iva !== undefined) out.iva = obj.iva;
   return out;
 }
 

@@ -27,9 +27,10 @@ import EliminarDepositoTerceroModal from './components/EliminarDepositoTerceroMo
 import AgregarTerceroModal from './components/AgregarTerceroModal';
 import RepartoUtilidadesList from './components/RepartoUtilidadesList';
 import PorImpactarList from './components/PorImpactarList';
-import PorImpactarFormModal from './components/PorImpactarFormModal';
+import PorImpactarFormModal, { PorImpactarFormData } from './components/PorImpactarFormModal';
 import PorImpactarResolverModal from './components/PorImpactarResolverModal';
 import EliminarPorImpactarModal from './components/EliminarPorImpactarModal';
+import MarcarPagadoPorImpactarModal, { MarcarPagadoPorImpactarData } from './components/MarcarPagadoPorImpactarModal';
 import RentabilidadList from './components/RentabilidadList';
 import IvaPanel from './components/IvaPanel';
 import ReportesPanel from './components/ReportesPanel';
@@ -102,6 +103,8 @@ export default function App() {
   const [selectedPorImpactar, setSelectedPorImpactar] = useState<PorImpactar | null>(null);
   const [isPorImpactarResolverOpen, setIsPorImpactarResolverOpen] = useState(false);
   const [porImpactarToResolve, setPorImpactarToResolve] = useState<PorImpactar | null>(null);
+  const [isMarkPaidPorImpactarOpen, setIsMarkPaidPorImpactarOpen] = useState(false);
+  const [porImpactarToMarkPaid, setPorImpactarToMarkPaid] = useState<PorImpactar | null>(null);
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -830,13 +833,7 @@ export default function App() {
     setPorImpactarToRevert(null);
   };
 
-  const handleAddOrEditPorImpactarSubmit = async (formData: {
-    descripcion: string;
-    monto: number;
-    socioResponsable: 'San' | 'Ale' | 'Empresa';
-    proyectoOrigenId: string | null;
-    fecha: string;
-  }) => {
+  const handleAddOrEditPorImpactarSubmit = async (formData: PorImpactarFormData) => {
     if (selectedPorImpactar) {
       const updates = porImpactarToDb(formData);
       delete updates.id;
@@ -910,6 +907,63 @@ export default function App() {
     setIsPorImpactarResolverOpen(true);
   };
 
+  const handleOpenMarkPaidPorImpactarModal = (record: PorImpactar) => {
+    setPorImpactarToMarkPaid(record);
+    setIsMarkPaidPorImpactarOpen(true);
+  };
+
+  const handleMarkPaidPorImpactar = async (recordId: string, paidData: MarcarPagadoPorImpactarData) => {
+    const { data, error } = await supabase
+      .from('por_impactar')
+      .update({
+        estatus_pago: 'Pagado',
+        fecha_pago: paidData.fechaPago,
+        tiene_factura: paidData.tieneFactura,
+        iva: paidData.iva
+      })
+      .eq('id', recordId)
+      .eq('estatus', 'pendiente')
+      .select()
+      .maybeSingle();
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+    if (!data) {
+      showToast('El registro ya fue resuelto o no existe. Recarga la página.', 'error');
+      return;
+    }
+    const updated = porImpactarFromDb(data);
+    setPorImpactar(prev => prev.map(rec => rec.id === recordId ? updated : rec));
+    setIsMarkPaidPorImpactarOpen(false);
+    setPorImpactarToMarkPaid(null);
+    showToast('Pago a proveedor registrado');
+  };
+
+  const handleRevertPaidPorImpactar = async (recordId: string) => {
+    const { data, error } = await supabase
+      .from('por_impactar')
+      .update({
+        estatus_pago: 'Pendiente',
+        fecha_pago: null
+      })
+      .eq('id', recordId)
+      .eq('estatus', 'pendiente')
+      .select()
+      .maybeSingle();
+    if (error) {
+      showToast(error.message, 'error');
+      return;
+    }
+    if (!data) {
+      showToast('El registro ya fue resuelto o no existe. Recarga la página.', 'error');
+      return;
+    }
+    const updated = porImpactarFromDb(data);
+    setPorImpactar(prev => prev.map(rec => rec.id === recordId ? updated : rec));
+    showToast('Pago revertido a "Se le debe"');
+  };
+
   /**
    * Resolves a pending Por Impactar record by converting it to a real Expense
    * and updating the original record status to 'resuelto'.
@@ -929,17 +983,37 @@ export default function App() {
       tieneFactura: boolean;
       metodoPago: 'Transferencia' | 'Tarjeta de Débito' | 'Efectivo';
       estatusPago: 'Pagado' | 'Pendiente';
+      fechaPago: string | null;
       fecha: string;
     }
   ) => {
     if (isProjectClosed(expenseData.proyectoId)) { showToast('Este proyecto está cerrado y no se puede modificar.', 'error'); return; }
+    const record = porImpactar.find(rec => rec.id === recordId);
+    if (!record) {
+      showToast('El registro ya fue resuelto o no existe. Recarga la página.', 'error');
+      return;
+    }
+
+    // A paid record dictates the payment fields so its VAT stays in the month it was paid
+    const isPaid = record.estatusPago === 'Pagado';
+    const { fechaPago: formFechaPago, ...formFields } = expenseData;
+    const fechaPago = isPaid ? (record.fechaPago ?? formFechaPago) : null;
+    const subtotal = isPaid ? record.monto : expenseData.subtotal;
+    const iva = isPaid ? record.iva : expenseData.iva;
+    const tieneFactura = isPaid ? record.tieneFactura : expenseData.tieneFactura;
+
     const calculatedTotal = Number(
-      (expenseData.subtotal + expenseData.iva - expenseData.isrRetenido - expenseData.ivaRetenido).toFixed(2)
+      (subtotal + iva - expenseData.isrRetenido - expenseData.ivaRetenido).toFixed(2)
     );
 
     const insertData = expenseToDb({
       tipo: 'Proveedor por Proyecto',
-      ...expenseData,
+      ...formFields,
+      subtotal,
+      iva,
+      tieneFactura,
+      estatusPago: isPaid ? 'Pagado' : 'Pendiente',
+      ...(fechaPago ? { fechaPago } : {}),
       total: calculatedTotal,
     });
     delete insertData.id;
@@ -956,9 +1030,7 @@ export default function App() {
     }
 
     const newExpense = expenseFromDb(data);
-    setExpenses(prev => [newExpense, ...prev]);
 
-    // Update Por Impactar record in Supabase
     const { data: updatedRec, error: updateError } = await supabase
       .from('por_impactar')
       .update({
@@ -967,14 +1039,28 @@ export default function App() {
         gasto_id_generado: newExpense.id
       })
       .eq('id', recordId)
+      .eq('estatus', 'pendiente')
       .select()
-      .single();
+      .maybeSingle();
 
-    if (updateError) {
-      showToast(updateError.message, 'error');
+    if (updateError || !updatedRec) {
+      // Undo the expense so it is not left orphaned without its Por Impactar link
+      const { error: rollbackError } = await supabase
+        .from('gastos')
+        .delete()
+        .eq('id', newExpense.id);
+      if (rollbackError) {
+        showToast('Error al resolver: revisa Gastos Pagados, puede haber un gasto duplicado.', 'error');
+        return;
+      }
+      showToast(
+        updateError ? updateError.message : 'El registro ya fue resuelto o no existe. Recarga la página.',
+        'error'
+      );
       return;
     }
 
+    setExpenses(prev => [newExpense, ...prev]);
     const mappedRec = porImpactarFromDb(updatedRec);
     setPorImpactar(prev => prev.map(rec => rec.id === recordId ? mappedRec : rec));
 
@@ -1398,6 +1484,8 @@ export default function App() {
             onEditClick={handleOpenEditPorImpactarModal}
             onDeleteClick={handleDeletePorImpactar}
             onResolveClick={handleOpenResolvePorImpactarModal}
+            onMarkPaidClick={handleOpenMarkPaidPorImpactarModal}
+            onRevertPaidClick={handleRevertPaidPorImpactar}
           />
         );
       case 'rentabilidad':
@@ -1417,6 +1505,7 @@ export default function App() {
             invoices={invoices}
             expenses={expenses}
             providerPayments={providerPayments}
+            porImpactar={porImpactar}
           />
         );
       case 'reportes':
@@ -1436,6 +1525,7 @@ export default function App() {
             invoices={invoices}
             expenses={expenses}
             providerPayments={providerPayments}
+            porImpactar={porImpactar}
             ivaWithdrawals={ivaWithdrawals}
             loading={ivaWithdrawalsLoading}
             onAddWithdrawal={handleAddIvaWithdrawal}
@@ -1673,6 +1763,16 @@ export default function App() {
         }}
         record={porImpactarToDelete}
         onConfirmDelete={handleConfirmDeletePorImpactar}
+      />
+
+      <MarcarPagadoPorImpactarModal
+        isOpen={isMarkPaidPorImpactarOpen}
+        onClose={() => {
+          setIsMarkPaidPorImpactarOpen(false);
+          setPorImpactarToMarkPaid(null);
+        }}
+        record={porImpactarToMarkPaid}
+        onConfirm={handleMarkPaidPorImpactar}
       />
 
       {proyectoToCerrar && (

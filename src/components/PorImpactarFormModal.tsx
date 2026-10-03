@@ -2,17 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, AlertTriangle, Coins } from 'lucide-react';
 import { Project, PorImpactar } from '../types';
 import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput } from '../utils';
+import { formatPeriodo } from '../utils/iva';
+
+export interface PorImpactarFormData {
+  descripcion: string;
+  monto: number;
+  socioResponsable: 'San' | 'Ale' | 'Empresa';
+  proyectoOrigenId: string | null;
+  fecha: string;
+  estatusPago: 'Pagado' | 'Pendiente';
+  fechaPago: string | null;
+  tieneFactura: boolean;
+  fechaVencimiento: string | null;
+  iva: number;
+}
 
 interface PorImpactarFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: {
-    descripcion: string;
-    monto: number;
-    socioResponsable: 'San' | 'Ale' | 'Empresa';
-    proyectoOrigenId: string | null;
-    fecha: string;
-  }) => void;
+  onSubmit: (formData: PorImpactarFormData) => void;
   initialData: PorImpactar | null;
   projects: Project[];
 }
@@ -32,6 +40,11 @@ export default function PorImpactarFormModal({
   const [socioResponsable, setSocioResponsable] = useState<'San' | 'Ale' | 'Empresa'>('Empresa');
   const [proyectoOrigenId, setProyectoOrigenId] = useState<string>('general'); // 'general' represents null
   const [fecha, setFecha] = useState('');
+  const [estatusPago, setEstatusPago] = useState<'Pagado' | 'Pendiente'>('Pendiente');
+  const [fechaPago, setFechaPago] = useState('');
+  const [tieneFactura, setTieneFactura] = useState(false);
+  const [iva, setIva] = useState('');
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -44,12 +57,25 @@ export default function PorImpactarFormModal({
         setSocioResponsable(initialData.socioResponsable);
         setProyectoOrigenId(initialData.proyectoOrigenId || 'general');
         setFecha(initialData.fecha);
+        setEstatusPago(initialData.estatusPago);
+        setFechaPago(initialData.fechaPago || '');
+        setTieneFactura(initialData.tieneFactura);
+        const initialIva = initialData.iva > 0
+          ? initialData.iva
+          : Number((initialData.monto * 0.16).toFixed(2));
+        setIva(initialIva.toString());
+        setFechaVencimiento(initialData.fechaVencimiento || '');
       } else {
         setDescripcion('');
         setMonto('');
         setSocioResponsable('Empresa');
         setProyectoOrigenId('general');
         setFecha(getMexicoCityDate());
+        setEstatusPago('Pendiente');
+        setFechaPago('');
+        setTieneFactura(false);
+        setIva('');
+        setFechaVencimiento('');
       }
     }
   }, [isOpen, initialData]);
@@ -72,6 +98,13 @@ export default function PorImpactarFormModal({
     if (!fecha) {
       newErrors.fecha = 'La fecha es requerida';
     }
+    if (estatusPago === 'Pagado' && !fechaPago) {
+      newErrors.fechaPago = 'La fecha de pago es requerida cuando el registro está Pagado';
+    }
+    const parsedIva = parseFloat(iva);
+    if (tieneFactura && (isNaN(parsedIva) || parsedIva < 0)) {
+      newErrors.iva = 'El IVA debe ser un número igual o mayor a 0';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -83,9 +116,36 @@ export default function PorImpactarFormModal({
       monto: parsedMonto,
       socioResponsable,
       proyectoOrigenId: proyectoOrigenId === 'general' ? null : proyectoOrigenId,
-      fecha
+      fecha,
+      estatusPago,
+      fechaPago: estatusPago === 'Pagado' ? fechaPago : null,
+      tieneFactura,
+      fechaVencimiento: fechaVencimiento || null,
+      iva: tieneFactura ? Number(parsedIva.toFixed(2)) : 0
     });
   };
+
+  const handleAutoCalculateIva = () => {
+    const base = parseFloat(cleanMonto) || 0;
+    setIva(Number((base * 0.16).toFixed(2)).toString());
+  };
+
+  const handleToggleFactura = (checked: boolean) => {
+    setTieneFactura(checked);
+    if (checked && !iva) handleAutoCalculateIva();
+  };
+
+  // Warns when editing a record whose creditable IVA currently sits in a specific month
+  let ivaMonthWarning: string | null = null;
+  if (initialData && initialData.estatusPago === 'Pagado' && initialData.tieneFactura && initialData.fechaPago) {
+    const mesOriginal = formatPeriodo(initialData.fechaPago.slice(0, 7));
+    const sigueContando = estatusPago === 'Pagado' && tieneFactura;
+    if (!sigueContando) {
+      ivaMonthWarning = `Este cambio mueve el IVA acreditable del mes ${mesOriginal}: sale de ese mes y deja de contar.`;
+    } else if (fechaPago && fechaPago.slice(0, 7) !== initialData.fechaPago.slice(0, 7)) {
+      ivaMonthWarning = `Este cambio mueve el IVA acreditable del mes ${mesOriginal} al mes ${formatPeriodo(fechaPago.slice(0, 7))}.`;
+    }
+  }
 
   const parsedMontoForPreview = parseFloat(cleanMonto) || 0;
   const totalConIva = parsedMontoForPreview * 1.16;
@@ -193,7 +253,7 @@ export default function PorImpactarFormModal({
                   onChange={(e) => setFecha(e.target.value)}
                   className={`w-full bg-white dark:bg-[#0E1A16] border ${
                     errors.fecha ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
-                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs`}
+                  } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark]`}
                 />
               </div>
               {errors.fecha && (
@@ -240,6 +300,133 @@ export default function PorImpactarFormModal({
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Provider payment */}
+          <div className="bg-enchanted-green/5 dark:bg-white/5 p-4 rounded border border-enchanted-green/10 dark:border-white/5 space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-enchanted-green dark:text-light-ivory">
+              Pago a proveedor
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                  Estatus de Pago
+                </label>
+                <select
+                  value={estatusPago}
+                  onChange={(e) => setEstatusPago(e.target.value as 'Pagado' | 'Pendiente')}
+                  className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs"
+                >
+                  <option value="Pendiente">Se le debe (Pendiente)</option>
+                  <option value="Pagado">Pagado</option>
+                </select>
+              </div>
+
+              {estatusPago === 'Pagado' ? (
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Fecha de Pago <span className="text-cranberry font-bold">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaPago}
+                    onChange={(e) => setFechaPago(e.target.value)}
+                    className={`w-full bg-white dark:bg-[#0E1A16] border ${
+                      errors.fechaPago ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                    } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark]`}
+                  />
+                  {errors.fechaPago && (
+                    <p className="text-xs text-cranberry mt-1 flex items-center space-x-1">
+                      <AlertTriangle size={12} />
+                      <span>{errors.fechaPago}</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                    Vencimiento (opcional)
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaVencimiento}
+                    onChange={(e) => setFechaVencimiento(e.target.value)}
+                    className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark]"
+                  />
+                </div>
+              )}
+            </div>
+
+            {estatusPago === 'Pagado' && (
+              <div className="sm:w-1/2 sm:pr-2">
+                <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                  Vencimiento (opcional)
+                </label>
+                <input
+                  type="date"
+                  value={fechaVencimiento}
+                  onChange={(e) => setFechaVencimiento(e.target.value)}
+                  className="w-full bg-white dark:bg-[#0E1A16] border border-enchanted-green/40 dark:border-light-ivory/30 text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark]"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+              <div className="flex items-center space-x-3 sm:mt-7">
+                <input
+                  type="checkbox"
+                  id="tieneFacturaPorImpactar"
+                  checked={tieneFactura}
+                  onChange={(e) => handleToggleFactura(e.target.checked)}
+                  className="w-4 h-4 text-enchanted-green border-rocky-gray/40 rounded focus:ring-elevated-gold"
+                />
+                <label htmlFor="tieneFacturaPorImpactar" className="text-xs font-bold text-enchanted-green dark:text-light-ivory select-none">
+                  ¿Tiene factura?
+                </label>
+              </div>
+
+              {tieneFactura && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90">
+                      IVA <span className="text-cranberry font-bold">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAutoCalculateIva}
+                      className="text-[10px] font-semibold text-elevated-gold hover:underline focus:outline-none"
+                      title="Calcular 16% sobre el monto"
+                    >
+                      +16%
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={iva}
+                    onChange={(e) => setIva(e.target.value)}
+                    className={`w-full bg-white dark:bg-[#0E1A16] border ${
+                      errors.iva ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                    } text-sm rounded px-3 py-2 text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold transition-colors shadow-xs`}
+                  />
+                  {errors.iva && (
+                    <p className="text-xs text-cranberry mt-1 flex items-center space-x-1">
+                      <AlertTriangle size={12} />
+                      <span>{errors.iva}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {ivaMonthWarning && (
+              <div className="flex items-start space-x-2 p-3 rounded border border-cranberry/30 bg-cranberry/5">
+                <AlertTriangle size={14} className="text-cranberry shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-cranberry leading-relaxed">{ivaMonthWarning}</p>
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}

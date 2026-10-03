@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Search, CreditCard as Edit3, Trash2, TriangleAlert as AlertTriangle, Zap, ListFilter as Filter, Briefcase, CircleCheck as CheckCircle2, Hourglass, Coins, CircleUser as UserCircle } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, TriangleAlert as AlertTriangle, Zap, ListFilter as Filter, Briefcase, CircleCheck as CheckCircle2, Hourglass, Coins, CircleUser as UserCircle, Banknote, RotateCcw, Wallet } from 'lucide-react';
 import { Project, PorImpactar } from '../types';
-import { formatCurrency } from '../utils';
+import { formatCurrency, getDueDateIndicator } from '../utils';
+import { formatPeriodo } from '../utils/iva';
 
 interface PorImpactarListProps {
   records: PorImpactar[];
@@ -11,6 +12,8 @@ interface PorImpactarListProps {
   onEditClick: (record: PorImpactar) => void;
   onDeleteClick: (id: string) => void;
   onResolveClick: (record: PorImpactar) => void;
+  onMarkPaidClick: (record: PorImpactar) => void;
+  onRevertPaidClick: (id: string) => void;
 }
 
 /**
@@ -24,7 +27,9 @@ export default function PorImpactarList({
   onAddClick,
   onEditClick,
   onDeleteClick,
-  onResolveClick
+  onResolveClick,
+  onMarkPaidClick,
+  onRevertPaidClick
 }: PorImpactarListProps) {
   if (loading) {
     return (
@@ -39,6 +44,8 @@ export default function PorImpactarList({
   const [socioFilter, setSocioFilter] = useState<'all' | 'San' | 'Ale' | 'Empresa'>('all');
   const [projectFilter, setProjectFilter] = useState<string>('all'); // project ID or 'all' or 'none' (for Sin Proyecto)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'Pagado' | 'Pendiente'>('all');
+  const [revertConfirmId, setRevertConfirmId] = useState<string | null>(null);
 
   // KPI Calculations
   const totalPending = records
@@ -47,6 +54,10 @@ export default function PorImpactarList({
 
   const totalResolved = records
     .filter(r => r.estatus === 'resuelto')
+    .reduce((sum, r) => sum + r.monto, 0);
+
+  const totalPorPagar = records
+    .filter(r => r.estatus === 'pendiente' && r.estatusPago === 'Pendiente')
     .reduce((sum, r) => sum + r.monto, 0);
 
   // Filtered records
@@ -59,6 +70,9 @@ export default function PorImpactarList({
     
     // Socio filter
     const matchesSocio = socioFilter === 'all' || record.socioResponsable === socioFilter;
+
+    // Provider payment filter
+    const matchesPayment = paymentFilter === 'all' || record.estatusPago === paymentFilter;
     
     // Project filter
     let matchesProject = true;
@@ -70,7 +84,7 @@ export default function PorImpactarList({
       }
     }
 
-    return matchesSearch && matchesStatus && matchesSocio && matchesProject;
+    return matchesSearch && matchesStatus && matchesSocio && matchesPayment && matchesProject;
   });
 
   const handleDeleteTrigger = (id: string) => {
@@ -80,6 +94,11 @@ export default function PorImpactarList({
   const handleDeleteConfirm = (id: string) => {
     onDeleteClick(id);
     setDeleteConfirmId(null);
+  };
+
+  const handleRevertConfirm = (id: string) => {
+    onRevertPaidClick(id);
+    setRevertConfirmId(null);
   };
 
   const getProjectName = (projId: string | null) => {
@@ -112,7 +131,7 @@ export default function PorImpactarList({
       </div>
 
       {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* KPI 1: Pendiente */}
         <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm overflow-hidden">
           <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-cranberry"></div>
@@ -145,6 +164,24 @@ export default function PorImpactarList({
             </div>
             <div className="w-10 h-10 rounded-full bg-elevated-gold/10 text-elevated-gold flex items-center justify-center">
               <CheckCircle2 size={18} />
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Por pagar a proveedores */}
+        <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm overflow-hidden">
+          <div className="absolute top-0 bottom-0 left-0 w-[4px] bg-enchanted-green dark:bg-light-ivory/60"></div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] tracking-widest text-rocky-gray dark:text-rose-linen/60 uppercase font-semibold">
+                Por pagar a proveedores (sin IVA)
+              </p>
+              <h3 className="text-2xl md:text-3xl font-serif font-medium text-enchanted-green dark:text-light-ivory mt-1">
+                {formatCurrency(totalPorPagar)}
+              </h3>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-enchanted-green/10 dark:bg-white/10 text-enchanted-green dark:text-light-ivory flex items-center justify-center">
+              <Wallet size={18} />
             </div>
           </div>
         </div>
@@ -198,6 +235,20 @@ export default function PorImpactarList({
               </select>
             </div>
 
+            {/* Filter by provider payment */}
+            <div className="flex items-center space-x-1.5">
+              <Banknote size={12} className="text-elevated-gold" />
+              <select
+                value={paymentFilter}
+                onChange={(e) => setPaymentFilter(e.target.value as 'all' | 'Pagado' | 'Pendiente')}
+                className="bg-white dark:bg-[#051A14] border border-rocky-gray/40 dark:border-white/10 text-[11px] font-semibold rounded px-2.5 py-1 text-enchanted-green dark:text-light-ivory focus:outline-none"
+              >
+                <option value="all">Pago: Todos</option>
+                <option value="Pagado">Pagado</option>
+                <option value="Pendiente">Se le debe</option>
+              </select>
+            </div>
+
             {/* Filter by Proyecto */}
             <div className="flex items-center space-x-1.5">
               <Briefcase size={12} className="text-elevated-gold" />
@@ -248,12 +299,17 @@ export default function PorImpactarList({
                   <th className="py-4 px-4">Proyecto de Referencia</th>
                   <th className="py-4 px-4">Fecha</th>
                   <th className="py-4 px-4">Estatus</th>
+                  <th className="py-4 px-4">Pago a proveedor</th>
                   <th className="py-4 px-5 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-rocky-gray/10 dark:divide-white/5 text-xs text-enchanted-green dark:text-light-ivory">
                 {filteredRecords.map((record) => {
                   const isPending = record.estatus === 'pendiente';
+                  const isPaid = record.estatusPago === 'Pagado';
+                  const dueIndicator = isPending && !isPaid && record.fechaVencimiento
+                    ? getDueDateIndicator('Pendiente', record.fechaVencimiento)
+                    : null;
                   return (
                     <tr 
                       key={record.id} 
@@ -293,8 +349,84 @@ export default function PorImpactarList({
                           </span>
                         )}
                       </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-col items-start gap-1">
+                          {isPaid ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-enchanted-green/10 dark:bg-white/10 text-enchanted-green dark:text-light-ivory uppercase tracking-wider">
+                              Pagado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-cranberry/10 text-cranberry uppercase tracking-wider">
+                              Se le debe
+                            </span>
+                          )}
+                          {isPaid && record.fechaPago && (
+                            <span className="text-[10px] text-rocky-gray dark:text-rose-linen/60 whitespace-nowrap">
+                              {record.fechaPago}{record.tieneFactura ? ' • CFDI' : ''}
+                            </span>
+                          )}
+                          {dueIndicator && (
+                            dueIndicator.type === 'future' ? (
+                              <span className="text-[10px] text-rocky-gray dark:text-rose-linen/60 font-medium whitespace-nowrap">
+                                {dueIndicator.text}
+                              </span>
+                            ) : dueIndicator.type === 'today' ? (
+                              <span className="text-[10px] text-cranberry dark:text-rose-linen font-bold px-1.5 py-0.5 bg-cranberry/10 border border-cranberry/20 rounded whitespace-nowrap">
+                                {dueIndicator.text}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-white bg-cranberry font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+                                {dueIndicator.text}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </td>
                       <td className="py-4 px-5 text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          {/* Mark as paid to provider */}
+                          {isPending && !isPaid && (
+                            <button
+                              onClick={() => onMarkPaidClick(record)}
+                              className="p-1.5 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-white/10 rounded transition-all"
+                              title="Marcar pagado al proveedor"
+                            >
+                              <Banknote size={14} />
+                            </button>
+                          )}
+
+                          {/* Revert payment to pending */}
+                          {isPending && isPaid && (
+                            revertConfirmId === record.id ? (
+                              <div className="flex items-center space-x-1.5 bg-cranberry/10 p-1 rounded max-w-[260px]">
+                                <span className="text-[10px] font-bold text-cranberry px-1 text-left leading-tight">
+                                  {record.tieneFactura && record.fechaPago
+                                    ? `¿Revertir? Su IVA sale de ${formatPeriodo(record.fechaPago.slice(0, 7))}`
+                                    : '¿Revertir a "Se le debe"?'}
+                                </span>
+                                <button
+                                  onClick={() => handleRevertConfirm(record.id)}
+                                  className="text-xs font-bold text-cranberry hover:underline px-1"
+                                >
+                                  Sí
+                                </button>
+                                <button
+                                  onClick={() => setRevertConfirmId(null)}
+                                  className="text-xs font-semibold text-rocky-gray hover:underline px-1"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setRevertConfirmId(record.id)}
+                                className="p-1.5 text-rocky-gray hover:text-cranberry hover:bg-cranberry/10 rounded transition-all"
+                                title="Revertir a 'Se le debe'"
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                            )
+                          )}
                           {/* Resolve Action */}
                           {isPending && (
                             <button

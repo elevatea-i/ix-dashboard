@@ -2,6 +2,7 @@ import React from 'react';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
 import { PorImpactar } from '../types';
 import { formatCurrency } from '../utils';
+import { formatPeriodo } from '../utils/iva';
 
 interface EliminarPorImpactarModalProps {
   isOpen: boolean;
@@ -17,6 +18,10 @@ export default function EliminarPorImpactarModal({
   onConfirmDelete
 }: EliminarPorImpactarModalProps) {
   if (!isOpen || !record) return null;
+
+  const ivaMonth = record.estatus === 'pendiente' && record.estatusPago === 'Pagado' && record.tieneFactura && record.fechaPago
+    ? formatPeriodo(record.fechaPago.slice(0, 7))
+    : null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +62,11 @@ export default function EliminarPorImpactarModal({
                 <p className="text-xs text-[#082019] dark:text-light-ivory/95 leading-relaxed font-semibold">
                   ¿Eliminar este registro de Por Impactar? Esta acción es permanente y no se puede deshacer.
                 </p>
+                {ivaMonth && (
+                  <p className="text-xs text-cranberry leading-relaxed font-bold">
+                    Este registro tiene IVA acreditable en el mes de {ivaMonth}; al borrarlo, ese IVA sale de ese mes.
+                  </p>
+                )}
               </div>
             </div>
           </div>
