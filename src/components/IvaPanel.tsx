@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Invoice, Expense, ProviderPayment, PorImpactar } from '../types';
+import { Invoice, Expense, ProviderPayment, PorImpactar, AbonoProveedor } from '../types';
 import { calculateIvaMetrics, getMesesDisponibles, formatPeriodo } from '../utils/iva';
 import IvaMonthSelector from './IvaMonthSelector';
 import {
@@ -17,6 +17,7 @@ interface IvaPanelProps {
   expenses: Expense[];
   providerPayments: ProviderPayment[];
   porImpactar: PorImpactar[];
+  abonos: AbonoProveedor[];
 }
 
 function getMesCDMX(): string {
@@ -34,12 +35,13 @@ export default function IvaPanel({
   expenses = [],
   providerPayments = [],
   porImpactar = [],
+  abonos = [],
 }: IvaPanelProps) {
   const [vista, setVista] = useState<'global' | 'mensual'>('global');
 
   const mesesDisponibles = useMemo(
-    () => getMesesDisponibles(invoices, expenses, providerPayments, porImpactar),
-    [invoices, expenses, providerPayments, porImpactar]
+    () => getMesesDisponibles(invoices, expenses, providerPayments, porImpactar, abonos),
+    [invoices, expenses, providerPayments, porImpactar, abonos]
   );
 
   const mesCDMX = getMesCDMX();
@@ -51,8 +53,8 @@ export default function IvaPanel({
 
   const periodo = vista === 'mensual' ? periodoSeleccionado : undefined;
   const metrics = useMemo(
-    () => calculateIvaMetrics(invoices, expenses, providerPayments, periodo, porImpactar),
-    [invoices, expenses, providerPayments, periodo, porImpactar]
+    () => calculateIvaMetrics(invoices, expenses, providerPayments, periodo, porImpactar, abonos),
+    [invoices, expenses, providerPayments, periodo, porImpactar, abonos]
   );
 
   const hasNoActivity =

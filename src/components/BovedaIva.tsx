@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Invoice, Expense, ProviderPayment, IvaWithdrawal, PorImpactar } from '../types';
+import { Invoice, Expense, ProviderPayment, IvaWithdrawal, PorImpactar, AbonoProveedor } from '../types';
 import { calculateIvaMetrics } from '../utils/iva';
 import { formatCurrency, getMexicoCityDate } from '../utils';
 import { Vault, ArrowUpRight, TrendingDown, History, Plus, Trash2, TriangleAlert as AlertTriangle, Circle as HelpCircle, CircleCheck as CheckCircle2, Calendar, X } from 'lucide-react';
@@ -9,6 +9,7 @@ interface BovedaIvaProps {
   expenses: Expense[];
   providerPayments: ProviderPayment[];
   porImpactar: PorImpactar[];
+  abonos: AbonoProveedor[];
   ivaWithdrawals: IvaWithdrawal[];
   loading?: boolean;
   onAddWithdrawal: (withdrawal: { concepto: string; monto: number; fecha: string }) => void;
@@ -20,13 +21,14 @@ export default function BovedaIva({
   expenses,
   providerPayments,
   porImpactar,
+  abonos,
   ivaWithdrawals,
   loading,
   onAddWithdrawal,
   onDeleteWithdrawal
 }: BovedaIvaProps) {
   // 1. Calculate live IVA metrics
-  const metrics = calculateIvaMetrics(invoices, expenses, providerPayments, undefined, porImpactar);
+  const metrics = calculateIvaMetrics(invoices, expenses, providerPayments, undefined, porImpactar, abonos);
   
   // saldo_a_favor_actual = if esAPagar is true, it is 0. Otherwise, it is the result.
   const saldoAFavorActual = metrics.esAPagar ? 0 : metrics.montoResultante;

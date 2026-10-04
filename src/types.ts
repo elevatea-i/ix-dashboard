@@ -98,6 +98,20 @@ export interface ProviderPayment {
   fecha_vencimiento?: string; // YYYY-MM-DD (optional)
   metodoPago?: 'PUE' | 'PPD'; // undefined = "Sin especificar" (pagos históricos)
   complementoEmitido?: boolean; // Solo relevante si metodoPago === 'PPD'
+  conParcialidades: boolean;
+}
+
+export interface AbonoProveedor {
+  id: string;
+  pagoProveedorId: string;
+  proyectoId: string;
+  tipo: 'Anticipo' | 'Parcialidad' | 'Finiquito';
+  monto: number;
+  fechaPago: string; // YYYY-MM-DD
+  iva: number;
+  complementoEmitido: boolean;
+  nota: string | null;
+  creadoEn: string;
 }
 
 export interface ThirdPartyPayment {

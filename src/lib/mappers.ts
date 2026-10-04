@@ -6,6 +6,7 @@ import {
   Invoice,
   Expense,
   ProviderPayment,
+  AbonoProveedor,
   ThirdPartyPayment,
   Tercero,
   DepositoTercero,
@@ -181,9 +182,11 @@ export function providerPaymentFromDb(row: Record<string, any>): ProviderPayment
     fecha_vencimiento: row.fecha_vencimiento,
     metodoPago: row.metodo_pago,
     complementoEmitido: row.complemento_emitido,
+    conParcialidades: row.con_parcialidades === true,
   };
 }
 
+// con_parcialidades is intentionally never sent: it is only set at creation via RPC.
 export function providerPaymentToDb(obj: Partial<ProviderPayment>): Record<string, any> {
   const out: Record<string, any> = {};
   if (obj.id !== undefined) out.id = obj.id;
@@ -202,6 +205,41 @@ export function providerPaymentToDb(obj: Partial<ProviderPayment>): Record<strin
   if (obj.metodoPago !== undefined) out.metodo_pago = obj.metodoPago;
   if (obj.complementoEmitido !== undefined) out.complemento_emitido = obj.complementoEmitido;
   return out;
+}
+
+// ============================================================
+// AbonoProveedor / abonos_proveedores
+// ============================================================
+export function abonoFromDb(row: Record<string, any>): AbonoProveedor {
+  return {
+    id: row.id,
+    pagoProveedorId: row.pago_proveedor_id,
+    proyectoId: row.proyecto_id,
+    tipo: row.tipo,
+    monto: Number(row.monto),
+    fechaPago: row.fecha_pago,
+    iva: Number(row.iva),
+    complementoEmitido: row.complemento_emitido === true,
+    nota: row.nota ?? null,
+    creadoEn: row.creado_en,
+  };
+}
+
+// tipo, iva and proyecto_id are computed by the database.
+export function abonoToDb(obj: {
+  pagoProveedorId: string;
+  monto: number;
+  fechaPago: string;
+  complementoEmitido: boolean;
+  nota: string | null;
+}): Record<string, any> {
+  return {
+    pago_proveedor_id: obj.pagoProveedorId,
+    monto: obj.monto,
+    fecha_pago: obj.fechaPago,
+    complemento_emitido: obj.complementoEmitido,
+    nota: obj.nota,
+  };
 }
 
 // ============================================================

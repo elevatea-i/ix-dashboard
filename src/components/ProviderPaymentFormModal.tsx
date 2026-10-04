@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertTriangle, Calendar, Layers, CreditCard, Calculator } from 'lucide-react';
+import { X, AlertTriangle, Calendar, Layers, CreditCard, Calculator, Lock, SplitSquareHorizontal } from 'lucide-react';
 import { Project, ProviderPayment } from '../types';
 import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput } from '../utils';
 
@@ -21,9 +21,19 @@ interface ProviderPaymentFormModalProps {
     fecha_vencimiento?: string;
     metodoPago?: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
+    conParcialidades: boolean;
+    anticipo: AnticipoFormData | null;
   }) => void;
   initialData: ProviderPayment | null;
   projects: Project[];
+  abonosCount: number;
+}
+
+export interface AnticipoFormData {
+  monto: number;
+  fechaPago: string;
+  complementoEmitido: boolean;
+  nota: string | null;
 }
 
 /**
@@ -35,7 +45,8 @@ export default function ProviderPaymentFormModal({
   onClose,
   onSubmit,
   initialData,
-  projects
+  projects,
+  abonosCount
 }: ProviderPaymentFormModalProps) {
   const [proyectoId, setProyectoId] = useState<string>('');
   const [proveedor, setProveedor] = useState<string>('');
@@ -52,6 +63,12 @@ export default function ProviderPaymentFormModal({
   const [fecha_vencimiento, setFechaVencimiento] = useState<string>('');
   const [metodoPago, setMetodoPago] = useState<'PUE' | 'PPD' | ''>('PUE');
   const [complementoEmitido, setComplementoEmitido] = useState<boolean>(false);
+
+  const [conParcialidades, setConParcialidades] = useState<boolean>(false);
+  const [anticipoMonto, setAnticipoMonto] = useState<string>('');
+  const [anticipoFecha, setAnticipoFecha] = useState<string>('');
+  const [anticipoComplemento, setAnticipoComplemento] = useState<boolean>(false);
+  const [anticipoNota, setAnticipoNota] = useState<string>('');
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -72,6 +89,7 @@ export default function ProviderPaymentFormModal({
         setFechaVencimiento(initialData.fecha_vencimiento || '');
         setMetodoPago(initialData.metodoPago || '');
         setComplementoEmitido(initialData.complementoEmitido || false);
+        setConParcialidades(initialData.conParcialidades);
       } else {
         setProyectoId(projects.length > 0 ? projects[0].id : '');
         setProveedor('');
@@ -86,9 +104,23 @@ export default function ProviderPaymentFormModal({
         setFechaVencimiento('');
         setMetodoPago('PUE');
         setComplementoEmitido(false);
+        setConParcialidades(false);
       }
+      setAnticipoMonto('');
+      setAnticipoFecha(getMexicoCityDate());
+      setAnticipoComplemento(false);
+      setAnticipoNota('');
     }
   }, [isOpen, initialData, projects]);
+
+  const isParcialidadesEdit = !!initialData?.conParcialidades;
+  const isParcialidades = isParcialidadesEdit || (!initialData && conParcialidades);
+  const montosLocked = isParcialidadesEdit && abonosCount > 0;
+
+  const handleMetodoPagoChange = (value: 'PUE' | 'PPD' | '') => {
+    setMetodoPago(value);
+    if (value !== 'PPD') setConParcialidades(false);
+  };
 
   const handleSubtotalChange = (val: string) => {
     const formatted = formatLiveCurrency(val);
@@ -135,6 +167,26 @@ export default function ProviderPaymentFormModal({
       newErrors.metodoPago = 'Seleccione un método de pago';
     }
 
+    const totalRedondeado = Number(computedTotal.toFixed(2));
+    let anticipo: AnticipoFormData | null = null;
+    if (!initialData && conParcialidades && anticipoMonto.trim() !== '') {
+      const montoAnticipo = Number((parseFloat(parseCurrencyInput(anticipoMonto)) || 0).toFixed(2));
+      if (montoAnticipo <= 0) {
+        newErrors.anticipoMonto = 'El anticipo debe ser mayor a 0';
+      } else if (montoAnticipo > totalRedondeado) {
+        newErrors.anticipoMonto = 'El anticipo no puede superar el total del pago';
+      }
+      if (!anticipoFecha) {
+        newErrors.anticipoFecha = 'Indique la fecha de pago del anticipo';
+      }
+      anticipo = {
+        monto: montoAnticipo,
+        fechaPago: anticipoFecha,
+        complementoEmitido: anticipoComplemento,
+        nota: anticipoNota.trim() || null,
+      };
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -153,8 +205,10 @@ export default function ProviderPaymentFormModal({
       fecha,
       fechaPago,
       fecha_vencimiento: fecha_vencimiento || undefined,
-      metodoPago: metodoPago === '' ? undefined : metodoPago,
-      complementoEmitido: metodoPago === 'PPD' ? complementoEmitido : undefined,
+      metodoPago: isParcialidades ? 'PPD' : metodoPago === '' ? undefined : metodoPago,
+      complementoEmitido: metodoPago === 'PPD' && !isParcialidades ? complementoEmitido : undefined,
+      conParcialidades: isParcialidades,
+      anticipo,
     });
   };
 
@@ -172,6 +226,12 @@ export default function ProviderPaymentFormModal({
             <p className="text-xs text-rocky-gray dark:text-rose-linen/60 mt-0.5">
               Control fiscal granular de egresos directos a subcontratistas y proveedores por evento.
             </p>
+            {isParcialidadesEdit && (
+              <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold border border-elevated-gold/30">
+                <SplitSquareHorizontal size={11} />
+                Pago en parcialidades
+              </span>
+            )}
           </div>
           <button 
             onClick={onClose}
@@ -236,6 +296,13 @@ export default function ProviderPaymentFormModal({
               <span>Desglose de Impuestos y Totales</span>
             </h4>
 
+            {montosLocked && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-elevated-gold/10 border border-elevated-gold/30 rounded text-[11px] font-semibold text-[#8C7853] dark:text-elevated-gold">
+                <Lock size={13} className="shrink-0" />
+                <span>Este pago ya tiene abonos: sus montos no se pueden modificar</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
@@ -246,6 +313,7 @@ export default function ProviderPaymentFormModal({
                     type="text"
                     value={subtotal}
                     onChange={(e) => handleSubtotalChange(e.target.value)}
+                    disabled={montosLocked}
                     placeholder="$0.00"
                     className={`w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
                       errors.subtotal ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
@@ -269,6 +337,7 @@ export default function ProviderPaymentFormModal({
                     min="0"
                     value={iva}
                     onChange={(e) => setIva(e.target.value)}
+                    disabled={montosLocked}
                     placeholder="0.00"
                     className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
                       errors.iva ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
@@ -292,6 +361,7 @@ export default function ProviderPaymentFormModal({
                     min="0"
                     value={isrRetenido}
                     onChange={(e) => setIsrRetenido(e.target.value)}
+                    disabled={montosLocked}
                     placeholder="0.00"
                     className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
                       errors.isrRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
@@ -315,6 +385,7 @@ export default function ProviderPaymentFormModal({
                     min="0"
                     value={ivaRetenido}
                     onChange={(e) => setIvaRetenido(e.target.value)}
+                    disabled={montosLocked}
                     placeholder="0.00"
                     className={`w-full pl-6 pr-3 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs ${
                       errors.ivaRetenido ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
@@ -352,11 +423,13 @@ export default function ProviderPaymentFormModal({
                   type="checkbox"
                   checked={tieneFactura}
                   onChange={(e) => setTieneFactura(e.target.checked)}
-                  className="h-4 w-4 rounded border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green focus:ring-elevated-gold cursor-pointer"
+                  disabled={montosLocked}
+                  className="h-4 w-4 rounded border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green focus:ring-elevated-gold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
 
+            {!isParcialidades && (
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
                 Estatus de Pago <span className="text-cranberry font-bold">*</span>
@@ -370,6 +443,7 @@ export default function ProviderPaymentFormModal({
                 <option value="Pendiente" className="bg-white dark:bg-[#051A14]">Pendiente</option>
               </select>
             </div>
+            )}
 
             <div>
               <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
@@ -384,7 +458,7 @@ export default function ProviderPaymentFormModal({
               />
             </div>
 
-            {estatus === 'Pagado' && (
+            {!isParcialidades && estatus === 'Pagado' && (
               <div>
                 <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 flex items-center gap-1">
                   <Calendar size={13} className="text-[#8C7853] dark:text-elevated-gold" />
@@ -419,9 +493,10 @@ export default function ProviderPaymentFormModal({
                 Método de Pago {!initialData && <span className="text-cranberry font-bold">*</span>}
               </label>
               <select
-                value={metodoPago}
-                onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD' | '')}
-                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold shadow-xs"
+                value={isParcialidadesEdit ? 'PPD' : metodoPago}
+                onChange={(e) => handleMetodoPagoChange(e.target.value as 'PUE' | 'PPD' | '')}
+                disabled={isParcialidadesEdit}
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {initialData && (
                   <option value="" className="bg-light-ivory dark:bg-[#051A14]">Sin especificar</option>
@@ -433,9 +508,99 @@ export default function ProviderPaymentFormModal({
                 <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.metodoPago}</p>
               )}
             </div>
+
+            {!initialData && metodoPago === 'PPD' && (
+              <div>
+                <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+                  Modalidad
+                </label>
+                <label className="flex items-center justify-between p-2 bg-white dark:bg-black/10 rounded border border-enchanted-green/40 dark:border-light-ivory/30 h-10 shadow-xs cursor-pointer">
+                  <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory">Pago en parcialidades</span>
+                  <input
+                    type="checkbox"
+                    checked={conParcialidades}
+                    onChange={(e) => setConParcialidades(e.target.checked)}
+                    className="h-4 w-4 rounded border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green focus:ring-elevated-gold cursor-pointer"
+                  />
+                </label>
+              </div>
+            )}
           </div>
 
-          {metodoPago === 'PPD' && (
+          {!initialData && conParcialidades && (
+            <div className="p-4 rounded-lg border border-elevated-gold/30 bg-elevated-gold/5 space-y-4">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold">
+                  Anticipo (opcional)
+                </h4>
+                <p className="text-[10px] text-rocky-gray mt-0.5">
+                  El estatus y la fecha de pago los calcula el sistema a partir de los abonos.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                    Monto del anticipo
+                  </label>
+                  <input
+                    type="text"
+                    value={anticipoMonto}
+                    onChange={(e) => setAnticipoMonto(formatLiveCurrency(e.target.value))}
+                    placeholder="$0.00"
+                    className={`w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold transition-colors shadow-xs ${
+                      errors.anticipoMonto ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                    }`}
+                  />
+                  {errors.anticipoMonto && (
+                    <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.anticipoMonto}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                    Fecha de pago {anticipoMonto.trim() !== '' && <span className="text-cranberry font-bold">*</span>}
+                  </label>
+                  <input
+                    type="date"
+                    value={anticipoFecha}
+                    onChange={(e) => setAnticipoFecha(e.target.value)}
+                    className={`w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border rounded text-xs text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark] ${
+                      errors.anticipoFecha ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                    }`}
+                  />
+                  {errors.anticipoFecha && (
+                    <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.anticipoFecha}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                    Complemento emitido
+                  </label>
+                  <select
+                    value={anticipoComplemento ? 'si' : 'no'}
+                    onChange={(e) => setAnticipoComplemento(e.target.value === 'si')}
+                    className="w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs"
+                  >
+                    <option value="no" className="bg-white dark:bg-[#051A14]">No</option>
+                    <option value="si" className="bg-white dark:bg-[#051A14]">Sí</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                  Nota <span className="text-[10px] text-rocky-gray font-normal">(Opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={anticipoNota}
+                  onChange={(e) => setAnticipoNota(e.target.value)}
+                  placeholder="ej. Transferencia SPEI"
+                  className="w-full px-3.5 py-1.5 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold transition-colors shadow-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          {metodoPago === 'PPD' && !isParcialidades && (
             <div className="p-3 border border-elevated-gold/20 bg-elevated-gold/5 rounded flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Complemento de Pago Emitido</p>

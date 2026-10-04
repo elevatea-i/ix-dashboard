@@ -7,6 +7,7 @@ interface EliminarPagoProveedorModalProps {
   isOpen: boolean;
   onClose: () => void;
   payment: ProviderPayment | null;
+  abonosCount: number;
   onConfirmDelete: (paymentId: string) => void;
 }
 
@@ -14,6 +15,7 @@ export default function EliminarPagoProveedorModal({
   isOpen,
   onClose,
   payment,
+  abonosCount,
   onConfirmDelete
 }: EliminarPagoProveedorModalProps) {
   if (!isOpen || !payment) return null;
@@ -57,6 +59,11 @@ export default function EliminarPagoProveedorModal({
                 <p className="text-xs text-[#082019] dark:text-light-ivory/95 leading-relaxed font-semibold">
                   ¿Eliminar este pago a proveedor? Esta acción afectará el cálculo de Rentabilidad del proyecto vinculado. No se puede deshacer.
                 </p>
+                {payment.conParcialidades && abonosCount > 0 && (
+                  <p className="text-xs text-cranberry leading-relaxed font-bold">
+                    También se borrarán sus {abonosCount} abonos, y su IVA saldrá de los meses en que se pagaron.
+                  </p>
+                )}
               </div>
             </div>
           </div>

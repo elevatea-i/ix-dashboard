@@ -17,8 +17,9 @@ import GastosList from './components/GastosList';
 import GastoFormModal from './components/GastoFormModal';
 import EliminarGastoModal from './components/EliminarGastoModal';
 import ProviderPaymentsList from './components/ProviderPaymentsList';
-import ProviderPaymentFormModal from './components/ProviderPaymentFormModal';
+import ProviderPaymentFormModal, { AnticipoFormData } from './components/ProviderPaymentFormModal';
 import EliminarPagoProveedorModal from './components/EliminarPagoProveedorModal';
+import AbonosProveedorModal from './components/AbonosProveedorModal';
 import PagosTercerosModule from './components/PagosTercerosModule';
 import ConceptoTerceroFormModal from './components/ConceptoTerceroFormModal';
 import DepositoTerceroFormModal from './components/DepositoTerceroFormModal';
@@ -38,11 +39,11 @@ import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import CerrarProyectoModal from './components/CerrarProyectoModal';
-import { Client, Project, RepartoCierre, ResumenRepartoDestino, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
+import { Client, Project, RepartoCierre, ResumenRepartoDestino, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, AbonoProveedor, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
-import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb, repartoCierreFromDb, resumenRepartoDestinoFromDb } from './lib/mappers';
+import { clientFromDb, clientToDb, expenseFromDb, expenseToDb, invoiceFromDb, invoiceToDb, ivaWithdrawalFromDb, ivaWithdrawalToDb, porImpactarFromDb, porImpactarToDb, profitDistributionFromDb, projectFromDb, projectToDb, providerPaymentFromDb, providerPaymentToDb, abonoFromDb, abonoToDb, thirdPartyPaymentFromDb, thirdPartyPaymentToDb, terceroFromDb, terceroToDb, depositoTerceroFromDb, depositoTerceroToDb, saldoTerceroFromDb, repartoCierreFromDb, resumenRepartoDestinoFromDb } from './lib/mappers';
 
 export default function App() {
   const { showToast } = useToast();
@@ -68,6 +69,9 @@ export default function App() {
 
   const [providerPayments, setProviderPayments] = useState<ProviderPayment[]>([]);
   const [providerPaymentsLoading, setProviderPaymentsLoading] = useState(true);
+
+  const [abonos, setAbonos] = useState<AbonoProveedor[]>([]);
+  const [abonosLoading, setAbonosLoading] = useState(true);
 
   const [thirdPartyPayments, setThirdPartyPayments] = useState<ThirdPartyPayment[]>([]);
   const [thirdPartyPaymentsLoading, setThirdPartyPaymentsLoading] = useState(true);
@@ -129,6 +133,7 @@ export default function App() {
 
   const [isProviderPaymentModalOpen, setIsProviderPaymentModalOpen] = useState(false);
   const [selectedProviderPayment, setSelectedProviderPayment] = useState<ProviderPayment | null>(null);
+  const [abonosPagoId, setAbonosPagoId] = useState<string | null>(null);
 
   const [isConceptoModalOpen, setIsConceptoModalOpen] = useState(false);
   const [selectedConcepto, setSelectedConcepto] = useState<ThirdPartyPayment | null>(null);
@@ -203,6 +208,17 @@ export default function App() {
         setProviderPayments(data.map(providerPaymentFromDb));
       }
       setProviderPaymentsLoading(false);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    supabase.from('abonos_proveedores').select('*').order('fecha_pago', { ascending: true }).then(({ data, error }) => {
+      if (error) {
+        showToast(error.message, 'error');
+      } else if (data) {
+        setAbonos(data.map(abonoFromDb));
+      }
+      setAbonosLoading(false);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -518,6 +534,7 @@ export default function App() {
     }
 
     setProjects(prev => prev.filter(p => p.id !== id));
+    setAbonos(prev => prev.filter(a => a.proyectoId !== id));
 
     setIsDeleteProjectModalOpen(false);
     setProjectToDeleteId(null);
@@ -1095,10 +1112,29 @@ export default function App() {
     fecha_vencimiento?: string;
     metodoPago?: 'PUE' | 'PPD';
     complementoEmitido?: boolean;
+    conParcialidades: boolean;
+    anticipo: AnticipoFormData | null;
   }) => {
+    const { conParcialidades, anticipo, ...paymentData } = formData;
     if (selectedProviderPayment) {
-      const updates = providerPaymentToDb(formData);
+      const updates = providerPaymentToDb(paymentData);
       delete updates.id;
+      if (selectedProviderPayment.conParcialidades) {
+        // Status and payment date are derived by the database from the abonos.
+        delete updates.estatus;
+        delete updates.fecha_pago;
+        delete updates.complemento_emitido;
+        const tieneAbonos = abonos.some(a => a.pagoProveedorId === selectedProviderPayment.id);
+        if (tieneAbonos) {
+          // Amounts are frozen by the database once the payment has abonos.
+          delete updates.subtotal;
+          delete updates.iva;
+          delete updates.isr_retenido;
+          delete updates.iva_retenido;
+          delete updates.total;
+          delete updates.tiene_factura;
+        }
+      }
       const { data, error } = await supabase
         .from('pagos_proveedores')
         .update(updates)
@@ -1112,8 +1148,37 @@ export default function App() {
       const updated = providerPaymentFromDb(data);
       setProviderPayments(prev => prev.map(p => p.id === selectedProviderPayment.id ? updated : p));
       showToast('Cambios guardados');
+    } else if (conParcialidades) {
+      const { data, error } = await supabase.rpc('crear_pago_proveedor_parcialidades', {
+        p_proyecto_id: paymentData.proyectoId,
+        p_proveedor: paymentData.proveedor,
+        p_subtotal: paymentData.subtotal,
+        p_iva: paymentData.iva,
+        p_isr_retenido: paymentData.isrRetenido,
+        p_iva_retenido: paymentData.ivaRetenido,
+        p_tiene_factura: paymentData.tieneFactura,
+        p_fecha: paymentData.fecha,
+        p_fecha_vencimiento: paymentData.fecha_vencimiento || null,
+        p_anticipo_monto: anticipo ? anticipo.monto : null,
+        p_anticipo_fecha: anticipo ? anticipo.fechaPago : null,
+        p_anticipo_complemento: anticipo ? anticipo.complementoEmitido : false,
+        p_anticipo_nota: anticipo ? anticipo.nota : null,
+      });
+      if (error) {
+        showToast(error.message, 'error');
+        return;
+      }
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!row) {
+        showToast('La base de datos no devolvió el pago creado.', 'error');
+        return;
+      }
+      const newPayment = providerPaymentFromDb(row);
+      setProviderPayments(prev => [newPayment, ...prev]);
+      await refreshAbonosDePago(newPayment.id);
+      showToast('Guardado con éxito');
     } else {
-      const insertData = providerPaymentToDb(formData);
+      const insertData = providerPaymentToDb(paymentData);
       delete insertData.id;
       const { data, error } = await supabase
         .from('pagos_proveedores')
@@ -1152,9 +1217,83 @@ export default function App() {
       return;
     }
     setProviderPayments(prev => prev.filter(p => p.id !== id));
+    setAbonos(prev => prev.filter(a => a.pagoProveedorId !== id));
     setIsDeleteProviderPaymentModalOpen(false);
     setProviderPaymentToDelete(null);
     showToast('Eliminado con éxito');
+  };
+
+  const refreshAbonosDePago = async (pagoId: string): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from('abonos_proveedores')
+      .select('*')
+      .eq('pago_proveedor_id', pagoId)
+      .order('fecha_pago', { ascending: true });
+    if (error) return error.message;
+    const fresh = (data ?? []).map(abonoFromDb);
+    setAbonos(prev => [...prev.filter(a => a.pagoProveedorId !== pagoId), ...fresh]);
+    return null;
+  };
+
+  const refreshPagoYAbonos = async (pagoId: string): Promise<string | null> => {
+    const { data, error } = await supabase
+      .from('pagos_proveedores')
+      .select('*')
+      .eq('id', pagoId)
+      .maybeSingle();
+    if (error) return error.message;
+    if (data) {
+      const updated = providerPaymentFromDb(data);
+      setProviderPayments(prev => prev.map(p => p.id === pagoId ? updated : p));
+    }
+    return refreshAbonosDePago(pagoId);
+  };
+
+  const handleCreateAbono = async (
+    pagoId: string,
+    abonoData: { monto: number; fechaPago: string; complementoEmitido: boolean; nota: string | null }
+  ): Promise<{ success: boolean; error?: string }> => {
+    const payment = providerPayments.find(p => p.id === pagoId);
+    if (!payment) return { success: false, error: 'No se encontró el pago a proveedor.' };
+    if (isProjectClosed(payment.proyectoId)) return { success: false, error: 'Este proyecto está cerrado y no se puede modificar.' };
+    const { error } = await supabase
+      .from('abonos_proveedores')
+      .insert(abonoToDb({ pagoProveedorId: pagoId, ...abonoData }));
+    if (error) return { success: false, error: error.message };
+    const refreshError = await refreshPagoYAbonos(pagoId);
+    if (refreshError) return { success: false, error: refreshError };
+    showToast('Guardado con éxito');
+    return { success: true };
+  };
+
+  const handleDeleteAbono = async (abonoId: string): Promise<{ success: boolean; error?: string }> => {
+    const abono = abonos.find(a => a.id === abonoId);
+    if (!abono) return { success: false, error: 'No se encontró el abono.' };
+    if (isProjectClosed(abono.proyectoId)) return { success: false, error: 'Este proyecto está cerrado y no se puede modificar.' };
+    const { error } = await supabase
+      .from('abonos_proveedores')
+      .delete()
+      .eq('id', abonoId);
+    if (error) return { success: false, error: error.message };
+    const refreshError = await refreshPagoYAbonos(abono.pagoProveedorId);
+    if (refreshError) return { success: false, error: refreshError };
+    showToast('Eliminado con éxito');
+    return { success: true };
+  };
+
+  const handleToggleComplementoAbono = async (abonoId: string): Promise<{ success: boolean; error?: string }> => {
+    const abono = abonos.find(a => a.id === abonoId);
+    if (!abono) return { success: false, error: 'No se encontró el abono.' };
+    if (isProjectClosed(abono.proyectoId)) return { success: false, error: 'Este proyecto está cerrado y no se puede modificar.' };
+    const { error } = await supabase
+      .from('abonos_proveedores')
+      .update({ complemento_emitido: !abono.complementoEmitido })
+      .eq('id', abonoId);
+    if (error) return { success: false, error: error.message };
+    const refreshError = await refreshPagoYAbonos(abono.pagoProveedorId);
+    if (refreshError) return { success: false, error: refreshError };
+    showToast('Cambios guardados');
+    return { success: true };
   };
 
   const handleOpenAddProviderPaymentModal = () => {
@@ -1436,11 +1575,13 @@ export default function App() {
         return (
           <ProviderPaymentsList
             payments={providerPayments}
+            abonos={abonos}
             projects={projects}
-            loading={providerPaymentsLoading}
+            loading={providerPaymentsLoading || abonosLoading}
             onAddClick={handleOpenAddProviderPaymentModal}
             onEditClick={handleOpenEditProviderPaymentModal}
             onDeleteClick={handleDeleteProviderPayment}
+            onAbonosClick={(payment) => setAbonosPagoId(payment.id)}
           />
         );
       case 'pagos_terceros':
@@ -1506,6 +1647,7 @@ export default function App() {
             expenses={expenses}
             providerPayments={providerPayments}
             porImpactar={porImpactar}
+            abonos={abonos}
           />
         );
       case 'reportes':
@@ -1526,6 +1668,7 @@ export default function App() {
             expenses={expenses}
             providerPayments={providerPayments}
             porImpactar={porImpactar}
+            abonos={abonos}
             ivaWithdrawals={ivaWithdrawals}
             loading={ivaWithdrawalsLoading}
             onAddWithdrawal={handleAddIvaWithdrawal}
@@ -1681,6 +1824,19 @@ export default function App() {
         onSubmit={handleAddOrEditProviderPaymentSubmit}
         initialData={selectedProviderPayment}
         projects={projects}
+        abonosCount={selectedProviderPayment ? abonos.filter(a => a.pagoProveedorId === selectedProviderPayment.id).length : 0}
+      />
+
+      <AbonosProveedorModal
+        isOpen={abonosPagoId !== null}
+        onClose={() => setAbonosPagoId(null)}
+        payment={providerPayments.find(p => p.id === abonosPagoId) ?? null}
+        project={projects.find(p => p.id === providerPayments.find(pp => pp.id === abonosPagoId)?.proyectoId)}
+        abonos={abonos}
+        readOnly={isProjectClosed(providerPayments.find(p => p.id === abonosPagoId)?.proyectoId)}
+        onCreate={handleCreateAbono}
+        onDelete={handleDeleteAbono}
+        onToggleComplemento={handleToggleComplementoAbono}
       />
 
       <ConceptoTerceroFormModal
@@ -1737,6 +1893,7 @@ export default function App() {
           setProviderPaymentToDelete(null);
         }}
         payment={providerPaymentToDelete}
+        abonosCount={providerPaymentToDelete ? abonos.filter(a => a.pagoProveedorId === providerPaymentToDelete.id).length : 0}
         onConfirmDelete={handleConfirmDeleteProviderPayment}
       />
 

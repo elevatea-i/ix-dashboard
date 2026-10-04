@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { ProviderPayment, Project } from '../types';
-import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2 } from 'lucide-react';
+import { ProviderPayment, Project, AbonoProveedor } from '../types';
+import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins } from 'lucide-react';
 import { formatCurrency, getDueDateIndicator } from '../utils';
+import { getAbonosResumen, AbonosResumen } from '../utils/abonos';
 
 interface ProviderPaymentsListProps {
   payments: ProviderPayment[];
+  abonos: AbonoProveedor[];
   projects: Project[];
   loading?: boolean;
   onAddClick: () => void;
   onEditClick: (payment: ProviderPayment) => void;
   onDeleteClick: (id: string) => void;
+  onAbonosClick: (payment: ProviderPayment) => void;
 }
 
 /**
@@ -19,11 +22,13 @@ interface ProviderPaymentsListProps {
  */
 export default function ProviderPaymentsList({
   payments,
+  abonos,
   projects,
   loading = false,
   onAddClick,
   onEditClick,
-  onDeleteClick
+  onDeleteClick,
+  onAbonosClick
 }: ProviderPaymentsListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterProject, setFilterProject] = useState('all');
@@ -35,23 +40,66 @@ export default function ProviderPaymentsList({
     return proj ? `[${proj.codigo}] ${proj.nombre}` : 'Proyecto desconocido';
   };
 
-  // KPI Computations using "total" instead of "monto"
-  const totalPagado = payments
-    .filter(p => p.estatus === 'Pagado')
-    .reduce((sum, p) => sum + p.total, 0);
+  // Installment payments are measured by their abonos; normal payments keep using total + estatus.
+  const resumenes = new Map<string, AbonosResumen>(
+    payments.filter(p => p.conParcialidades).map(p => [p.id, getAbonosResumen(p, abonos)])
+  );
+  const normales = payments.filter(p => !p.conParcialidades);
+  const parciales = payments.filter(p => p.conParcialidades);
 
-  const totalPendiente = payments
-    .filter(p => p.estatus === 'Pendiente')
-    .reduce((sum, p) => sum + p.total, 0);
+  const isOverdue = (estatus: 'Pagado' | 'Pendiente', fechaVencimiento?: string) => {
+    if (estatus !== 'Pendiente' || !fechaVencimiento) return false;
+    const indicator = getDueDateIndicator(estatus, fechaVencimiento);
+    return !!indicator && indicator.type === 'past';
+  };
 
-  const overduePaymentsList = payments.filter(p => {
-    if (p.estatus !== 'Pendiente' || !p.fecha_vencimiento) return false;
-    const indicator = getDueDateIndicator(p.estatus, p.fecha_vencimiento);
-    return indicator && indicator.type === 'past';
+  const totalPagado =
+    normales.filter(p => p.estatus === 'Pagado').reduce((sum, p) => sum + p.total, 0) +
+    parciales.reduce((sum, p) => sum + (resumenes.get(p.id)?.pagado ?? 0), 0);
+
+  const totalPendiente =
+    normales.filter(p => p.estatus === 'Pendiente').reduce((sum, p) => sum + p.total, 0) +
+    parciales.reduce((sum, p) => sum + (resumenes.get(p.id)?.saldo ?? 0), 0);
+
+  const normalesVencidos = normales.filter(p => isOverdue(p.estatus, p.fecha_vencimiento));
+  const parcialesVencidos = parciales.filter(p => {
+    const saldo = resumenes.get(p.id)?.saldo ?? 0;
+    return saldo > 0 && isOverdue('Pendiente', p.fecha_vencimiento);
   });
 
-  const countVencidos = overduePaymentsList.length;
-  const totalVencidos = overduePaymentsList.reduce((sum, p) => sum + p.total, 0);
+  const countVencidos = normalesVencidos.length + parcialesVencidos.length;
+  const totalVencidos =
+    normalesVencidos.reduce((sum, p) => sum + p.total, 0) +
+    parcialesVencidos.reduce((sum, p) => sum + (resumenes.get(p.id)?.saldo ?? 0), 0);
+
+  const isPpdSinComplemento = (pay: ProviderPayment) => {
+    if (pay.conParcialidades) return (resumenes.get(pay.id)?.sinComplemento ?? 0) > 0;
+    return pay.metodoPago === 'PPD' && !pay.complementoEmitido;
+  };
+
+  const renderDueIndicator = (estatus: 'Pagado' | 'Pendiente', fechaVencimiento?: string) => {
+    const indicator = getDueDateIndicator(estatus, fechaVencimiento);
+    if (!indicator) return null;
+    if (indicator.type === 'future') {
+      return (
+        <span className="text-[10px] text-rocky-gray dark:text-rose-linen/60 font-medium whitespace-nowrap">
+          {indicator.text}
+        </span>
+      );
+    }
+    if (indicator.type === 'today') {
+      return (
+        <span className="text-[10px] text-cranberry dark:text-rose-linen font-bold px-1.5 py-0.5 bg-cranberry/10 border border-cranberry/20 rounded whitespace-nowrap">
+          {indicator.text}
+        </span>
+      );
+    }
+    return (
+      <span className="text-[10px] text-white bg-cranberry font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
+        {indicator.text}
+      </span>
+    );
+  };
 
   const handleResetFilters = () => {
     setSearchTerm('');
@@ -73,7 +121,7 @@ export default function ProviderPaymentsList({
     }
 
     if (filterPpdNoComplement) {
-      if (!(pay.metodoPago === 'PPD' && !pay.complementoEmitido)) return false;
+      if (!isPpdSinComplemento(pay)) return false;
     }
 
     return true;
@@ -84,7 +132,7 @@ export default function ProviderPaymentsList({
     if (!matchesSearch) return false;
     if (filterProject !== 'all' && pay.proyectoId !== filterProject) return false;
     if (filterEstatus !== 'all' && pay.estatus !== filterEstatus) return false;
-    return pay.metodoPago === 'PPD' && !pay.complementoEmitido;
+    return isPpdSinComplemento(pay);
   }).length;
 
   return (
@@ -282,7 +330,9 @@ export default function ProviderPaymentsList({
                 </tr>
               </thead>
               <tbody className="divide-y divide-enchanted-green/5 dark:divide-light-ivory/5">
-                {filteredPayments.map((pay) => (
+                {filteredPayments.map((pay) => {
+                  const resumen = resumenes.get(pay.id);
+                  return (
                   <tr 
                     key={pay.id} 
                     className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-all text-xs"
@@ -309,6 +359,11 @@ export default function ProviderPaymentsList({
                             <> | Ret: -{formatCurrency((pay.isrRetenido || 0) + (pay.ivaRetenido || 0))}</>
                           )}
                         </span>
+                        {resumen && (
+                          <span className="text-[10px] font-mono mt-0.5 text-[#8C7853] dark:text-elevated-gold font-semibold">
+                            Pagado {formatCurrency(resumen.pagado)} · Saldo {formatCurrency(resumen.saldo)}
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -346,7 +401,16 @@ export default function ProviderPaymentsList({
                             Sin especificar
                           </span>
                         )}
-                        {pay.metodoPago === 'PPD' && (
+                        {pay.metodoPago === 'PPD' && resumen && (
+                          <span className={`text-[9px] mt-1 px-1.5 py-0.5 rounded ${
+                            resumen.sinComplemento === 0
+                              ? 'bg-enchanted-green/10 text-enchanted-green dark:text-light-ivory'
+                              : 'bg-rose-linen/30 text-cranberry font-semibold'
+                          }`}>
+                            {resumen.sinComplemento === 0 ? 'Con Compl.' : `${resumen.sinComplemento} sin compl.`}
+                          </span>
+                        )}
+                        {pay.metodoPago === 'PPD' && !resumen && (
                           <span className={`text-[9px] mt-1 px-1.5 py-0.5 rounded ${
                             pay.complementoEmitido
                               ? 'bg-enchanted-green/10 text-enchanted-green dark:text-light-ivory'
@@ -359,7 +423,26 @@ export default function ProviderPaymentsList({
                     </td>
 
                     <td className="px-6 py-4">
-                      {pay.estatus === 'Pagado' ? (
+                      {resumen ? (
+                        resumen.saldo === 0 ? (
+                          <span className="bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
+                            Pagado
+                          </span>
+                        ) : (
+                          <div className="flex flex-col gap-1.5 items-start min-w-[96px]">
+                            <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">
+                              Parcial {Math.floor(resumen.porcentaje)} %
+                            </span>
+                            <div className="h-1 w-full bg-enchanted-green/10 dark:bg-white/10 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-elevated-gold rounded-full transition-all duration-500"
+                                style={{ width: `${resumen.porcentaje}%` }}
+                              />
+                            </div>
+                            {renderDueIndicator('Pendiente', pay.fecha_vencimiento)}
+                          </div>
+                        )
+                      ) : pay.estatus === 'Pagado' ? (
                         <span className="bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
                           Pagado
                         </span>
@@ -368,36 +451,22 @@ export default function ProviderPaymentsList({
                           <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
                             Pendiente
                           </span>
-                          {(() => {
-                            const indicator = getDueDateIndicator(pay.estatus, pay.fecha_vencimiento);
-                            if (!indicator) return null;
-                            
-                            if (indicator.type === 'future') {
-                              return (
-                                <span className="text-[10px] text-rocky-gray dark:text-rose-linen/60 font-medium whitespace-nowrap">
-                                  {indicator.text}
-                                </span>
-                              );
-                            } else if (indicator.type === 'today') {
-                              return (
-                                <span className="text-[10px] text-cranberry dark:text-rose-linen font-bold px-1.5 py-0.5 bg-cranberry/10 border border-cranberry/20 rounded whitespace-nowrap">
-                                  {indicator.text}
-                                </span>
-                              );
-                            } else {
-                              return (
-                                <span className="text-[10px] text-white bg-cranberry font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap">
-                                  {indicator.text}
-                                </span>
-                              );
-                            }
-                          })()}
+                          {renderDueIndicator(pay.estatus, pay.fecha_vencimiento)}
                         </div>
                       )}
                     </td>
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
+                        {resumen && (
+                          <button
+                            title="Abonos"
+                            onClick={() => onAbonosClick(pay)}
+                            className="p-1.5 text-[#8C7853] dark:text-elevated-gold hover:bg-elevated-gold/10 rounded transition-all"
+                          >
+                            <HandCoins size={14} />
+                          </button>
+                        )}
                         {/* Edit */}
                         <button
                           title="Editar pago"
@@ -417,7 +486,8 @@ export default function ProviderPaymentsList({
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

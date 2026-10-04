@@ -1,4 +1,4 @@
-import { Invoice, Expense, ProviderPayment, PorImpactar } from '../types';
+import { Invoice, Expense, ProviderPayment, PorImpactar, AbonoProveedor } from '../types';
 
 /**
  * IVA metrics calculated from invoices, expenses, and provider payments.
@@ -46,6 +46,9 @@ export interface IvaMetrics {
  * - IVA Trasladado: invoices with tieneFactura === true AND estado === 'pagada'.
  * - IVA Acreditable Gastos: expenses with tieneFactura === true AND estatusPago === 'Pagado'.
  * - IVA Acreditable Proveedores: payments with tieneFactura === true AND estatus === 'Pagado'.
+ *   Installment payments (conParcialidades) are excluded; instead each of their installments
+ *   counts its own iva in the month of its fechaPago, only if the parent payment exists and
+ *   has tieneFactura === true.
  * - IVA Acreditable Por Impactar: records with estatus === 'pendiente' AND estatusPago === 'Pagado'
  *   AND tieneFactura === true. Resolved records are excluded because their generated expense counts.
  *
@@ -56,6 +59,7 @@ export interface IvaMetrics {
  * @param providerPayments List of all provider payments.
  * @param periodo       Optional. Format 'YYYY-MM'. Filters by fechaPago month.
  * @param porImpactarRecords List of all Por Impactar records.
+ * @param abonos        List of all provider payment installments.
  * @returns Complete IVA metrics.
  */
 export function calculateIvaMetrics(
@@ -63,7 +67,8 @@ export function calculateIvaMetrics(
   expenses: Expense[] = [],
   providerPayments: ProviderPayment[] = [],
   periodo?: string,
-  porImpactarRecords: PorImpactar[] = []
+  porImpactarRecords: PorImpactar[] = [],
+  abonos: AbonoProveedor[] = []
 ): IvaMetrics {
   // --- Base inclusion filters (without date) ---
   const facturasBase = invoices.filter(
@@ -73,9 +78,10 @@ export function calculateIvaMetrics(
     exp => exp.tieneFactura === true && exp.estatusPago === 'Pagado'
   );
   const proveedoresBase = providerPayments.filter(
-    pay => pay.tieneFactura === true && pay.estatus === 'Pagado'
+    pay => !pay.conParcialidades && pay.tieneFactura === true && pay.estatus === 'Pagado'
   );
   const porImpactarBase = porImpactarRecords.filter(isPorImpactarAcreditable);
+  const abonosBase = getAbonosAcreditables(providerPayments, abonos);
 
   // --- sinFechaPago: always calculated, regardless of periodo ---
   const facturasSinFecha = facturasBase.filter(inv => !inv.fechaPago);
@@ -104,11 +110,14 @@ export function calculateIvaMetrics(
   const gastosFiltrados = gastosBase.filter(exp => matchPeriodo(exp.fechaPago));
   const proveedoresFiltrados = proveedoresBase.filter(pay => matchPeriodo(pay.fechaPago));
   const porImpactarFiltrados = porImpactarBase.filter(rec => matchPeriodo(rec.fechaPago));
+  const abonosFiltrados = abonosBase.filter(ab => matchPeriodo(ab.fechaPago));
 
   // --- Sums ---
   const ivaTrasladado = facturasFiltradas.reduce((s, inv) => s + (inv.iva || 0), 0);
   const ivaAcreditableGastos = gastosFiltrados.reduce((s, exp) => s + (exp.iva || 0), 0);
-  const ivaAcreditableProveedores = proveedoresFiltrados.reduce((s, pay) => s + (pay.iva || 0), 0);
+  const ivaAcreditableProveedores =
+    proveedoresFiltrados.reduce((s, pay) => s + (pay.iva || 0), 0) +
+    abonosFiltrados.reduce((s, ab) => s + (ab.iva || 0), 0);
   const ivaAcreditablePorImpactar = porImpactarFiltrados.reduce((s, rec) => s + (rec.iva || 0), 0);
   const ivaAcreditableTotal = ivaAcreditableGastos + ivaAcreditableProveedores + ivaAcreditablePorImpactar;
   const retencionesClientes = facturasFiltradas.reduce((s, inv) => s + (inv.retencionIva || 0), 0);
@@ -133,6 +142,19 @@ export function calculateIvaMetrics(
 
 function isPorImpactarAcreditable(rec: PorImpactar): boolean {
   return rec.estatus === 'pendiente' && rec.estatusPago === 'Pagado' && rec.tieneFactura === true;
+}
+
+function getAbonosAcreditables(
+  providerPayments: ProviderPayment[],
+  abonos: AbonoProveedor[]
+): AbonoProveedor[] {
+  if (abonos.length === 0) return [];
+  const facturados = new Set(
+    providerPayments
+      .filter(pay => pay.conParcialidades && pay.tieneFactura === true)
+      .map(pay => pay.id)
+  );
+  return abonos.filter(ab => facturados.has(ab.pagoProveedorId));
 }
 
 const MESES = [
@@ -162,13 +184,15 @@ export function formatPeriodo(periodo: string): string {
  * @param expenses      List of all expenses.
  * @param providerPayments List of all provider payments.
  * @param porImpactarRecords List of all Por Impactar records.
+ * @param abonos        List of all provider payment installments.
  * @returns Array of 'YYYY-MM' strings sorted descending.
  */
 export function getMesesDisponibles(
   invoices: Invoice[] = [],
   expenses: Expense[] = [],
   providerPayments: ProviderPayment[] = [],
-  porImpactarRecords: PorImpactar[] = []
+  porImpactarRecords: PorImpactar[] = [],
+  abonos: AbonoProveedor[] = []
 ): string[] {
   const meses = new Set<string>();
 
@@ -183,13 +207,18 @@ export function getMesesDisponibles(
     }
   }
   for (const pay of providerPayments) {
-    if (pay.tieneFactura === true && pay.estatus === 'Pagado' && pay.fechaPago) {
+    if (!pay.conParcialidades && pay.tieneFactura === true && pay.estatus === 'Pagado' && pay.fechaPago) {
       meses.add(pay.fechaPago.slice(0, 7));
     }
   }
   for (const rec of porImpactarRecords) {
     if (isPorImpactarAcreditable(rec) && rec.fechaPago) {
       meses.add(rec.fechaPago.slice(0, 7));
+    }
+  }
+  for (const ab of getAbonosAcreditables(providerPayments, abonos)) {
+    if (ab.fechaPago) {
+      meses.add(ab.fechaPago.slice(0, 7));
     }
   }
 
