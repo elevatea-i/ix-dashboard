@@ -66,6 +66,12 @@ export default function IvaPanel({
   const showSinFechaPago =
     vista === 'mensual' && metrics.sinFechaPago.registros > 0;
 
+  const enEspera = metrics.enEsperaComplemento;
+  const montosEnEspera = [
+    enEspera.ivaTrasladado > 0 ? `${formatCurrency(enEspera.ivaTrasladado)} de IVA trasladado` : null,
+    enEspera.ivaAcreditable > 0 ? `${formatCurrency(enEspera.ivaAcreditable)} de IVA acreditable` : null,
+  ].filter(Boolean).join(' y ');
+
   return (
     <div id="iva-panel-container" className="space-y-6 animate-fade-in">
       {/* Encabezado + Interruptor */}
@@ -126,6 +132,18 @@ export default function IvaPanel({
             Hay <strong>{metrics.sinFechaPago.registros}</strong> registros pagados sin fecha de pago capturada.
             Su IVA (<strong>{formatCurrency(metrics.sinFechaPago.iva)}</strong>) cuenta en la vista global,
             pero no aparece en ningun mes.
+          </p>
+        </div>
+      )}
+
+      {/* Aviso de registros PPD sin complemento de pago (vista global y mensual) */}
+      {enEspera.registros > 0 && (
+        <div className="bg-cranberry/5 border border-cranberry/20 rounded-lg p-4 flex items-start gap-3">
+          <TriangleAlert size={16} className="text-cranberry mt-0.5 shrink-0" />
+          <p className="text-[11px] text-cranberry font-medium leading-relaxed">
+            Hay <strong>{enEspera.registros}</strong> registros PPD sin complemento de pago
+            {montosEnEspera ? <>: <strong>{montosEnEspera}</strong> en espera</> : null}.
+            No cuentan hasta marcar su complemento.
           </p>
         </div>
       )}
@@ -353,9 +371,10 @@ export default function IvaPanel({
               Lineamiento Fiscal (SAT)
             </h4>
             <p className="text-[11px] text-[#051a14] dark:text-light-ivory leading-relaxed">
-              El IVA se calcula con base en flujo de efectivo: Solo se consideran facturas efectivamente
+              El IVA se calcula con base en flujo de efectivo: solo se consideran facturas efectivamente
               cobradas, gastos efectivamente pagados y pagos a proveedores efectivamente liquidados,
-              todos con su CFDI registrado.
+              todos con su CFDI registrado. Las operaciones PPD solo cuentan cuando tienen su
+              complemento de pago, en el mes de su fecha de pago.
             </p>
           </div>
         </div>

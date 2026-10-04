@@ -265,6 +265,11 @@ export default function AbonosProveedorModal({
                                   </span>
                                   <span className="text-[10px] font-bold">{abono.complementoEmitido ? 'Sí' : 'No'}</span>
                                 </button>
+                                {payment?.tieneFactura && !abono.complementoEmitido && (
+                                  <p className="mt-1 text-[9px] leading-snug text-rocky-gray dark:text-light-ivory/70 max-w-[140px]">
+                                    Su IVA cuenta hasta marcar el complemento.
+                                  </p>
+                                )}
                               </td>
                               <td className="px-3 py-2 max-w-[160px] truncate text-rocky-gray dark:text-light-ivory/70" title={abono.nota ?? ''}>
                                 {abono.nota || '—'}
