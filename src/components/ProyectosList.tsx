@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useIsDesktop } from '../hooks/useIsDesktop';
-import { FolderGit2, Search, Plus, Pencil as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound, Lock, Ban } from 'lucide-react';
+import { FolderGit2, Plus, Pencil as Edit, Trash2, Eye, X, FileSpreadsheet, Receipt, FileCheck, Zap, UsersRound, Lock, TrendingUp, TriangleAlert as AlertTriangle, Award } from 'lucide-react';
 import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment, RepartoCierre } from '../types';
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
 import { generarReporteProyecto } from '../utils/reports';
 import { supabase } from '../lib/supabase';
+import PageHeader from './ui/PageHeader';
+import Button from './ui/Button';
+import IconButton from './ui/IconButton';
+import SearchInput from './ui/SearchInput';
+import StatusDot from './ui/StatusDot';
+import DataCard from './ui/DataCard';
 
 interface ProyectosListProps {
   projects: Project[];
@@ -24,9 +30,9 @@ interface ProyectosListProps {
   onCerrarClick?: (project: Project) => void;
 }
 
-/**
- * Lists registered projects, allows filtering and shows their details, edit and delete actions.
- */
+const GRID_COLUMNS = 'grid gap-4 px-6';
+const GRID_TEMPLATE = 'minmax(220px,2fr) minmax(160px,1fr) 100px 140px 140px';
+
 export default function ProyectosList({
   projects,
   loading,
@@ -126,28 +132,11 @@ export default function ProyectosList({
     }
   }, [projects]);
 
-  const renderBillingStatusBadge = (projId: string) => {
+  const getBillingStatusDot = (projId: string) => {
     const status = calculateProjectBillingStatus(projId, invoices);
-    switch (status) {
-      case 'Pagado':
-        return (
-          <span className="bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-            Pagado
-          </span>
-        );
-      case 'Facturado':
-        return (
-          <span className="bg-elevated-gold/20 text-[#8C7853] dark:text-[#DFBDB5] px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-            Facturado
-          </span>
-        );
-      default:
-        return (
-          <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-            Sin facturar
-          </span>
-        );
-    }
+    if (status === 'Pagado') return <StatusDot tone="ok" label="Pagado" />;
+    if (status === 'Facturado') return <StatusDot tone="ok" label="Facturado" />;
+    return <StatusDot tone="neutral" label="Sin facturar" />;
   };
 
   const getClientName = (clientId: string): string => {
@@ -173,185 +162,130 @@ export default function ProyectosList({
   const activeSan = projects.filter(p => p.ejecutivoId === 'San').length;
   const activeAle = projects.filter(p => p.ejecutivoId === 'Ale').length;
 
-  return (
-    <div className="space-y-6 font-sans">
-      {/* Header Area */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-serif font-semibold text-enchanted-green dark:text-light-ivory">
-            Proyectos Registrados
-          </h2>
-          <p className="text-xs text-rocky-gray dark:text-rose-linen/80">
-            Control de códigos operativos, asignaciones de ejecutivo y estatus de facturación.
-          </p>
-        </div>
+  const subtitle = `${totalProjects} ${totalProjects === 1 ? 'proyecto registrado' : 'proyectos registrados'}. ${activeSan} de San y ${activeAle} de Ale.`;
 
-        {totalProjects > 0 && (
-          <button
-            id="header-add-project-btn"
-            onClick={onAddClick}
-            className="bg-enchanted-green dark:bg-elevated-gold text-light-ivory dark:text-[#070D0C] hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-all text-xs uppercase tracking-wider font-bold py-2.5 px-5 rounded shadow-sm flex items-center space-x-1.5"
-          >
-            <Plus size={14} />
-            <span>Registrar Proyecto</span>
-          </button>
-        )}
-      </div>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Proyectos"
+        subtitle={subtitle}
+        action={
+          <Button id="header-add-project-btn" variant="primary" icon={<Plus size={16} />} onClick={onAddClick}>
+            Registrar proyecto
+          </Button>
+        }
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
-            Cargando proyectos…
+        <DataCard id="proyectos-table-wrapper">
+          <div className="flex items-center justify-center py-24">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gold border-t-transparent" />
           </div>
-        </div>
+        </DataCard>
       ) : totalProjects === 0 ? (
-        <div className="max-w-2xl mx-auto my-12 text-center p-8 md:p-12 bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
-          
-          <div className="mx-auto w-16 h-16 rounded-full bg-enchanted-green/5 dark:bg-light-ivory/5 flex items-center justify-center text-elevated-gold mb-6">
-            <FolderGit2 size={32} />
+        <DataCard id="empty-projects-state" className="p-12 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-ink/5 flex items-center justify-center text-ink-muted mb-4">
+            <FolderGit2 size={24} />
           </div>
-
-          <h3 className="text-xl font-serif font-semibold text-enchanted-green dark:text-light-ivory mb-3">
-            Sin Proyectos Activos
-          </h3>
-          
-          <p className="text-xs text-rocky-gray dark:text-rose-linen/80 max-w-md mx-auto leading-relaxed mb-8">
-            Aquí se gestionarán los códigos de proyecto, ejecutivos a cargo e integraciones de facturación. Comienza dando de alta tu primer proyecto operativo vinculándolo a un cliente existente.
+          <h3 className="text-base font-semibold text-ink">Sin proyectos registrados</h3>
+          <p className="text-sm text-ink-muted mt-1 max-w-md mx-auto mb-6">
+            Comienza dando de alta tu primer proyecto operativo vinculándolo a un cliente existente.
           </p>
-
           <div className="flex justify-center">
-            <button
+            <Button
               id="empty-state-add-project-btn"
+              variant="primary"
+              icon={<Plus size={16} />}
               onClick={onAddClick}
-              className="w-full sm:w-auto bg-enchanted-green dark:bg-elevated-gold text-light-ivory dark:text-[#070D0C] hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-all text-xs uppercase tracking-wider font-bold py-3 px-8 rounded shadow-md flex items-center justify-center space-x-2"
             >
-              <Plus size={14} />
-              <span>Registrar Primer Proyecto</span>
-            </button>
+              Registrar primer proyecto
+            </Button>
           </div>
-        </div>
+        </DataCard>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          
+
           <div className="lg:col-span-2 space-y-6">
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
-                <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-enchanted-green dark:bg-elevated-gold"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] tracking-wider uppercase text-rocky-gray dark:text-rose-linen font-bold">Proyectos Totales</p>
-                    <p className="text-2xl font-serif font-bold text-enchanted-green dark:text-light-ivory mt-1">{totalProjects}</p>
-                  </div>
-                  <FolderGit2 className="text-enchanted-green/20 dark:text-light-ivory/20" size={28} />
-                </div>
-              </div>
-
-              <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
-                <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-elevated-gold"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] tracking-wider uppercase text-rocky-gray dark:text-rose-linen font-bold">Asignaciones San</p>
-                    <p className="text-2xl font-serif font-bold text-enchanted-green dark:text-light-ivory mt-1">{activeSan}</p>
-                  </div>
-                  <User className="text-elevated-gold/30" size={28} />
-                </div>
-              </div>
-
-              <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded p-5 relative shadow-sm">
-                <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-rose-linen"></div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] tracking-wider uppercase text-rocky-gray dark:text-rose-linen font-bold">Asignaciones Ale</p>
-                    <p className="text-2xl font-serif font-bold text-enchanted-green dark:text-light-ivory mt-1">{activeAle}</p>
-                  </div>
-                  <User className="text-rose-linen/40" size={28} />
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <SearchInput
+                value={searchTerm}
+                onChange={setSearchTerm}
+                placeholder="Buscar por nombre, código o cliente"
+                ariaLabel="Buscar por nombre, código o cliente"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="h-11 px-2 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
             </div>
 
-            <div className="bg-white/30 dark:bg-[#0E1A16]/30 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg overflow-hidden shadow-md">
-              <div className="p-4 border-b border-rocky-gray/20 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="relative w-full sm:max-w-xs">
-                  <Search size={14} className="absolute left-1 top-1/2 -translate-y-1/2 text-rocky-gray" />
-                  <input
-                    id="project-search-input"
-                    type="text"
-                    placeholder="Buscar por nombre, código o cliente..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-transparent border-b border-rocky-gray/60 focus:border-elevated-gold dark:focus:border-elevated-gold py-2 pl-7 pr-3 text-sm focus:outline-none transition-colors placeholder:text-rocky-gray placeholder:italic text-enchanted-green dark:text-light-ivory"
-                  />
-                </div>
-
-                <div className="text-[10px] uppercase font-bold tracking-wider text-rocky-gray">
-                  Mostrando {filteredProjects.length} de {totalProjects} proyectos
-                </div>
-              </div>
-
+            <DataCard id="proyectos-table-wrapper">
               {filteredProjects.length === 0 ? (
-                <div className="p-12 text-center text-rocky-gray italic text-xs">
+                <div className="p-12 text-center text-sm text-ink-muted">
                   Ningún proyecto coincide con la búsqueda.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-[#F2E9DF]/50 dark:bg-[#070D0C]/50 border-b border-rocky-gray/30 dark:border-white/10 font-serif italic text-sm text-[#0B3D2E]/80 dark:text-light-ivory/80">
-                        <th className="px-6 py-4 font-medium">Proyecto</th>
-                        <th className="px-6 py-4 font-medium">Cliente</th>
-                        <th className="px-6 py-4 font-medium">Ejecutivo</th>
-                        <th className="px-6 py-4 font-medium">Facturación</th>
-                        <th className="px-6 py-4 font-medium text-right">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-enchanted-green/5 dark:divide-white/5 text-sm">
+                <>
+                  <div className="overflow-x-auto">
+                    <div role="table" aria-label="Proyectos" className="min-w-0" style={{ minWidth: '880px' }}>
+                      <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Ejecutivo</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Facturación</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Acciones</div>
+                      </div>
+
                       {filteredProjects.map((project) => {
                         const isSelected = selectedProject?.id === project.id;
                         return (
-                          <tr 
+                          <div
                             key={project.id}
-                            className={`hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors group ${
-                              isSelected ? 'bg-enchanted-green/5 dark:bg-white/5' : ''
+                            role="row"
+                            className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03] ${
+                              isSelected ? 'bg-ink/[0.03]' : ''
                             }`}
+                            style={{ gridTemplateColumns: GRID_TEMPLATE }}
                           >
-                            <td className="px-6 py-4">
+                            <div role="cell" className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm font-semibold text-enchanted-green dark:text-light-ivory tracking-tight">
-                                  {project.codigo}
-                                </span>
+                                <p className="font-semibold text-ink truncate" title={project.codigo}>{project.codigo}</p>
                                 {project.cerrado && (
-                                  <span className="inline-flex items-center gap-1 bg-rocky-gray/15 dark:bg-white/10 text-rocky-gray dark:text-rose-linen/70 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
-                                    <Lock size={9} />
-                                    Cerrado
+                                  <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted">
+                                    <Lock size={11} /> Cerrado
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-rocky-gray mt-0.5">
-                                {project.nombre}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-xs font-medium">
-                              {getClientName(project.clienteId)}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${
-                                project.ejecutivoId === 'San' 
-                                  ? 'bg-[#0B3D2E]/10 dark:bg-[#0B3D2E]/20 text-[#0B3D2E] dark:text-light-ivory' 
-                                  : 'bg-elevated-gold/15 text-elevated-gold'
-                              }`}>
-                                {project.ejecutivoId}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              {renderBillingStatusBadge(project.id)}
-                            </td>
-                            <td className="px-6 py-4 text-right">
+                              <p className="mt-0.5 text-[13px] text-ink-muted truncate" title={project.nombre}>{project.nombre}</p>
+                            </div>
+
+                            <div role="cell" className="min-w-0">
+                              <p className="text-ink truncate" title={getClientName(project.clienteId)}>
+                                {getClientName(project.clienteId)}
+                              </p>
+                            </div>
+
+                            <div role="cell">
+                              <p className="text-ink">{project.ejecutivoId}</p>
+                            </div>
+
+                            <div role="cell">
+                              {getBillingStatusDot(project.id)}
+                            </div>
+
+                            <div role="cell" className="flex items-center justify-center gap-1 -my-2">
                               {deleteConfirmId === project.id ? (
-                                <div className="flex items-center justify-end space-x-2">
-                                  <span className="text-[10px] text-cranberry font-bold uppercase animate-pulse">¿Confirmar?</span>
-                                  <button
+                                <div className="flex items-center justify-end gap-2">
+                                  <span className="text-[13px] text-risk font-semibold">¿Confirmar?</span>
+                                  <IconButton
+                                    label="Confirmar eliminación"
+                                    tone="danger"
+                                    icon={<Trash2 size={16} />}
                                     onClick={() => {
                                       onDeleteClick(project.id);
                                       if (selectedProject?.id === project.id) {
@@ -360,63 +294,58 @@ export default function ProyectosList({
                                       }
                                       setDeleteConfirmId(null);
                                     }}
-                                    className="p-1 text-cranberry hover:bg-cranberry/10 rounded"
-                                    title="Confirmar eliminación"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+                                  />
                                   <button
+                                    type="button"
                                     onClick={() => setDeleteConfirmId(null)}
-                                    className="p-1 text-rocky-gray hover:bg-rocky-gray/10 rounded text-xs font-bold"
+                                    className="text-[13px] font-semibold text-ink-muted hover:text-ink"
                                   >
                                     No
                                   </button>
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-end space-x-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                                  <button
+                                <>
+                                  <IconButton
+                                    label="Ver detalles"
+                                    icon={<Eye size={16} />}
                                     onClick={(e) => {
                                       const btn = e.currentTarget;
-                                      const row = btn.closest('tr');
+                                      const row = btn.closest('[role="row"]');
                                       const target = row || btn;
                                       const rect = target.getBoundingClientRect();
                                       setPanelTop(rect.top);
                                       setSelectedProject(project);
                                     }}
-                                    className="p-1.5 text-enchanted-green/70 dark:text-light-ivory/70 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/10 dark:hover:bg-white/10 rounded transition-all"
-                                    title="Ver Detalles"
-                                  >
-                                    <Eye size={14} />
-                                  </button>
+                                  />
                                   {!project.cerrado && (
-                                    <button
+                                    <IconButton
+                                      label="Editar"
+                                      icon={<Edit size={16} />}
                                       onClick={() => onEditClick(project)}
-                                      className="p-1.5 text-elevated-gold hover:text-elevated-gold/80 hover:bg-elevated-gold/10 rounded transition-all"
-                                      title="Editar"
-                                    >
-                                      <Edit size={14} />
-                                    </button>
+                                    />
                                   )}
                                   {!project.cerrado && (
-                                    <button
+                                    <IconButton
+                                      label="Eliminar"
+                                      tone="danger"
+                                      icon={<Trash2 size={16} />}
                                       onClick={() => setDeleteConfirmId(project.id)}
-                                      className="p-1.5 text-cranberry/70 hover:text-cranberry hover:bg-cranberry/10 rounded transition-all"
-                                      title="Eliminar"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                    />
                                   )}
-                                </div>
+                                </>
                               )}
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                  </div>
+                  <p className="px-6 py-3 text-[13px] text-ink-muted">
+                    Mostrando {filteredProjects.length} de {totalProjects} proyectos
+                  </p>
+                </>
               )}
-            </div>
+            </DataCard>
           </div>
 
           <div className="lg:col-span-1" ref={colRef}>
@@ -432,668 +361,632 @@ export default function ProyectosList({
                 zIndex: 50,
               } : undefined}
             >
-            {selectedProject ? (
-              <div className="bg-white/40 dark:bg-[#0E1A16]/40 backdrop-blur-md border border-rocky-gray/30 dark:border-white/10 rounded-lg shadow-lg relative overflow-hidden p-6 space-y-6">
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-elevated-gold"></div>
-                
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-elevated-gold uppercase tracking-wider font-bold">Ficha de Proyecto</span>
-                      {selectedProject.cerrado && (
-                        <span className="inline-flex items-center gap-1 bg-rocky-gray/15 dark:bg-white/10 text-rocky-gray dark:text-rose-linen/70 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">
-                          <Lock size={9} />
-                          Cerrado
-                        </span>
+              {selectedProject ? (
+                <DataCard id="proyecto-ficha" className="p-6 space-y-6">
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] text-ink-muted">Ficha de proyecto</span>
+                        {selectedProject.cerrado && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted">
+                            <Lock size={11} /> Cerrado
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-semibold text-ink mt-0.5">
+                        {selectedProject.nombre}
+                      </h3>
+                      <p className="text-[13px] text-ink-muted mt-1 tabular-nums">{selectedProject.codigo}</p>
+                      {selectedProject.cerrado && selectedProject.fechaCierre && (
+                        <p className="text-[13px] text-ink-muted mt-0.5">
+                          Cerrado el {selectedProject.fechaCierre}
+                        </p>
                       )}
                     </div>
-                    <h3 className="text-lg font-serif font-semibold text-enchanted-green dark:text-light-ivory mt-0.5">
-                      {selectedProject.nombre}
-                    </h3>
-                    <p className="text-xs font-mono text-rocky-gray mt-1">{selectedProject.codigo}</p>
-                    {selectedProject.cerrado && selectedProject.fechaCierre && (
-                      <p className="text-[10px] text-rocky-gray/70 mt-0.5">
-                        Cerrado el {selectedProject.fechaCierre}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => { setSelectedProject(null); setPanelTop(null); }}
-                    className="p-1 text-rocky-gray hover:text-cranberry dark:hover:text-[#DFBDB5] hover:bg-white/5 rounded-full transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <hr className="border-rocky-gray/20 dark:border-white/5" />
-
-                <div className="space-y-3.5">
-                  <div>
-                    <p className="text-[10px] text-rocky-gray dark:text-rose-linen uppercase tracking-wider font-bold">Cliente Contratante</p>
-                    <p className="text-sm font-semibold text-enchanted-green dark:text-light-ivory mt-1">
-                      {getClientName(selectedProject.clienteId)}
-                    </p>
-                    {getClient(selectedProject.clienteId)?.razonSocial && (
-                      <p className="text-xs text-rocky-gray mt-0.5">
-                        {getClient(selectedProject.clienteId)?.razonSocial} • RFC: {getClient(selectedProject.clienteId)?.rfc}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-1">
-                    <div>
-                      <p className="text-[10px] text-rocky-gray dark:text-rose-linen uppercase tracking-wider font-bold">Responsable</p>
-                      <p className="text-sm font-semibold text-enchanted-green dark:text-light-ivory mt-1">
-                        {selectedProject.ejecutivoId}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-rocky-gray dark:text-rose-linen uppercase tracking-wider font-bold">Creado El</p>
-                      <p className="text-sm text-enchanted-green dark:text-light-ivory mt-1 font-mono">
-                        {selectedProject.fechaCreacion}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] text-rocky-gray dark:text-rose-linen uppercase tracking-wider font-bold">Estatus Operativo</p>
-                    <div className="mt-1.5">
-                      {renderBillingStatusBadge(selectedProject.id)}
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
                     <button
-                      onClick={() => {
-                        const clientName = getClientName(selectedProject.clienteId);
-                        generarReporteProyecto(
-                          selectedProject,
-                          clientName,
-                          invoices,
-                          expenses,
-                          providerPayments
-                        );
-                      }}
-                      className="w-full flex items-center justify-center space-x-2 bg-enchanted-green hover:bg-[#0C4E3A] dark:bg-elevated-gold dark:text-[#051A14] dark:hover:bg-elevated-gold/90 text-white py-2 px-4 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer"
+                      type="button"
+                      onClick={() => { setSelectedProject(null); setPanelTop(null); }}
+                      className="p-1 text-ink-muted hover:text-risk hover:bg-ink/5 rounded transition-colors"
                     >
-                      <FileSpreadsheet size={14} />
-                      <span>Descargar Reporte Excel</span>
+                      <X size={16} />
                     </button>
-                    {!selectedProject.cerrado && onCerrarClick && (
-                      <button
-                        onClick={() => {
-                          const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
-                          const hasUnpaid = projectInvoices.some(inv => inv.estado !== 'pagada');
-                          if (hasUnpaid) return;
-                          onCerrarClick(selectedProject);
-                        }}
-                        disabled={invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')}
-                        title={
-                          invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')
-                            ? 'Todas las facturas deben estar pagadas para cerrar el proyecto'
-                            : 'Cerrar proyecto definitivamente'
-                        }
-                        className="w-full flex items-center justify-center space-x-2 mt-2 bg-rocky-gray/80 hover:bg-rocky-gray dark:bg-rocky-gray/60 dark:hover:bg-rocky-gray/80 text-[#070d0c] py-2 px-4 rounded-md text-xs font-semibold transition-all shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Lock size={14} />
-                        <span>Cerrar Proyecto</span>
-                      </button>
-                    )}
                   </div>
-                </div>
 
-                <hr className="border-rocky-gray/20 dark:border-white/5" />
+                  <hr className="border-line" />
 
-                <div className="space-y-4">
-                  <h4 className="text-xs uppercase tracking-wider font-bold text-enchanted-green dark:text-light-ivory">
-                    Integración y Métricas
-                  </h4>
+                  <div className="space-y-3.5">
+                    <div>
+                      <p className="text-[13px] text-ink-muted">Cliente contratante</p>
+                      <p className="text-sm font-semibold text-ink mt-1">
+                        {getClientName(selectedProject.clienteId)}
+                      </p>
+                      {getClient(selectedProject.clienteId)?.razonSocial && (
+                        <p className="text-[13px] text-ink-muted mt-0.5">
+                          {getClient(selectedProject.clienteId)?.razonSocial} · RFC: {getClient(selectedProject.clienteId)?.rfc}
+                        </p>
+                      )}
+                    </div>
 
-                  {(() => {
-                    const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
-                    if (projectInvoices.length === 0) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <Receipt size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Facturas vinculadas</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">Sin facturas registradas para este proyecto.</p>
+                    <div className="grid grid-cols-2 gap-4 pt-1">
+                      <div>
+                        <p className="text-[13px] text-ink-muted">Responsable</p>
+                        <p className="text-sm font-semibold text-ink mt-1">
+                          {selectedProject.ejecutivoId}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[13px] text-ink-muted">Creado el</p>
+                        <p className="text-sm text-ink mt-1 tabular-nums">
+                          {selectedProject.fechaCreacion}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[13px] text-ink-muted">Estatus operativo</p>
+                      <div className="mt-1.5">
+                        {getBillingStatusDot(selectedProject.id)}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 space-y-2">
+                      <Button
+                        variant="primary"
+                        className="w-full"
+                        icon={<FileSpreadsheet size={14} />}
+                        onClick={() => {
+                          const clientName = getClientName(selectedProject.clienteId);
+                          generarReporteProyecto(
+                            selectedProject,
+                            clientName,
+                            invoices,
+                            expenses,
+                            providerPayments
+                          );
+                        }}
+                      >
+                        Descargar reporte Excel
+                      </Button>
+                      {!selectedProject.cerrado && onCerrarClick && (
+                        <Button
+                          variant="ghost"
+                          className="w-full"
+                          icon={<Lock size={14} />}
+                          onClick={() => {
+                            const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
+                            const hasUnpaid = projectInvoices.some(inv => inv.estado !== 'pagada');
+                            if (hasUnpaid) return;
+                            onCerrarClick(selectedProject);
+                          }}
+                          disabled={invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')}
+                          title={
+                            invoices.filter(inv => inv.proyectoId === selectedProject.id).some(inv => inv.estado !== 'pagada')
+                              ? 'Todas las facturas deben estar pagadas para cerrar el proyecto'
+                              : 'Cerrar proyecto definitivamente'
+                          }
+                        >
+                          Cerrar proyecto
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <hr className="border-line" />
+
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-ink">Integración y métricas</h4>
+
+                    {(() => {
+                      const projectInvoices = invoices.filter(inv => inv.proyectoId === selectedProject.id);
+                      if (projectInvoices.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3">
+                            <div className="flex items-start gap-2.5">
+                              <Receipt size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Facturas vinculadas</p>
+                                <p className="text-[13px] text-ink-muted mt-1">Sin facturas registradas para este proyecto.</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <Receipt size={14} className="text-elevated-gold" />
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <Receipt size={14} className="text-ink-muted" />
                             <span>Facturas vinculadas ({projectInvoices.length})</span>
                           </p>
-                        </div>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectInvoices.map(inv => (
-                            <div key={inv.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
-                              <div className="space-y-0.5">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">{inv.folio}</span>
-                                <span className="text-[10px] text-rocky-gray block">{inv.fechaEmision} • {inv.metodoPago}</span>
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {projectInvoices.map(inv => (
+                              <div key={inv.id} className="flex items-center justify-between text-[13px] p-2 rounded-md bg-ink/[0.02]">
+                                <div className="space-y-0.5">
+                                  <span className="font-semibold text-ink">{inv.folio}</span>
+                                  <span className="text-[11px] text-ink-muted block tabular-nums">{inv.fechaEmision} · {inv.metodoPago}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-semibold text-ink block tabular-nums">
+                                    {formatCurrency(inv.total)}
+                                  </span>
+                                  {inv.estado === 'pagada' ? (
+                                    <span className="text-[11px] text-ink-muted">Pagada</span>
+                                  ) : (
+                                    <span className="text-[11px] text-risk">Facturada</span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                  {formatCurrency(inv.total)}
-                                </span>
-                                {inv.estado === 'pagada' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagada</span>
-                                ) : (
-                                  <span className="text-[9px] uppercase font-bold text-cranberry">Facturada</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const projectExpenses = expenses.filter(
-                      exp => exp.proyectoId === selectedProject.id && exp.tipo === 'Proveedor por Proyecto'
-                    );
-                    if (projectExpenses.length === 0) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <FileSpreadsheet size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Gastos vinculados</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">Sin gastos de proveedor registrados para este proyecto.</p>
-                            </div>
+                            ))}
                           </div>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <FileSpreadsheet size={14} className="text-elevated-gold" />
+                    })()}
+
+                    {(() => {
+                      const projectExpenses = expenses.filter(
+                        exp => exp.proyectoId === selectedProject.id && exp.tipo === 'Proveedor por Proyecto'
+                      );
+                      if (projectExpenses.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3">
+                            <div className="flex items-start gap-2.5">
+                              <FileSpreadsheet size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Gastos vinculados</p>
+                                <p className="text-[13px] text-ink-muted mt-1">Sin gastos de proveedor registrados para este proyecto.</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <FileSpreadsheet size={14} className="text-ink-muted" />
                             <span>Gastos de proveedor ({projectExpenses.length})</span>
                           </p>
-                        </div>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectExpenses.map(exp => (
-                            <div key={exp.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
-                              <div className="space-y-0.5">
-                                <span className="font-semibold text-enchanted-green dark:text-light-ivory">{exp.concepto}</span>
-                                <span className="text-[10px] text-rocky-gray block">{exp.fecha} • {exp.categoriaId}</span>
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {projectExpenses.map(exp => (
+                              <div key={exp.id} className="flex items-center justify-between text-[13px] p-2 rounded-md bg-ink/[0.02]">
+                                <div className="space-y-0.5">
+                                  <span className="font-semibold text-ink">{exp.concepto}</span>
+                                  <span className="text-[11px] text-ink-muted block tabular-nums">{exp.fecha} · {exp.categoriaId}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-semibold text-ink block tabular-nums">
+                                    {formatCurrency(exp.total)}
+                                  </span>
+                                  {exp.estatusPago === 'Pagado' ? (
+                                    <span className="text-[11px] text-ink-muted">Pagado</span>
+                                  ) : (
+                                    <span className="text-[11px] text-risk">Pendiente</span>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                  {formatCurrency(exp.total)}
-                                </span>
-                                {exp.estatusPago === 'Pagado' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
-                                ) : (
-                                  <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const projectProviderPayments = (providerPayments || []).filter(
-                      pay => pay.proyectoId === selectedProject.id
-                    );
-                    if (projectProviderPayments.length === 0) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <FileCheck size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Pagos a Proveedores vinculados</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">Sin pagos a proveedores registrados para este proyecto.</p>
-                            </div>
+                            ))}
                           </div>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <FileCheck size={14} className="text-elevated-gold" />
-                            <span>Pagos a Proveedores ({projectProviderPayments.length})</span>
+                    })()}
+
+                    {(() => {
+                      const projectProviderPayments = (providerPayments || []).filter(
+                        pay => pay.proyectoId === selectedProject.id
+                      );
+                      if (projectProviderPayments.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3">
+                            <div className="flex items-start gap-2.5">
+                              <FileCheck size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Pagos a proveedores vinculados</p>
+                                <p className="text-[13px] text-ink-muted mt-1">Sin pagos a proveedores registrados para este proyecto.</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <FileCheck size={14} className="text-ink-muted" />
+                            <span>Pagos a proveedores ({projectProviderPayments.length})</span>
                           </p>
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {projectProviderPayments.map(pay => {
+                              const indicator = getDueDateIndicator(pay.estatus, pay.fecha_vencimiento);
+                              return (
+                                <div key={pay.id} className="flex items-center justify-between text-[13px] p-2 rounded-md bg-ink/[0.02]">
+                                  <div className="space-y-0.5">
+                                    <span className="font-semibold text-ink block">{pay.proveedor}</span>
+                                    <div className="flex flex-col gap-0.5 text-[11px] text-ink-muted tabular-nums">
+                                      <span>{pay.fecha}</span>
+                                      {pay.fecha_vencimiento && pay.estatus === 'Pendiente' && (
+                                        <span>Vence: {pay.fecha_vencimiento}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="font-semibold text-ink block tabular-nums">
+                                      {formatCurrency(pay.total)}
+                                    </span>
+                                    <div className="flex flex-col items-end gap-1 mt-0.5">
+                                      {pay.estatus === 'Pagado' ? (
+                                        <span className="text-[11px] text-ink-muted">Pagado</span>
+                                      ) : (
+                                        <>
+                                          <span className="text-[11px] text-risk">Pendiente</span>
+                                          {indicator && (
+                                            <span className={`text-[11px] font-semibold px-1 py-0.5 rounded ${
+                                              indicator.type === 'future'
+                                                ? 'text-ink-muted'
+                                                : indicator.type === 'today'
+                                                  ? 'text-risk bg-risk/10'
+                                                  : 'text-paper bg-risk'
+                                            }`}>
+                                              {indicator.text}
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectProviderPayments.map(pay => {
-                            const indicator = getDueDateIndicator(pay.estatus, pay.fecha_vencimiento);
-                            return (
-                              <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
+                      );
+                    })()}
+
+                    {(() => {
+                      const projectPorImpactar = (porImpactar || []).filter(
+                        pay => pay.proyectoDestinoId === selectedProject.id && pay.estatus === 'resuelto'
+                      );
+                      if (projectPorImpactar.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3">
+                            <div className="flex items-start gap-2.5">
+                              <Zap size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Por impactar resueltos</p>
+                                <p className="text-[13px] text-ink-muted mt-1">Sin registros resueltos vinculados a este proyecto.</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <Zap size={14} className="text-ink-muted" />
+                            <span>Por impactar resueltos ({projectPorImpactar.length})</span>
+                          </p>
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {projectPorImpactar.map(pay => (
+                              <div key={pay.id} className="flex items-center justify-between text-[13px] p-2 rounded-md bg-ink/[0.02]">
                                 <div className="space-y-0.5">
-                                  <span className="font-semibold text-enchanted-green dark:text-light-ivory block">{pay.proveedor}</span>
-                                  <div className="flex flex-col gap-0.5 text-[10px] text-rocky-gray">
-                                    <span>{pay.fecha}</span>
-                                    {pay.fecha_vencimiento && pay.estatus === 'Pendiente' && (
-                                      <span className="font-mono">Vence: {pay.fecha_vencimiento}</span>
-                                    )}
+                                  <span className="font-semibold text-ink">{pay.descripcion}</span>
+                                  <span className="text-[11px] text-ink-muted block tabular-nums">{pay.fecha} · {pay.socioResponsable}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="font-semibold text-ink block tabular-nums">
+                                    {formatCurrency(pay.monto)}
+                                  </span>
+                                  <span className="text-[11px] text-ink-muted">Resuelto</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {(() => {
+                      const projectThirdPartyPayments = (thirdPartyPayments || []).filter(
+                        pay => pay.proyectoId === selectedProject.id
+                      );
+                      if (projectThirdPartyPayments.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3">
+                            <div className="flex items-start gap-2.5">
+                              <UsersRound size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Pagos a terceros vinculados</p>
+                                <p className="text-[13px] text-ink-muted mt-1">Sin registros vinculados a este proyecto.</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <UsersRound size={14} className="text-ink-muted" />
+                            <span>Pagos a terceros ({projectThirdPartyPayments.length})</span>
+                          </p>
+                          <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                            {projectThirdPartyPayments.map(pay => (
+                              <div key={pay.id} className="flex items-center justify-between text-[13px] p-2 rounded-md bg-ink/[0.02]">
+                                <div className="space-y-0.5">
+                                  <span className="font-semibold text-ink">{pay.concepto}</span>
+                                  <div className="text-[11px] text-ink-muted tabular-nums">
+                                    <span>Saldo orig: {formatCurrency(pay.saldoOriginal)}</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                    {formatCurrency(pay.total)}
+                                  <span className="font-semibold text-ink block tabular-nums">
+                                    {formatCurrency(pay.montoADepositar)}
                                   </span>
-                                  <div className="flex flex-col items-end gap-1 mt-0.5">
-                                    {pay.estatus === 'Pagado' ? (
-                                      <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Pagado</span>
-                                    ) : (
-                                      <>
-                                        <span className="text-[9px] uppercase font-bold text-cranberry font-mono">Pendiente</span>
-                                        {indicator && (
-                                          <span className={`text-[9px] font-bold px-1 py-0.5 rounded ${
-                                            indicator.type === 'future'
-                                              ? 'text-rocky-gray dark:text-rose-linen/50'
-                                              : indicator.type === 'today'
-                                                ? 'text-cranberry dark:text-rose-linen bg-cranberry/10 border border-cranberry/20'
-                                                : 'text-white bg-cranberry shadow-sm'
-                                          }`}>
-                                            {indicator.text}
-                                          </span>
-                                        )}
-                                      </>
-                                    )}
+                                  {pay.statusFac === 'Disponible' ? (
+                                    <span className="text-[11px] text-ink-muted">Disponible</span>
+                                  ) : (
+                                    <span className="text-[11px] text-ink-muted">Por pagar</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {(() => {
+                      const projectDists = (profitDistributions || []).filter(
+                        pd => pd.proyectoId === selectedProject.id
+                      );
+
+                      if (projectDists.length === 0) {
+                        return (
+                          <div className="rounded-lg border border-line p-3.5">
+                            <div className="flex items-start gap-2.5">
+                              <Award size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                                  <span>Reparto de utilidades</span>
+                                  <span className="text-[11px] text-ink-muted">Pendiente</span>
+                                </p>
+                                <p className="text-[13px] text-ink-muted mt-1 leading-relaxed">
+                                  Pendiente — se genera automáticamente cuando el proyecto esté completamente pagado (todas sus facturas en estado "Pagada").
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="space-y-3">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <Award size={14} className="text-ink-muted" />
+                            <span>Historial de reparto de utilidades ({projectDists.length})</span>
+                          </p>
+
+                          <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            {projectDists.map((dist, idx) => (
+                              <div
+                                key={dist.id}
+                                className="rounded-lg border border-line p-3 space-y-1.5 text-[13px]"
+                              >
+                                <div className="flex items-center justify-between text-[11px] text-ink-muted pb-1 border-b border-line">
+                                  <span>Reparto #{idx + 1}</span>
+                                  <span className="tabular-nums">{dist.fechaCreacion}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between text-[13px] py-0.5">
+                                    <span className="text-ink-muted">Utilidad operativa (neto):</span>
+                                    <span className="font-semibold text-ink tabular-nums">
+                                      {formatCurrency(dist.gananciaTotal)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[13px] py-0.5">
+                                    <span className="text-ink-muted">Dueño (65%):</span>
+                                    <span className="font-semibold text-ink tabular-nums">
+                                      {formatCurrency(dist.gananciaDueno)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[13px] py-0.5">
+                                    <span className="text-ink-muted">Ejecutivo (30%/35%):</span>
+                                    <span className="font-semibold text-ink tabular-nums">
+                                      {formatCurrency(dist.gananciaEjecutivo)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[13px] py-0.5">
+                                    <span className="text-ink-muted">Fondo diploma (5%):</span>
+                                    <span className="font-semibold text-ink tabular-nums">
+                                      {formatCurrency(dist.gananciaDiploma)}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const projectPorImpactar = (porImpactar || []).filter(
-                      pay => pay.proyectoDestinoId === selectedProject.id && pay.estatus === 'resuelto'
-                    );
-                    if (projectPorImpactar.length === 0) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <Zap size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Por Impactar resueltos</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">Sin registros resueltos vinculados a este proyecto.</p>
-                            </div>
+                            ))}
                           </div>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <Zap size={14} className="text-elevated-gold animate-pulse" />
-                            <span>Por Impactar resueltos ({projectPorImpactar.length})</span>
+                    })()}
+
+                    {(() => {
+                      const metrics = calculateProjectProfitability(
+                        selectedProject,
+                        getClientName(selectedProject.clienteId),
+                        invoices,
+                        providerPayments,
+                        expenses,
+                        thirdPartyPayments
+                      );
+                      const isProfitNegative = metrics.ganancia < 0;
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <TrendingUp size={14} className="text-ink-muted" />
+                            <span>Rentabilidad del proyecto</span>
                           </p>
-                        </div>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectPorImpactar.map(pay => (
-                            <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
-                              <div className="space-y-0.5">
-                                <span className="font-semibold text-enchanted-green dark:text-light-ivory">{pay.descripcion}</span>
-                                <span className="text-[10px] text-rocky-gray block">{pay.fecha} • {pay.socioResponsable}</span>
-                              </div>
-                              <div className="text-right">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                  {formatCurrency(pay.monto)}
+                          <div className="space-y-1 text-[13px]">
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-ink-muted">Costo cliente (facturado):</span>
+                              <span className="font-semibold text-ink tabular-nums">
+                                {formatCurrency(metrics.costoCliente)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-ink-muted">Costo proveedor:</span>
+                              <span className="text-ink-muted tabular-nums">
+                                {formatCurrency(metrics.costoProveedor)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-ink-muted">Gastos proveedor vinc.:</span>
+                              <span className="text-ink-muted tabular-nums">
+                                {formatCurrency(metrics.gastosProveedorVinculados)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-ink-muted">Pagos a terceros:</span>
+                              <span className="text-ink-muted tabular-nums">
+                                {formatCurrency(metrics.costoTerceros)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between border-t border-line pt-1 mt-1 font-semibold">
+                              <span className="text-ink">Ganancia neta:</span>
+                              <span className={`tabular-nums ${isProfitNegative ? 'text-risk' : 'text-ink'}`}>
+                                {formatCurrency(metrics.ganancia)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between py-0.5">
+                              <span className="text-ink-muted font-semibold">Porcentaje rentabilidad:</span>
+                              {metrics.porcentajeRentabilidad === 'N/A' ? (
+                                <span className="text-[13px] text-ink-muted">N/A</span>
+                              ) : (
+                                <span className="text-ink tabular-nums">
+                                  {metrics.porcentajeRentabilidad}%
                                 </span>
-                                <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-elevated-gold">Resuelto</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const projectThirdPartyPayments = (thirdPartyPayments || []).filter(
-                      pay => pay.proyectoId === selectedProject.id
-                    );
-                    if (projectThirdPartyPayments.length === 0) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3 border border-enchanted-green/10 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <UsersRound size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Pagos a Terceros vinculados</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">Sin registros vinculados a este proyecto.</p>
+                              )}
                             </div>
                           </div>
                         </div>
                       );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <UsersRound size={14} className="text-elevated-gold" />
-                            <span>Pagos a Terceros ({projectThirdPartyPayments.length})</span>
+                    })()}
+
+                    {!selectedProject.cerrado && (() => {
+                      if (loadingResumen) {
+                        return (
+                          <div className="rounded-lg border border-line p-3.5">
+                            <div className="flex items-center justify-center py-4">
+                              <div className="animate-spin rounded-full h-6 w-6 border-2 border-gold border-t-transparent" />
+                            </div>
+                          </div>
+                        );
+                      }
+                      if (!resumenVivo) return null;
+                      const hayFacturasSinCobrar = invoices.some(
+                        inv => inv.proyectoId === selectedProject.id && inv.estado !== 'pagada'
+                      );
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <TrendingUp size={14} className="text-ink-muted" />
+                            <span>Ganado vs. repartido</span>
                           </p>
+                          <div className="grid grid-cols-3 gap-2 items-stretch">
+                            <div className="rounded-lg border border-line p-2.5 flex flex-col min-w-0">
+                              <p className="text-[11px] text-ink-muted truncate">Ganancia hasta hoy</p>
+                              <p className="text-[13px] font-semibold text-ink mt-1 tabular-nums break-all leading-tight">
+                                {formatCurrency(resumenVivo.gananciaTotal)}
+                              </p>
+                            </div>
+                            <div className="rounded-lg border border-line p-2.5 flex flex-col min-w-0">
+                              <p className="text-[11px] text-ink-muted truncate">Ya repartido</p>
+                              <p className="text-[13px] font-semibold text-ink mt-1 tabular-nums break-all leading-tight">
+                                {formatCurrency(resumenVivo.yaRepartido)}
+                              </p>
+                            </div>
+                            <div className="rounded-lg border border-line p-2.5 flex flex-col min-w-0">
+                              <p className="text-[11px] text-ink-muted truncate">Pendiente</p>
+                              <p className="text-[13px] font-semibold text-ink mt-1 tabular-nums break-all leading-tight">
+                                {formatCurrency(resumenVivo.pendiente)}
+                              </p>
+                            </div>
+                          </div>
+                          {hayFacturasSinCobrar && (
+                            <div className="flex items-start gap-1.5 mt-1">
+                              <AlertTriangle size={12} className="text-ink-muted mt-0.5 shrink-0" />
+                              <p className="text-[11px] text-ink-muted leading-relaxed">
+                                Cifra parcial: hay facturas sin cobrar que no se han sumado.
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
-                          {projectThirdPartyPayments.map(pay => (
-                            <div key={pay.id} className="flex items-center justify-between text-xs p-2 bg-enchanted-green/[0.03] dark:bg-white/[0.03] rounded border border-enchanted-green/5">
-                              <div className="space-y-0.5">
-                                <span className="font-semibold text-enchanted-green dark:text-light-ivory">{pay.concepto}</span>
-                                <div className="text-[10px] text-rocky-gray space-y-0.5">
-                                  <div className="flex items-center space-x-1.5">
-                                    <span>Saldo Orig: {formatCurrency(pay.saldoOriginal)}</span>
+                      );
+                    })()}
+
+                    {selectedProject.cerrado && (() => {
+                      const projectRepartos = repartosCierre.filter(r => r.proyectoId === selectedProject.id);
+                      if (projectRepartos.length === 0 && !selectedProject.gananciaAlCierre) {
+                        return (
+                          <div className="rounded-lg border border-line p-3.5">
+                            <div className="flex items-start gap-2.5">
+                              <Lock size={16} className="text-ink-muted mt-0.5" />
+                              <div>
+                                <p className="text-[13px] font-semibold text-ink">Reparto de cierre</p>
+                                <p className="text-[13px] text-ink-muted mt-1">
+                                  Proyecto cerrado sin reparto de utilidades pendientes.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="rounded-lg border border-line p-3 space-y-2">
+                          <p className="text-[13px] font-semibold text-ink flex items-center gap-1.5">
+                            <Lock size={14} className="text-ink-muted" />
+                            <span>Reparto de cierre</span>
+                          </p>
+                          <div className="space-y-1 text-[13px]">
+                            {selectedProject.gananciaAlCierre != null && (
+                              <div className="flex items-center justify-between py-0.5">
+                                <span className="text-ink-muted">Ganancia al cierre:</span>
+                                <span className="font-semibold text-ink tabular-nums">
+                                  {formatCurrency(selectedProject.gananciaAlCierre)}
+                                </span>
+                              </div>
+                            )}
+                            {selectedProject.yaRepartidoAntes != null && selectedProject.yaRepartidoAntes > 0 && (
+                              <div className="flex items-center justify-between py-0.5">
+                                <span className="text-ink-muted">Ya repartido antes:</span>
+                                <span className="text-ink-muted tabular-nums">
+                                  {formatCurrency(selectedProject.yaRepartidoAntes)}
+                                </span>
+                              </div>
+                            )}
+                            {projectRepartos.length > 0 && (
+                              <>
+                                <div className="border-t border-line pt-1.5 mt-1.5">
+                                  <p className="text-[11px] text-ink-muted mb-1">Distribución al cierre</p>
+                                </div>
+                                {projectRepartos.map(r => (
+                                  <div key={r.id} className="flex items-center justify-between py-0.5">
+                                    <span className="text-ink-muted">{r.destino} ({r.porcentaje}%):</span>
+                                    <span className="font-semibold text-ink tabular-nums">
+                                      {formatCurrency(r.monto)}
+                                    </span>
                                   </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory block">
-                                  {formatCurrency(pay.montoADepositar)}
-                                </span>
-                                {pay.statusFac === 'Disponible' ? (
-                                  <span className="text-[9px] uppercase font-bold text-[#0B3D2E] dark:text-[#f2e9df]">Disponible</span>
-                                ) : (
-                                  <span className="text-[9px] uppercase font-bold text-[#8C7853] dark:text-amber-200 font-mono">Por pagar</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const projectDists = (profitDistributions || []).filter(
-                      pd => pd.proyectoId === selectedProject.id
-                    );
-                    
-                    if (projectDists.length === 0) {
-                      return (
-                        <div className="bg-elevated-gold/[0.04] dark:bg-white/5 rounded p-3.5 border border-elevated-gold/25 dark:border-white/5 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <Award size={16} className="text-[#8C7853] dark:text-elevated-gold mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80 flex items-center gap-1.5">
-                                <span>Reparto de Utilidades</span>
-                                <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold text-[8px] font-bold px-1 rounded uppercase tracking-wider">Pendiente</span>
-                              </p>
-                              <p className="text-[10px] text-rocky-gray mt-1 leading-relaxed">
-                                Pendiente — se genera automáticamente cuando el proyecto esté completamente pagado (todas sus facturas en estado "Pagada").
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <Award size={14} className="text-elevated-gold animate-pulse" />
-                            <span>Historial de Reparto de Utilidades ({projectDists.length})</span>
-                          </p>
-                        </div>
-                        
-                        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                          {projectDists.map((dist, idx) => (
-                            <div 
-                              key={dist.id} 
-                              className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/15 dark:border-light-ivory/15 p-3 space-y-1.5 text-xs"
-                            >
-                              <div className="flex items-center justify-between text-[10px] font-bold text-[#8C7853] dark:text-elevated-gold uppercase tracking-wider pb-1 border-b border-rocky-gray/5">
-                                <span>Reparto #{idx + 1}</span>
-                                <span>{dist.fechaCreacion}</span>
-                              </div>
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between text-xs py-0.5">
-                                  <span className="text-rocky-gray">Utilidad Operativa (Neto):</span>
-                                  <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                                    {formatCurrency(dist.gananciaTotal)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] py-0.5">
-                                  <span className="text-rocky-gray">Dueño (65%):</span>
-                                  <span className="font-mono font-semibold text-[#0B3D2E] dark:text-[#EAE3D2]">
-                                    {formatCurrency(dist.gananciaDueno)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] py-0.5">
-                                  <span className="text-rocky-gray">Ejecutivo (30%/35%):</span>
-                                  <span className="font-mono font-semibold text-[#8C7853] dark:text-elevated-gold">
-                                    {formatCurrency(dist.gananciaEjecutivo)}
-                                  </span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] py-0.5">
-                                  <span className="text-rocky-gray">Fondo Diploma (5%):</span>
-                                  <span className="font-mono font-semibold text-enchanted-green dark:text-light-ivory">
-                                    {formatCurrency(dist.gananciaDiploma)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {(() => {
-                    const metrics = calculateProjectProfitability(
-                      selectedProject,
-                      getClientName(selectedProject.clienteId),
-                      invoices,
-                      providerPayments,
-                      expenses,
-                      thirdPartyPayments
-                    );
-                    const isProfitNegative = metrics.ganancia < 0;
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-enchanted-green/10 dark:border-light-ivory/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <TrendingUp size={14} className="text-elevated-gold" />
-                            <span>Rentabilidad del Proyecto</span>
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-xs">
-                          <div className="flex items-center justify-between py-0.5">
-                            <span className="text-rocky-gray">Costo Cliente (Facturado):</span>
-                            <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                              {formatCurrency(metrics.costoCliente)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-0.5">
-                            <span className="text-rocky-gray">Costo Proveedor:</span>
-                            <span className="font-mono text-rocky-gray dark:text-light-ivory/80">
-                              {formatCurrency(metrics.costoProveedor)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-0.5">
-                            <span className="text-rocky-gray">Gastos Proveedor Vinc.:</span>
-                            <span className="font-mono text-rocky-gray dark:text-light-ivory/80">
-                              {formatCurrency(metrics.gastosProveedorVinculados)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-0.5">
-                            <span className="text-rocky-gray">Pagos a Terceros:</span>
-                            <span className="font-mono text-rocky-gray dark:text-light-ivory/80">
-                              {formatCurrency(metrics.costoTerceros)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between border-t border-rocky-gray/5 pt-1 mt-1 font-bold">
-                            <span className="text-enchanted-green dark:text-light-ivory">Ganancia Neta:</span>
-                            <span className={`font-mono ${isProfitNegative ? 'text-cranberry' : 'text-enchanted-green dark:text-light-ivory'}`}>
-                              {formatCurrency(metrics.ganancia)}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-0.5">
-                            <span className="text-rocky-gray font-semibold">Porcentaje Rentabilidad:</span>
-                            {metrics.porcentajeRentabilidad === 'N/A' ? (
-                              <span className="text-[10px] text-rocky-gray/60 dark:text-light-ivory/40 bg-rocky-gray/5 dark:bg-white/5 px-1.5 py-0.5 rounded font-semibold">
-                                N/A
-                              </span>
-                            ) : (
-                              <span className={`font-mono font-bold text-xs px-1.5 py-0.5 rounded ${
-                                metrics.porcentajeRentabilidad < 10 
-                                  ? 'bg-cranberry/10 text-cranberry' 
-                                  : metrics.porcentajeRentabilidad < 30 
-                                    ? 'bg-[#8C7853]/15 text-[#8C7853] dark:text-elevated-gold' 
-                                    : 'bg-enchanted-green/10 text-enchanted-green dark:text-light-ivory'
-                              }`}>
-                                {metrics.porcentajeRentabilidad}%
-                              </span>
+                                ))}
+                              </>
                             )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })()}
-
-                  {!selectedProject.cerrado && (() => {
-                    if (loadingResumen) {
-                      return (
-                        <div className="bg-enchanted-green/5 dark:bg-white/5 rounded p-3.5 border border-enchanted-green/10 dark:border-white/5 animate-pulse">
-                          <div className="h-3 w-40 bg-rocky-gray/20 rounded mb-3" />
-                          <div className="grid grid-cols-3 gap-3">
-                            <div className="h-14 bg-rocky-gray/10 rounded" />
-                            <div className="h-14 bg-rocky-gray/10 rounded" />
-                            <div className="h-14 bg-rocky-gray/10 rounded" />
-                          </div>
-                        </div>
                       );
-                    }
-                    if (!resumenVivo) return null;
-                    const hayFacturasSinCobrar = invoices.some(
-                      inv => inv.proyectoId === selectedProject.id && inv.estado !== 'pagada'
-                    );
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-rocky-gray/20 dark:border-white/10 p-3 space-y-2">
-                        <div className="flex items-center gap-1.5 border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <TrendingUp size={14} className="text-rocky-gray" />
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Ganado vs. Repartido</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 items-stretch">
-                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
-                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Ganancia hasta hoy</p>
-                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
-                              {formatCurrency(resumenVivo.gananciaTotal)}
-                            </p>
-                          </div>
-                          <div className="bg-enchanted-green/5 dark:bg-white/5 rounded-lg p-2.5 border border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col min-w-0">
-                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Ya repartido</p>
-                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
-                              {formatCurrency(resumenVivo.yaRepartido)}
-                            </p>
-                          </div>
-                          <div className={`rounded-lg p-2.5 border flex flex-col min-w-0 ${
-                            resumenVivo.pendiente > 0
-                              ? 'bg-elevated-gold/10 border-elevated-gold/30'
-                              : 'bg-enchanted-green/5 border-enchanted-green/10 dark:bg-white/5 dark:border-light-ivory/10'
-                          }`}>
-                            <p className="text-[9px] text-rocky-gray uppercase tracking-wider font-bold truncate">Pendiente</p>
-                            <p className="text-[11px] font-mono font-bold text-enchanted-green dark:text-light-ivory mt-1 break-all leading-tight">
-                              {formatCurrency(resumenVivo.pendiente)}
-                            </p>
-                          </div>
-                        </div>
-                        {hayFacturasSinCobrar && (
-                          <div className="flex items-start gap-1.5 mt-1">
-                            <AlertTriangle size={12} className="text-[#8C7853] dark:text-elevated-gold mt-0.5 shrink-0" />
-                            <p className="text-[10px] text-[#8C7853] dark:text-elevated-gold leading-relaxed">
-                              Cifra parcial: hay facturas sin cobrar que no se han sumado.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {selectedProject.cerrado && (() => {
-                    const projectRepartos = repartosCierre.filter(r => r.proyectoId === selectedProject.id);
-                    if (projectRepartos.length === 0 && !selectedProject.gananciaAlCierre) {
-                      return (
-                        <div className="bg-rocky-gray/5 dark:bg-white/5 rounded p-3.5 border border-rocky-gray/20 dark:border-white/10 relative overflow-hidden">
-                          <div className="flex items-start space-x-2.5">
-                            <Lock size={16} className="text-rocky-gray mt-0.5" />
-                            <div>
-                              <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Reparto de Cierre</p>
-                              <p className="text-[10px] text-rocky-gray mt-1">
-                                Proyecto cerrado sin reparto de utilidades pendientes.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div className="bg-white/50 dark:bg-black/20 rounded border border-rocky-gray/20 dark:border-white/10 p-3 space-y-2">
-                        <div className="flex items-center justify-between border-b border-rocky-gray/10 pb-1.5 mb-1">
-                          <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                            <Lock size={14} className="text-rocky-gray" />
-                            <span>Reparto de Cierre</span>
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-xs">
-                          {selectedProject.gananciaAlCierre != null && (
-                            <div className="flex items-center justify-between py-0.5">
-                              <span className="text-rocky-gray">Ganancia al cierre:</span>
-                              <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                                {formatCurrency(selectedProject.gananciaAlCierre)}
-                              </span>
-                            </div>
-                          )}
-                          {selectedProject.yaRepartidoAntes != null && selectedProject.yaRepartidoAntes > 0 && (
-                            <div className="flex items-center justify-between py-0.5">
-                              <span className="text-rocky-gray">Ya repartido antes:</span>
-                              <span className="font-mono text-rocky-gray">
-                                {formatCurrency(selectedProject.yaRepartidoAntes)}
-                              </span>
-                            </div>
-                          )}
-                          {projectRepartos.length > 0 && (
-                            <>
-                              <div className="border-t border-rocky-gray/10 pt-1.5 mt-1.5">
-                                <p className="text-[10px] text-rocky-gray uppercase tracking-wider font-bold mb-1">Distribucion al cierre</p>
-                              </div>
-                              {projectRepartos.map(r => (
-                                <div key={r.id} className="flex items-center justify-between py-0.5">
-                                  <span className="text-rocky-gray">{r.destino} ({r.porcentaje}%):</span>
-                                  <span className="font-mono font-semibold text-enchanted-green dark:text-light-ivory">
-                                    {formatCurrency(r.monto)}
-                                  </span>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
-              </div>
-            ) : (
-              <div className="h-full border border-dashed border-rocky-gray/30 dark:border-white/10 rounded-lg p-8 text-center flex flex-col items-center justify-center space-y-3.5 text-rocky-gray">
-                <FolderGit2 size={24} className="text-rocky-gray/40" />
-                <p className="text-xs italic leading-relaxed">
-                  Selecciona un proyecto de la lista para inspeccionar sus especificaciones operativas, códigos y apartados futuros.
-                </p>
-              </div>
-            )}
+                    })()}
+                  </div>
+                </DataCard>
+              ) : (
+                <DataCard className="h-full p-8 text-center flex flex-col items-center justify-center space-y-3.5 text-ink-muted">
+                  <FolderGit2 size={24} className="text-ink-muted/40" />
+                  <p className="text-[13px] leading-relaxed">
+                    Selecciona un proyecto de la lista para inspeccionar sus especificaciones operativas, códigos y apartados futuros.
+                  </p>
+                </DataCard>
+              )}
             </div>
           </div>
 
@@ -1102,4 +995,3 @@ export default function ProyectosList({
     </div>
   );
 }
-

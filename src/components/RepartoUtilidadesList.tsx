@@ -1,17 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ProfitDistribution, RepartoCierre, ResumenRepartoDestino, Project, Client } from '../types';
-import { 
-  Search, 
-  Sparkles, 
-  Award, 
-  User, 
-  Briefcase, 
-  TrendingUp,
-  RefreshCcw,
-  BookOpen,
-  Lock
-} from 'lucide-react';
+import { Award, Lock } from 'lucide-react';
 import { formatCurrency } from '../utils';
+import PageHeader from './ui/PageHeader';
+import SummaryStrip from './ui/SummaryStrip';
+import SearchInput from './ui/SearchInput';
+import DataCard from './ui/DataCard';
 
 interface RepartoUtilidadesListProps {
   distributions: ProfitDistribution[];
@@ -43,7 +37,6 @@ export default function RepartoUtilidadesList({
     };
   };
 
-  // KPIs for the Historico tab (unchanged logic)
   const totalGananciaRepartida = distributions.reduce((sum, d) => sum + (d.gananciaTotal || 0), 0);
   const totalDueño = distributions.reduce((sum, d) => sum + (d.gananciaDueno || 0), 0);
   const totalEjecutivo = distributions.reduce((sum, d) => sum + (d.gananciaEjecutivo || 0), 0);
@@ -52,14 +45,12 @@ export default function RepartoUtilidadesList({
   const TOPE_DIPLOMA = 37800;
   const diplomaPercentage = Math.min(100, Number(((totalDiploma / TOPE_DIPLOMA) * 100).toFixed(1)));
 
-  // Filter distributions (Historico tab)
   const filteredDistributions = distributions.filter(dist => {
     const info = getProjectInfo(dist.proyectoId);
     const text = `${info.nombre} ${info.codigo} ${info.cliente}`.toLowerCase();
     return text.includes(searchTerm.toLowerCase());
   });
 
-  // Group repartos_cierre by proyecto (Cierres tab)
   const cierresByProject = repartosCierre.reduce<Record<string, RepartoCierre[]>>((acc, rc) => {
     if (!acc[rc.proyectoId]) acc[rc.proyectoId] = [];
     acc[rc.proyectoId].push(rc);
@@ -76,333 +67,218 @@ export default function RepartoUtilidadesList({
     setSearchTerm('');
   };
 
-  return (
-    <div id="reparto-utilidades-container" className="space-y-6 animate-fade-in">
-      {/* Title & Description */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-            Reparto de Utilidades
-          </h2>
-          <p className="text-xs text-rocky-gray mt-1">
-            Consola analítica de distribución de ganancias netas: histórico automático y cierres manuales.
-          </p>
-        </div>
-      </div>
+  // Build sorted resumen for the first SummaryStrip
+  const sortedResumen = resumenRepartos.slice().sort((a, b) => b.totalCombinado - a.totalCombinado);
+  const findDestino = (destino: string) => sortedResumen.find(r => r.destino === destino);
 
-      {/* Combined Totals by Destino (from the view) */}
-      {resumenRepartos.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {resumenRepartos
-            .sort((a, b) => b.totalCombinado - a.totalCombinado)
-            .map(r => (
-            <div
-              key={r.destino}
-              className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm"
-            >
-              <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray mb-1">
-                Total {r.destino}
-              </p>
-              <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                {formatCurrency(r.totalCombinado)}
-              </p>
-              <p className="text-[10px] text-rocky-gray mt-2 font-mono">
-                Histórico: {formatCurrency(r.totalHistorico)} &middot; Cierres: {formatCurrency(r.totalCierres)}
-              </p>
-            </div>
-          ))}
-        </div>
+  return (
+    <div id="reparto-utilidades-container" className="space-y-6">
+      <PageHeader
+        title="Reparto de utilidades"
+        subtitle="Histórico automático y cierres manuales."
+      />
+
+      {/* Summary strip: totals by destino */}
+      {sortedResumen.length > 0 && (
+        <SummaryStrip
+          items={sortedResumen.map(r => ({
+            id: `kpi-reparto-total-${r.destino.toLowerCase()}`,
+            label: `Total ${r.destino}`,
+            value: r.totalCombinado,
+            note: `Histórico ${formatCurrency(r.totalHistorico)} · Cierres ${formatCurrency(r.totalCierres)}`,
+            primary: r.destino === 'San',
+          }))}
+        />
       )}
 
-      {/* Toggle Historico / Cierres + Search */}
-      <div className="p-4 bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 text-rocky-gray" size={16} />
-            <input
-              id="reparto-search-input"
-              type="text"
-              placeholder="Buscar por proyecto o cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-enchanted-green/[0.02] dark:bg-white/[0.02] border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-sm placeholder:text-rocky-gray/60 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold"
-            />
-          </div>
+      {/* Summary strip: distribution breakdown */}
+      <SummaryStrip
+        items={[
+          { id: 'kpi-utilidad-total', label: 'Utilidad total', value: totalGananciaRepartida, primary: true },
+          { id: 'kpi-utilidad-dueno', label: 'Acumulado dueño', value: totalDueño },
+          { id: 'kpi-utilidad-ejecutivo', label: 'Acumulado ejecutivo', value: totalEjecutivo },
+          {
+            id: 'kpi-utilidad-diploma',
+            label: 'Fondo diploma',
+            value: totalDiploma,
+            note: `Tope ${formatCurrency(TOPE_DIPLOMA)}, ${diplomaPercentage}%`,
+          },
+        ]}
+      />
 
-          <div className="flex items-center gap-3">
-            {searchTerm && (
-              <button
-                id="reparto-reset-filters"
-                onClick={handleResetFilters}
-                className="inline-flex items-center gap-1.5 text-xs text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory font-semibold transition-colors"
-              >
-                <RefreshCcw size={12} />
-                <span>Limpiar</span>
-              </button>
-            )}
-            <div className="inline-flex rounded border border-enchanted-green/15 dark:border-light-ivory/15 overflow-hidden text-[10px] font-bold uppercase tracking-wider">
-              <button
-                type="button"
-                onClick={() => setVista('historico')}
-                className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${
-                  vista === 'historico'
-                    ? 'bg-enchanted-green text-white dark:bg-elevated-gold dark:text-enchanted-green'
-                    : 'bg-white dark:bg-[#051A14]/40 text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5'
-                }`}
-              >
-                Histórico
-              </button>
-              <button
-                type="button"
-                onClick={() => setVista('cierres')}
-                className={`flex items-center gap-1 px-3 py-1.5 transition-colors ${
-                  vista === 'cierres'
-                    ? 'bg-enchanted-green text-white dark:bg-elevated-gold dark:text-enchanted-green'
-                    : 'bg-white dark:bg-[#051A14]/40 text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5'
-                }`}
-              >
-                Cierres
-              </button>
-            </div>
-          </div>
+      {/* Filters + segmented control */}
+      <div className="flex flex-wrap items-center gap-3">
+        <SearchInput
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar por proyecto o cliente"
+          ariaLabel="Buscar por proyecto o cliente"
+        />
+        <div className="inline-flex rounded-md border border-field overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setVista('historico')}
+            aria-pressed={vista === 'historico'}
+            className={`inline-flex h-11 items-center px-5 text-sm font-semibold transition-colors ${
+              vista === 'historico'
+                ? 'bg-ink text-paper'
+                : 'bg-transparent text-ink-muted hover:text-ink hover:bg-ink/5'
+            }`}
+          >
+            Histórico
+          </button>
+          <button
+            type="button"
+            onClick={() => setVista('cierres')}
+            aria-pressed={vista === 'cierres'}
+            className={`inline-flex h-11 items-center px-5 text-sm font-semibold transition-colors ${
+              vista === 'cierres'
+                ? 'bg-ink text-paper'
+                : 'bg-transparent text-ink-muted hover:text-ink hover:bg-ink/5'
+            }`}
+          >
+            Cierres
+          </button>
         </div>
+        {searchTerm && (
+          <button
+            type="button"
+            id="reparto-reset-filters"
+            onClick={handleResetFilters}
+            className="h-11 px-2 text-sm font-semibold text-ink-muted transition-colors hover:text-ink"
+          >
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {/* === HISTORICO TAB === */}
       {vista === 'historico' && (
-        <>
-          {/* KPI Stats Grid (unchanged) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div id="kpi-utilidad-total" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex flex-col justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Utilidad Total Generada</p>
-                <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                  {formatCurrency(totalGananciaRepartida)}
-                </p>
-              </div>
-              <div className="mt-3 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
-                <span>Base de ingresos netos</span>
-                <TrendingUp size={14} className="text-enchanted-green dark:text-light-ivory" />
-              </div>
-            </div>
-
-            <div id="kpi-utilidad-dueno" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex flex-col justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Acumulado Dueño (65%)</p>
-                <p className="text-2xl font-mono font-bold text-[#0B3D2E] dark:text-[#EAE3D2]">
-                  {formatCurrency(totalDueño)}
-                </p>
-              </div>
-              <div className="mt-3 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
-                <span>Fórmula fija de reparto</span>
-                <User size={14} className="text-[#0B3D2E] dark:text-elevated-gold" />
-              </div>
-            </div>
-
-            <div id="kpi-utilidad-ejecutivo" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex flex-col justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Acumulado Ejecutivo (30%/35%)</p>
-                <p className="text-2xl font-mono font-bold text-[#8C7853] dark:text-elevated-gold">
-                  {formatCurrency(totalEjecutivo)}
-                </p>
-              </div>
-              <div className="mt-3 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
-                <span>Inc. reasignación de excedentes</span>
-                <Briefcase size={14} className="text-[#8C7853] dark:text-elevated-gold" />
-              </div>
-            </div>
-
-            <div id="kpi-utilidad-diploma" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex flex-col justify-between">
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Fondo Diploma (Becas 5%)</p>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                    {formatCurrency(totalDiploma)}
-                  </span>
-                  <span className="text-[10px] text-rocky-gray font-mono font-semibold">
-                    Tope: {formatCurrency(TOPE_DIPLOMA)}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-3 space-y-1.5">
-                <div className="w-full bg-enchanted-green/10 dark:bg-white/10 h-2 rounded-full overflow-hidden">
-                  <div 
-                    className="bg-elevated-gold h-full rounded-full transition-all duration-500"
-                    style={{ width: `${diplomaPercentage}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[9px] text-rocky-gray font-mono">
-                  <span>Progreso al tope</span>
-                  <span className="font-bold text-enchanted-green dark:text-elevated-gold">{diplomaPercentage}%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Historico Table */}
+        <DataCard id="reparto-historico-table">
           {filteredDistributions.length === 0 ? (
-            <div className="bg-white dark:bg-[#051A14]/40 border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg p-12 text-center">
-              <div className="w-12 h-12 bg-enchanted-green/5 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto text-rocky-gray mb-4">
-                <Award size={24} className="opacity-80" />
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-ink/5 flex items-center justify-center text-ink-muted mb-4">
+                <Award size={22} />
               </div>
-              <h3 className="text-sm font-semibold text-enchanted-green dark:text-light-ivory">
-                Sin repartos registrados
-              </h3>
-              <p className="text-xs text-rocky-gray max-w-md mx-auto mt-2 leading-relaxed">
-                Las utilidades se calculan de forma automatica e integra cuando un proyecto cambia a estado de facturacion <strong>"Pagado"</strong> (todas sus facturas asociadas quedan liquidadas).
+              <h3 className="text-base font-semibold text-ink">Sin repartos registrados</h3>
+              <p className="text-sm text-ink-muted mt-1 max-w-md">
+                Las utilidades se calculan de forma automática cuando un proyecto cambia a estado de facturación "Pagado" (todas sus facturas asociadas quedan liquidadas).
               </p>
             </div>
           ) : (
-            <div className="bg-white dark:bg-[#051A14]/40 border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg overflow-hidden shadow-sm">
+            <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-enchanted-green/10 dark:border-light-ivory/10 bg-enchanted-green/[0.02] dark:bg-black/20 text-[10px] uppercase font-bold text-enchanted-green/80 dark:text-light-ivory/80 tracking-wider">
-                      <th className="py-3.5 px-4 font-semibold">Proyecto</th>
-                      <th className="py-3.5 px-4 font-semibold">Cliente</th>
-                      <th className="py-3.5 px-4 font-semibold text-right">Ganancia Total</th>
-                      <th className="py-3.5 px-4 font-semibold text-right">Dueño (65%)</th>
-                      <th className="py-3.5 px-4 font-semibold text-right">Ejecutivo (30%/35%)</th>
-                      <th className="py-3.5 px-4 font-semibold text-right">Diploma (5% / Tope)</th>
-                      <th className="py-3.5 px-4 font-semibold text-center">Fecha Reparto</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-enchanted-green/5 dark:divide-light-ivory/5 text-xs text-enchanted-green dark:text-light-ivory/95">
-                    {filteredDistributions.map((dist) => {
-                      const info = getProjectInfo(dist.proyectoId);
-                      return (
-                        <tr 
-                          key={dist.id}
-                          className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-colors"
-                        >
-                          <td className="py-4 px-4 font-medium">
-                            <div>
-                              <p className="font-semibold text-enchanted-green dark:text-light-ivory">
-                                {info.nombre}
-                              </p>
-                              <p className="text-[10px] text-rocky-gray font-mono mt-0.5">
-                                {info.codigo}
-                              </p>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-rocky-gray dark:text-rose-linen/80">
-                            {info.cliente}
-                          </td>
-                          <td className="py-4 px-4 font-mono font-bold text-right text-enchanted-green dark:text-light-ivory">
-                            {formatCurrency(dist.gananciaTotal)}
-                          </td>
-                          <td className="py-4 px-4 font-mono text-right text-[#0B3D2E] dark:text-[#EAE3D2]">
-                            {formatCurrency(dist.gananciaDueno)}
-                          </td>
-                          <td className="py-4 px-4 font-mono text-right text-[#8C7853] dark:text-elevated-gold">
-                            {formatCurrency(dist.gananciaEjecutivo)}
-                          </td>
-                          <td className="py-4 px-4 font-mono text-right text-enchanted-green/90 dark:text-light-ivory/90">
-                            <div>
-                              <span>{formatCurrency(dist.gananciaDiploma)}</span>
-                              {dist.gananciaDiploma === 0 && (
-                                <span className="block text-[8px] uppercase font-bold text-rose-linen bg-cranberry/20 px-1 py-0.5 rounded mt-0.5 w-fit ml-auto">
-                                  Topado
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 text-center font-mono text-[11px] text-rocky-gray">
-                            {dist.fechaCreacion}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div role="table" aria-label="Histórico de repartos" className="min-w-0" style={{ minWidth: '1100px' }}>
+                  <div role="row" className="grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_130px_130px_130px_140px_120px] gap-4 px-6 border-b border-line py-3">
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Ganancia total</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Dueño (65%)</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Ejecutivo (30%/35%)</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Diploma (5% / tope)</div>
+                    <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Fecha reparto</div>
+                  </div>
+
+                  {filteredDistributions.map((dist) => {
+                    const info = getProjectInfo(dist.proyectoId);
+                    return (
+                      <div
+                        key={dist.id}
+                        role="row"
+                        className="grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_130px_130px_130px_140px_120px] gap-4 px-6 items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                      >
+                        <div role="cell" className="min-w-0">
+                          <p className="font-semibold text-ink truncate" title={info.nombre}>{info.nombre}</p>
+                          <p className="mt-0.5 text-[13px] text-ink-muted tabular-nums">{info.codigo}</p>
+                        </div>
+                        <div role="cell" className="min-w-0">
+                          <p className="text-ink-muted truncate" title={info.cliente}>{info.cliente}</p>
+                        </div>
+                        <div role="cell" className="text-right font-semibold tabular-nums text-ink">{formatCurrency(dist.gananciaTotal)}</div>
+                        <div role="cell" className="text-right tabular-nums text-ink-muted">{formatCurrency(dist.gananciaDueno)}</div>
+                        <div role="cell" className="text-right tabular-nums text-ink-muted">{formatCurrency(dist.gananciaEjecutivo)}</div>
+                        <div role="cell" className="text-right tabular-nums text-ink-muted">
+                          <span>{formatCurrency(dist.gananciaDiploma)}</span>
+                          {dist.gananciaDiploma === 0 && (
+                            <span className="block text-[11px] text-ink-muted">Topado</span>
+                          )}
+                        </div>
+                        <div role="cell" className="text-center tabular-nums text-[13px] text-ink-muted">
+                          {dist.fechaCreacion}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="bg-enchanted-green/[0.02] dark:bg-black/10 px-4 py-3 border-t border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between text-[11px] text-rocky-gray">
-                <span>Mostrando {filteredDistributions.length} distribuciones de utilidades automaticas</span>
-                <span className="flex items-center gap-1">
-                  <BookOpen size={12} className="text-elevated-gold" />
-                  <span>Calculo sin impuestos directos de IVA</span>
-                </span>
-              </div>
-            </div>
+              <p className="px-6 py-3 text-[13px] text-ink-muted">
+                Mostrando {filteredDistributions.length} distribuciones de utilidades automáticas
+              </p>
+            </>
           )}
-        </>
+        </DataCard>
       )}
 
       {/* === CIERRES TAB === */}
       {vista === 'cierres' && (
-        <>
+        <div className="space-y-4">
           {filteredCierreProjects.length === 0 ? (
-            <div className="bg-white dark:bg-[#051A14]/40 border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg p-12 text-center">
-              <div className="w-12 h-12 bg-enchanted-green/5 dark:bg-white/5 rounded-full flex items-center justify-center mx-auto text-rocky-gray mb-4">
-                <Lock size={24} className="opacity-80" />
+            <DataCard id="reparto-cierres-empty" className="p-12 text-center">
+              <div className="w-12 h-12 rounded-full bg-ink/5 flex items-center justify-center mx-auto text-ink-muted mb-4">
+                <Lock size={24} />
               </div>
-              <h3 className="text-sm font-semibold text-enchanted-green dark:text-light-ivory">
-                Sin cierres registrados
-              </h3>
-              <p className="text-xs text-rocky-gray max-w-md mx-auto mt-2 leading-relaxed">
+              <h3 className="text-base font-semibold text-ink">Sin cierres registrados</h3>
+              <p className="text-sm text-ink-muted max-w-md mx-auto mt-2">
                 Los cierres manuales se generan al cerrar un proyecto desde su ficha de detalle. Los porcentajes y montos quedan congelados al momento del cierre.
               </p>
-            </div>
+            </DataCard>
           ) : (
-            <div className="space-y-4">
-              {filteredCierreProjects.map(projId => {
-                const info = getProjectInfo(projId);
-                const rows = cierresByProject[projId].sort((a, b) => b.monto - a.monto);
-                const totalProj = rows.reduce((s, r) => s + r.monto, 0);
-                const fechaCierre = rows[0]?.creadoEn
-                  ? new Date(rows[0].creadoEn).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
-                  : '---';
+            filteredCierreProjects.map(projId => {
+              const info = getProjectInfo(projId);
+              const rows = cierresByProject[projId].sort((a, b) => b.monto - a.monto);
+              const totalProj = rows.reduce((s, r) => s + r.monto, 0);
+              const fechaCierre = rows[0]?.creadoEn
+                ? new Date(rows[0].creadoEn).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })
+                : '---';
 
-                return (
-                  <div
-                    key={projId}
-                    className="bg-white dark:bg-[#051A14]/40 border border-enchanted-green/10 dark:border-light-ivory/10 rounded-lg overflow-hidden shadow-sm"
-                  >
-                    {/* Project header */}
-                    <div className="px-5 py-4 bg-enchanted-green/[0.02] dark:bg-black/20 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-semibold text-enchanted-green dark:text-light-ivory">
-                          {info.nombre}
-                        </p>
-                        <p className="text-[10px] text-rocky-gray font-mono mt-0.5">
-                          {info.codigo} &middot; {info.cliente}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4 text-[10px] text-rocky-gray font-mono">
-                        <span>Cerrado: {fechaCierre}</span>
-                        <span className="font-bold text-enchanted-green dark:text-light-ivory">
-                          Total: {formatCurrency(totalProj)}
-                        </span>
-                      </div>
+              return (
+                <DataCard key={projId} id={`reparto-cierre-${projId}`}>
+                  <div className="px-6 py-4 border-b border-line flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink truncate" title={info.nombre}>{info.nombre}</p>
+                      <p className="mt-0.5 text-[13px] text-ink-muted tabular-nums">{info.codigo} · {info.cliente}</p>
                     </div>
-
-                    {/* Destino rows */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="text-[10px] uppercase font-bold text-enchanted-green/70 dark:text-light-ivory/70 tracking-wider">
-                            <th className="py-2.5 px-5 font-semibold">Destino</th>
-                            <th className="py-2.5 px-5 font-semibold text-right">Porcentaje</th>
-                            <th className="py-2.5 px-5 font-semibold text-right">Monto</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-enchanted-green/5 dark:divide-light-ivory/5 text-xs text-enchanted-green dark:text-light-ivory/95">
-                          {rows.map(rc => (
-                            <tr key={rc.id} className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-colors">
-                              <td className="py-3 px-5 font-medium">{rc.destino}</td>
-                              <td className="py-3 px-5 text-right font-mono text-rocky-gray">{rc.porcentaje}%</td>
-                              <td className="py-3 px-5 text-right font-mono font-bold">{formatCurrency(rc.monto)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    <div className="flex items-center gap-4 text-[13px] text-ink-muted tabular-nums">
+                      <span>Cerrado: {fechaCierre}</span>
+                      <span className="font-semibold text-ink">Total: {formatCurrency(totalProj)}</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="overflow-x-auto">
+                    <div role="table" aria-label={`Reparto de cierre ${info.nombre}`} className="min-w-0">
+                      <div role="row" className="grid grid-cols-[1fr_120px_140px] gap-4 px-6 border-b border-line py-3">
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Destino</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Porcentaje</div>
+                        <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Monto</div>
+                      </div>
+                      {rows.map(rc => (
+                        <div
+                          key={rc.id}
+                          role="row"
+                          className="grid grid-cols-[1fr_120px_140px] gap-4 px-6 items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                        >
+                          <div role="cell" className="font-medium text-ink">{rc.destino}</div>
+                          <div role="cell" className="text-right tabular-nums text-ink-muted">{rc.porcentaje}%</div>
+                          <div role="cell" className="text-right font-semibold tabular-nums text-ink">{formatCurrency(rc.monto)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </DataCard>
+              );
+            })
           )}
-        </>
+        </div>
       )}
     </div>
   );
