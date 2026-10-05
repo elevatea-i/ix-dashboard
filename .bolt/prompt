@@ -1,1 +1,28 @@
+REGLAS DE DISEÑO IX (permanentes)
+- En tareas de rediseño, cambia solo presentación: nunca lógica, cálculos,
+  filtros, handlers, props, tipos, mappers ni llamadas a Supabase.
+- Comentarios en inglés, sin referencias a herramientas.
+- Color solo con tokens: bg-paper, bg-panel, text-ink, text-ink-muted,
+  border-line, border-field, text-gold, text-risk, bg-risk, bg-ok, text-ok,
+  bg-ink-muted. Sin hex sueltos ni variantes dark: en lo nuevo.
+- font-sans para todo; font-serif solo en el título de pantalla. Cifras con
+  números tabulares, nunca font-mono.
+- Etiquetas y encabezados de 13px, sin mayúsculas ni tracking. Textos en
+  sentence case.
+- rounded-lg en paneles, rounded-md en botones e inputs. Sin sombras: bordes
+  border-line.
+- Sin animate-pulse ni animate-fade-in (animate-spin en cargas sí).
+- Sin barras laterales de color, círculos con ícono ni badges para estados:
+  usar StatusDot.
+- Usar los componentes de src/components/ui/ (PageHeader, Button, IconButton,
+  Money, SummaryStrip, SearchInput, SelectField, StatusDot, DataCard). Patrón
+  de referencia: ProviderPaymentsList.tsx.
+- Cranberry (text-risk) solo para riesgo real: vencido, falta, negativo. Un
+  estado pendiente que no es riesgo usa tono neutral.
+- Tablas con role table/row/columnheader/cell, sin zebra, hover:bg-ink/[0.03].
+- Fechas con formatDateShort, en una sola línea.
+- Lo que una instrucción no mencione se conserva tal cual. Conserva los id.
+- Al terminar: lista de archivos tocados y confirmación de tsc y build. No
+  pegues código completo salvo que se pida.
+
 Para verificar si existen datos reales en Supabase (conteos, patrones, búsquedas), usa siempre una conexión con privilegios completos (ej. mcp__supabase__execute_sql), nunca la REST API con la anon key sin sesión — RLS puede devolver resultados vacíos que no reflejan los datos reales, y eso lleva a conclusiones falsas
