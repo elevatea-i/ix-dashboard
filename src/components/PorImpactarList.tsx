@@ -25,8 +25,8 @@ interface PorImpactarListProps {
   onRevertPaidClick: (id: string) => void;
 }
 
-const GRID_COLUMNS =
-  'grid grid-cols-[minmax(220px,2fr)_140px_120px_minmax(180px,1.4fr)_120px_120px_minmax(170px,1.2fr)_180px] gap-4 px-6';
+const GRID_COLUMNS = 'grid gap-4 px-6';
+const GRID_TEMPLATE = 'minmax(220px,2fr) 140px 120px minmax(180px,1.4fr) 120px 120px minmax(170px,1.2fr) 180px';
 
 export default function PorImpactarList({
   records,
@@ -215,8 +215,8 @@ export default function PorImpactarList({
         ) : (
           <>
             <div className="overflow-x-auto">
-              <div role="table" aria-label="Registros por impactar" className="min-w-[1280px]">
-                <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`}>
+              <div role="table" aria-label="Registros por impactar" className="min-w-0" style={{ minWidth: '1410px' }}>
+                <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Descripción</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Monto</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Socio</div>
@@ -235,7 +235,7 @@ export default function PorImpactarList({
                     : null;
 
                   return (
-                    <div key={record.id} role="row" className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}>
+                    <div key={record.id} role="row" className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
                       <div role="cell" className="min-w-0">
                         <p className="font-semibold text-ink truncate" title={record.descripcion}>{record.descripcion}</p>
                       </div>

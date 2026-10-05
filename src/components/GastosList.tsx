@@ -36,8 +36,8 @@ const CATEGORIES: ExpenseCategory[] = [
   'Otros / sin clasificar'
 ];
 
-const GRID_COLUMNS =
-  'grid grid-cols-[minmax(220px,2fr)_minmax(180px,1.5fr)_minmax(170px,1.3fr)_120px_140px_120px_120px_120px] gap-4 px-6';
+const GRID_COLUMNS = 'grid gap-4 px-6';
+const GRID_TEMPLATE = 'minmax(220px,2fr) minmax(180px,1.5fr) minmax(170px,1.3fr) 120px 140px 120px 120px 120px';
 
 export default function GastosList({
   expenses,
@@ -206,8 +206,8 @@ export default function GastosList({
         ) : (
           <>
             <div className="overflow-x-auto">
-              <div role="table" aria-label="Gastos pagados" className="min-w-[1180px]">
-                <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`}>
+              <div role="table" aria-label="Gastos pagados" className="min-w-0" style={{ minWidth: '1350px' }}>
+                <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Concepto</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Categoría</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Clasificación</div>
@@ -219,7 +219,7 @@ export default function GastosList({
                 </div>
 
                 {filteredExpenses.map(exp => (
-                  <div key={exp.id} role="row" className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}>
+                  <div key={exp.id} role="row" className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
                     <div role="cell" className="min-w-0">
                       <p className="font-semibold text-ink truncate">{exp.concepto}</p>
                       {(exp.esReembolsable || exp.tieneFactura) && (
