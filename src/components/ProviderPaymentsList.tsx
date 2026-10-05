@@ -262,13 +262,13 @@ export default function ProviderPaymentsList({
             <div className="overflow-x-auto">
               <div role="table" aria-label="Pagos a proveedores" className="min-w-[980px]">
                 <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`}>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proveedor</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Monto</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Fecha</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Factura</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Método</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Estatus</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Acciones</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Proveedor</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Monto</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Fecha</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Factura</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Método</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Estatus</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Acciones</div>
                 </div>
 
                 {filteredPayments.map((pay) => {

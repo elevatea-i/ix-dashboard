@@ -224,7 +224,7 @@ export default function ProviderPaymentFormModal({
               {initialData ? 'Editar Pago a Proveedor' : 'Registrar Pago a Proveedor'}
             </h3>
             <p className="text-xs text-rocky-gray dark:text-rose-linen/60 mt-0.5">
-              Control fiscal granular de egresos directos a subcontratistas y proveedores por evento.
+              Control fiscal de egresos directos a proveedores por evento.
             </p>
             {isParcialidadesEdit && (
               <span className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold border border-elevated-gold/30">
@@ -414,7 +414,7 @@ export default function ProviderPaymentFormModal({
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 text-center">
                 Facturado
               </label>
               <div className="flex items-center justify-between p-2 bg-white dark:bg-black/10 rounded border border-enchanted-green/40 dark:border-light-ivory/30 h-10 shadow-xs">
@@ -431,13 +431,13 @@ export default function ProviderPaymentFormModal({
 
             {!isParcialidades && (
             <div>
-              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
+              <label className="block text-xs font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5 text-center">
                 Estatus de Pago <span className="text-cranberry font-bold">*</span>
               </label>
               <select
                 value={estatus}
                 onChange={(e) => setEstatus(e.target.value as 'Pagado' | 'Pendiente')}
-                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs text-center"
               >
                 <option value="Pagado" className="bg-white dark:bg-[#051A14]">Pagado</option>
                 <option value="Pendiente" className="bg-white dark:bg-[#051A14]">Pendiente</option>
