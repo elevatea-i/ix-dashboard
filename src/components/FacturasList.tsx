@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Invoice, Project, Client } from '../types';
-import { Plus, Search, CircleCheck as CheckCircle2, CreditCard as Edit3, Trash2, DollarSign, TrendingUp, Clock, ListFilter as Filter, Receipt, FileCheck2, CalendarCheck2 } from 'lucide-react';
+import { Plus, Search, CircleCheck as CheckCircle2, Pencil as Edit3, Trash2, DollarSign, TrendingUp, Clock, ListFilter as Filter, Receipt, FileCheck2, CalendarCheck2 } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface FacturasListProps {

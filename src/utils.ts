@@ -104,6 +104,29 @@ export function parseCurrencyInput(formatted: string): string {
   return formatted.replace(/[^\d.]/g, '');
 }
 
+const MONTHS_ES_SHORT = [
+  'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+  'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
+];
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) as a short Spanish date
+ * without using Date or Intl, to avoid timezone drift.
+ * Returns e.g. "2 oct 2026". Empty string for invalid input.
+ */
+export function formatDateShort(iso: string): string {
+  if (!iso) return '';
+  const parts = iso.split('-');
+  if (parts.length !== 3) return '';
+  const year = parts[0];
+  const month = parseInt(parts[1], 10);
+  const day = parseInt(parts[2], 10);
+  if (isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    return '';
+  }
+  return `${day} ${MONTHS_ES_SHORT[month - 1]} ${year}`;
+}
+
 export interface DueDateIndicator {
   text: string;
   type: 'future' | 'today' | 'past';

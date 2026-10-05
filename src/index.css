@@ -22,6 +22,47 @@
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
 }
 
+/* Semantic color tokens (light) */
+:root {
+  --ix-paper: #F2E9DF;
+  --ix-surface: #FAF6F1;
+  --ix-ink: #0B3D2E;
+  --ix-muted: #6E6A62;
+  --ix-line: #E3D8CB;
+  --ix-field: #D8CBBA;
+  --ix-gold: #8C7853;
+  --ix-risk: #84344E;
+  --ix-ok: #0B3D2E;
+  --ix-side: #0B3D2E;
+}
+
+/* Semantic color tokens (dark) */
+.dark {
+  --ix-paper: #06190F;
+  --ix-surface: #0C241C;
+  --ix-ink: #F2E9DF;
+  --ix-muted: #A89F92;
+  --ix-line: rgba(242,233,223,0.10);
+  --ix-field: rgba(242,233,223,0.18);
+  --ix-gold: #B39C70;
+  --ix-risk: #C7798F;
+  --ix-ok: #8FBFA8;
+  --ix-side: #040F09;
+}
+
+@theme inline {
+  --color-paper: var(--ix-paper);
+  --color-surface: var(--ix-surface);
+  --color-ink: var(--ix-ink);
+  --color-ink-muted: var(--ix-muted);
+  --color-line: var(--ix-line);
+  --color-field: var(--ix-field);
+  --color-gold: var(--ix-gold);
+  --color-risk: var(--ix-risk);
+  --color-ok: var(--ix-ok);
+  --color-side: var(--ix-side);
+}
+
 /* Custom Scrollbar styled elegantly to match the aesthetic */
 ::-webkit-scrollbar {
   width: 6px;
@@ -46,9 +87,10 @@ html, body {
   height: 100vh;
   margin: 0;
   overflow: hidden;
-  background-color: #F2E9DF;
+  background-color: var(--ix-paper);
   transition: background-color 0.3s ease;
   font-family: var(--font-sans);
+  font-variant-numeric: lining-nums tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -61,11 +103,19 @@ html.dark input[type="date"] {
   color-scheme: dark;
 }
 
-html.dark, html.dark body {
-  background-color: #051A14;
+/* Accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--ix-gold);
+  outline-offset: 2px;
+}
+
+/* Remove default browser outline from sidebar and buttons */
+button:focus,
+[role="navigation"]:focus,
+nav:focus {
+  outline: none;
 }
 
 h1, h2, h3, h4, h5, h6, .font-serif-editorial {
   font-family: var(--font-serif);
 }
-

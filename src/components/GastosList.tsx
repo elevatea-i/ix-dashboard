@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Expense, Project, ExpenseCategory } from '../types';
-import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Coins, TrendingDown, Clock, Tag, Layers, ArrowUpRight, RefreshCcw, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
+import { Plus, Search, Pencil as Edit3, Trash2, ListFilter as Filter, Coins, TrendingDown, Clock, Tag, Layers, ArrowUpRight, RefreshCcw, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../utils';
 
 interface GastosListProps {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProviderPayment, Project, AbonoProveedor } from '../types';
-import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins } from 'lucide-react';
+import { Plus, Search, Pencil as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins } from 'lucide-react';
 import { formatCurrency, getDueDateIndicator } from '../utils';
 import { getAbonosResumen, AbonosResumen } from '../utils/abonos';
 

@@ -50,7 +50,14 @@ export default function App() {
   const { session, profile, loading, signIn, signOut } = useAuth();
   const isAuthenticated = !!session;
 
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('ix-theme');
+      return stored === 'dark';
+    } catch {
+      return false;
+    }
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeModule, setActiveModule] = useState<ModuleId>('clientes');
@@ -175,6 +182,11 @@ export default function App() {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('ix-theme', darkMode ? 'dark' : 'light');
+    } catch {
+      // Storage unavailable; keep in-memory behavior
     }
   }, [darkMode]);
 

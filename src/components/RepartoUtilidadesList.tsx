@@ -85,7 +85,7 @@ export default function RepartoUtilidadesList({
             Reparto de Utilidades
           </h2>
           <p className="text-xs text-rocky-gray mt-1">
-            Consola analitica de distribucion de ganancias netas — historico automatico y cierres manuales.
+            Consola analítica de distribución de ganancias netas: histórico automático y cierres manuales.
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function RepartoUtilidadesList({
                 {formatCurrency(r.totalCombinado)}
               </p>
               <p className="text-[10px] text-rocky-gray mt-2 font-mono">
-                Historico: {formatCurrency(r.totalHistorico)} &middot; Cierres: {formatCurrency(r.totalCierres)}
+                Histórico: {formatCurrency(r.totalHistorico)} &middot; Cierres: {formatCurrency(r.totalCierres)}
               </p>
             </div>
           ))}
@@ -150,7 +150,7 @@ export default function RepartoUtilidadesList({
                     : 'bg-white dark:bg-[#051A14]/40 text-rocky-gray hover:bg-enchanted-green/5 dark:hover:bg-white/5'
                 }`}
               >
-                Historico
+                Histórico
               </button>
               <button
                 type="button"
@@ -188,13 +188,13 @@ export default function RepartoUtilidadesList({
 
             <div id="kpi-utilidad-dueno" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex flex-col justify-between">
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Acumulado Dueno (65%)</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Acumulado Dueño (65%)</p>
                 <p className="text-2xl font-mono font-bold text-[#0B3D2E] dark:text-[#EAE3D2]">
                   {formatCurrency(totalDueño)}
                 </p>
               </div>
               <div className="mt-3 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
-                <span>Formula fija de reparto</span>
+                <span>Fórmula fija de reparto</span>
                 <User size={14} className="text-[#0B3D2E] dark:text-elevated-gold" />
               </div>
             </div>
@@ -207,7 +207,7 @@ export default function RepartoUtilidadesList({
                 </p>
               </div>
               <div className="mt-3 pt-3 border-t border-rocky-gray/5 flex items-center justify-between text-[10px] text-rocky-gray">
-                <span>Inc. reasignacion de excedentes</span>
+                <span>Inc. reasignación de excedentes</span>
                 <Briefcase size={14} className="text-[#8C7853] dark:text-elevated-gold" />
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function RepartoUtilidadesList({
                       <th className="py-3.5 px-4 font-semibold">Proyecto</th>
                       <th className="py-3.5 px-4 font-semibold">Cliente</th>
                       <th className="py-3.5 px-4 font-semibold text-right">Ganancia Total</th>
-                      <th className="py-3.5 px-4 font-semibold text-right">Dueno (65%)</th>
+                      <th className="py-3.5 px-4 font-semibold text-right">Dueño (65%)</th>
                       <th className="py-3.5 px-4 font-semibold text-right">Ejecutivo (30%/35%)</th>
                       <th className="py-3.5 px-4 font-semibold text-right">Diploma (5% / Tope)</th>
                       <th className="py-3.5 px-4 font-semibold text-center">Fecha Reparto</th>
