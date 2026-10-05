@@ -286,7 +286,7 @@ export default function ProviderPaymentsList({
                         </p>
                       </div>
 
-                      <div role="cell" className="text-right">
+                      <div role="cell" className="text-center">
                         <Money value={pay.total} size="sm" />
                         <p className="mt-0.5 text-[13px] text-ink-muted tabular-nums">
                           Sub {formatCurrency(pay.subtotal)} · IVA {formatCurrency(pay.iva)}
@@ -303,7 +303,7 @@ export default function ProviderPaymentsList({
                         )}
                       </div>
 
-                      <div role="cell">
+                      <div role="cell" className="text-center">
                         <p className="whitespace-nowrap tabular-nums">{formatDateShort(pay.fecha)}</p>
                         {pay.fecha_vencimiento && pay.estatus === 'Pendiente' && (
                           <p className="mt-0.5 whitespace-nowrap text-[13px] text-ink-muted tabular-nums">
@@ -312,9 +312,9 @@ export default function ProviderPaymentsList({
                         )}
                       </div>
 
-                      <div role="cell">{pay.tieneFactura ? 'Sí' : 'No'}</div>
+                      <div role="cell" className="text-center">{pay.tieneFactura ? 'Sí' : 'No'}</div>
 
-                      <div role="cell">
+                      <div role="cell" className="text-center">
                         <p className="font-semibold">{pay.metodoPago || 'Sin especificar'}</p>
                         {pay.metodoPago === 'PPD' && resumen && (
                           <p className={`mt-0.5 text-[13px] ${resumen.sinComplemento === 0 ? 'text-ink-muted' : 'text-risk font-medium'}`}>
@@ -328,7 +328,7 @@ export default function ProviderPaymentsList({
                         )}
                       </div>
 
-                      <div role="cell" className="flex flex-col items-start gap-1.5">
+                      <div role="cell" className="flex flex-col items-center gap-1.5 text-center">
                         {resumen ? (
                           resumen.saldo === 0 ? (
                             <StatusDot tone="ok" label="Pagado" />
@@ -354,7 +354,7 @@ export default function ProviderPaymentsList({
                         )}
                       </div>
 
-                      <div role="cell" className="flex items-center justify-end gap-1 -my-2">
+                      <div role="cell" className="flex items-center justify-center gap-1 -my-2">
                         {resumen && (
                           <IconButton
                             label="Abonos"
