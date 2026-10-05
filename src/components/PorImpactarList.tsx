@@ -224,7 +224,7 @@ export default function PorImpactarList({
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Fecha</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Estatus</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Pago a proveedor</div>
-                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Acciones</div>
+                  <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">Acciones</div>
                 </div>
 
                 {filteredRecords.map(record => {
