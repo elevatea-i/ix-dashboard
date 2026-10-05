@@ -59,7 +59,7 @@ export default function ReportesPanel({
       <div id="reportes-panel-container" className="space-y-6 animate-fade-in">
         <div>
           <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-            Reportes.
+            Reportes Operativos
           </h2>
           <p className="text-xs text-rocky-gray mt-1">
             Generador de informes financieros integrales de tus proyectos en formato Excel (.xlsx).
@@ -87,7 +87,7 @@ export default function ReportesPanel({
     <div id="reportes-panel-container" className="space-y-6 animate-fade-in">
       <div>
         <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-          Reportes.
+          Reportes Operativos
         </h2>
         <p className="text-xs text-rocky-gray mt-1">
           Busca y selecciona un proyecto para compilar y descargar su informe contable y de rentabilidad en un archivo Excel con múltiples hojas.

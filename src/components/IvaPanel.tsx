@@ -141,7 +141,7 @@ export default function IvaPanel({
         <div className="bg-cranberry/5 border border-cranberry/20 rounded-lg p-4 flex items-start gap-3">
           <TriangleAlert size={16} className="text-cranberry mt-0.5 shrink-0" />
           <p className="text-[11px] text-cranberry font-medium leading-relaxed">
-            Hay <strong>{enEspera.registros}</strong> {enEspera.registros === 1 ? 'registro' : 'registros'} PPD sin complemento de pago
+            Hay <strong>{enEspera.registros}</strong> registros PPD sin complemento de pago
             {montosEnEspera ? <>: <strong>{montosEnEspera}</strong> en espera</> : null}.
             No cuentan hasta marcar su complemento.
           </p>
