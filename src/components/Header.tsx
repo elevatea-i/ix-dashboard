@@ -57,7 +57,7 @@ export default function Header({
         {/* System identity */}
         <div className="hidden sm:block">
           <p className="text-[10px] tracking-widest text-elevated-gold dark:text-rose-linen uppercase font-semibold">
-            SISTEMA DE GESTIÓN INTERNA
+            SISTEMA FINANCIERO INTERNO.
           </p>
         </div>
       </div>
