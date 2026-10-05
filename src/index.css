@@ -52,7 +52,7 @@
 
 @theme inline {
   --color-paper: var(--ix-paper);
-  --color-surface: var(--ix-surface);
+  --color-panel: var(--ix-surface);
   --color-ink: var(--ix-ink);
   --color-ink-muted: var(--ix-muted);
   --color-line: var(--ix-line);
@@ -110,9 +110,8 @@ html.dark input[type="date"] {
 }
 
 /* Remove default browser outline from sidebar and buttons */
-button:focus,
-[role="navigation"]:focus,
-nav:focus {
+button:focus:not(:focus-visible),
+nav:focus:not(:focus-visible) {
   outline: none;
 }
 
