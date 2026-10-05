@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { ProfitDistribution, RepartoCierre, ResumenRepartoDestino, Project, Client } from '../types';
 import { Award, Lock } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { formatCurrency, formatDateShort } from '../utils';
 import PageHeader from './ui/PageHeader';
 import SummaryStrip from './ui/SummaryStrip';
 import SearchInput from './ui/SearchInput';
 import DataCard from './ui/DataCard';
+
+const GRID_HISTORICO =
+  'grid grid-cols-[minmax(220px,2fr)_minmax(140px,1.2fr)_repeat(4,minmax(110px,1fr))_110px] gap-4 px-6';
+const GRID_CIERRES =
+  'grid grid-cols-[1fr_100px_140px] gap-4 px-6';
 
 interface RepartoUtilidadesListProps {
   distributions: ProfitDistribution[];
@@ -67,9 +72,7 @@ export default function RepartoUtilidadesList({
     setSearchTerm('');
   };
 
-  // Build sorted resumen for the first SummaryStrip
   const sortedResumen = resumenRepartos.slice().sort((a, b) => b.totalCombinado - a.totalCombinado);
-  const findDestino = (destino: string) => sortedResumen.find(r => r.destino === destino);
 
   return (
     <div id="reparto-utilidades-container" className="space-y-6">
@@ -168,8 +171,8 @@ export default function RepartoUtilidadesList({
           ) : (
             <>
               <div className="overflow-x-auto">
-                <div role="table" aria-label="Histórico de repartos" className="min-w-0" style={{ minWidth: '1100px' }}>
-                  <div role="row" className="grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_130px_130px_130px_140px_120px] gap-4 px-6 border-b border-line py-3">
+                <div role="table" aria-label="Histórico de repartos" className="min-w-[980px]">
+                  <div role="row" className={`${GRID_HISTORICO} border-b border-line py-3`}>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Ganancia total</div>
@@ -185,7 +188,7 @@ export default function RepartoUtilidadesList({
                       <div
                         key={dist.id}
                         role="row"
-                        className="grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_130px_130px_130px_140px_120px] gap-4 px-6 items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                        className={`${GRID_HISTORICO} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
                       >
                         <div role="cell" className="min-w-0">
                           <p className="font-semibold text-ink truncate" title={info.nombre}>{info.nombre}</p>
@@ -204,7 +207,7 @@ export default function RepartoUtilidadesList({
                           )}
                         </div>
                         <div role="cell" className="text-center tabular-nums text-[13px] text-ink-muted">
-                          {dist.fechaCreacion}
+                          {formatDateShort(dist.fechaCreacion)}
                         </div>
                       </div>
                     );
@@ -255,8 +258,8 @@ export default function RepartoUtilidadesList({
                   </div>
 
                   <div className="overflow-x-auto">
-                    <div role="table" aria-label={`Reparto de cierre ${info.nombre}`} className="min-w-0">
-                      <div role="row" className="grid grid-cols-[1fr_120px_140px] gap-4 px-6 border-b border-line py-3">
+                    <div role="table" aria-label={`Reparto de cierre ${info.nombre}`}>
+                      <div role="row" className={`${GRID_CIERRES} border-b border-line py-3`}>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Destino</div>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Porcentaje</div>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Monto</div>
@@ -265,7 +268,7 @@ export default function RepartoUtilidadesList({
                         <div
                           key={rc.id}
                           role="row"
-                          className="grid grid-cols-[1fr_120px_140px] gap-4 px-6 items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                          className={`${GRID_CIERRES} items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
                         >
                           <div role="cell" className="font-medium text-ink">{rc.destino}</div>
                           <div role="cell" className="text-right tabular-nums text-ink-muted">{rc.porcentaje}%</div>

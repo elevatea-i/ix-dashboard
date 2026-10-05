@@ -22,11 +22,11 @@ interface RentabilidadListProps {
   thirdPartyPayments: ThirdPartyPayment[];
 }
 
-const GRID_COLS_PROJ = 'grid gap-4 px-6';
-const GRID_TEMPLATE_PROJ = 'minmax(220px,2fr) minmax(160px,1fr) 130px 130px 140px 130px 130px 110px';
+const GRID_COLS_PROJ =
+  'grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_130px_130px_140px_130px_130px_110px] gap-4 px-6';
 
-const GRID_COLS_CLIENT = 'grid gap-4 px-6';
-const GRID_TEMPLATE_CLIENT = 'minmax(200px,2fr) 90px 130px 130px 140px 130px 130px 110px';
+const GRID_COLS_CLIENT =
+  'grid grid-cols-[minmax(200px,2fr)_90px_130px_130px_140px_130px_130px_110px] gap-4 px-6';
 
 export default function RentabilidadList({
   projects = [],
@@ -161,8 +161,8 @@ export default function RentabilidadList({
           ) : (
             <>
               <div className="overflow-x-auto">
-                <div role="table" aria-label="Rentabilidad por proyecto" className="min-w-0" style={{ minWidth: '1200px' }}>
-                  <div role="row" className={`${GRID_COLS_PROJ} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE_PROJ }}>
+                <div role="table" aria-label="Rentabilidad por proyecto" className="min-w-[1200px]">
+                  <div role="row" className={`${GRID_COLS_PROJ} border-b border-line py-3`}>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Costo cliente</div>
@@ -179,8 +179,7 @@ export default function RentabilidadList({
                       <div
                         key={item.proyectoId}
                         role="row"
-                        className={`${GRID_COLS_PROJ} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
-                        style={{ gridTemplateColumns: GRID_TEMPLATE_PROJ }}
+                        className={`${GRID_COLS_PROJ} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]}`}
                       >
                         <div role="cell" className="min-w-0">
                           <p className="font-semibold text-ink truncate" title={item.proyectoCodigo}>{item.proyectoCodigo}</p>
@@ -229,8 +228,8 @@ export default function RentabilidadList({
           ) : (
             <>
               <div className="overflow-x-auto">
-                <div role="table" aria-label="Rentabilidad por cliente" className="min-w-0" style={{ minWidth: '1200px' }}>
-                  <div role="row" className={`${GRID_COLS_CLIENT} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE_CLIENT }}>
+                <div role="table" aria-label="Rentabilidad por cliente" className="min-w-[1200px]">
+                  <div role="row" className={`${GRID_COLS_CLIENT} border-b border-line py-3`}>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-center">N.º de proyectos</div>
                     <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Costo cliente</div>
@@ -247,8 +246,7 @@ export default function RentabilidadList({
                       <div
                         key={item.clienteId}
                         role="row"
-                        className={`${GRID_COLS_CLIENT} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
-                        style={{ gridTemplateColumns: GRID_TEMPLATE_CLIENT }}
+                        className={`${GRID_COLS_CLIENT} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03]}`}
                       >
                         <div role="cell" className="min-w-0">
                           <p className="font-semibold text-ink truncate" title={item.clienteNombre}>{item.clienteNombre}</p>

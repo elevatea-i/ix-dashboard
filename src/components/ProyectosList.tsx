@@ -30,8 +30,8 @@ interface ProyectosListProps {
   onCerrarClick?: (project: Project) => void;
 }
 
-const GRID_COLUMNS = 'grid gap-4 px-6';
-const GRID_TEMPLATE = 'minmax(220px,2fr) minmax(160px,1fr) 100px 140px 140px';
+const GRID_COLUMNS =
+  'grid grid-cols-[minmax(220px,2fr)_minmax(160px,1fr)_100px_140px_140px] gap-4 px-6';
 
 export default function ProyectosList({
   projects,
@@ -232,8 +232,8 @@ export default function ProyectosList({
               ) : (
                 <>
                   <div className="overflow-x-auto">
-                    <div role="table" aria-label="Proyectos" className="min-w-0" style={{ minWidth: '880px' }}>
-                      <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`} style={{ gridTemplateColumns: GRID_TEMPLATE }}>
+                    <div role="table" aria-label="Proyectos" className="min-w-[880px]">
+                      <div role="row" className={`${GRID_COLUMNS} border-b border-line py-3`}>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Cliente</div>
                         <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Ejecutivo</div>
@@ -250,7 +250,6 @@ export default function ProyectosList({
                             className={`${GRID_COLUMNS} items-start border-b border-line py-4 text-sm text-ink transition-colors hover:bg-ink/[0.03] ${
                               isSelected ? 'bg-ink/[0.03]' : ''
                             }`}
-                            style={{ gridTemplateColumns: GRID_TEMPLATE }}
                           >
                             <div role="cell" className="min-w-0">
                               <div className="flex items-center gap-2">

@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { Invoice, Expense, Project } from '../types';
 import { formatCurrency, formatDateShort } from '../utils';
-import { Receipt, TrendingDown } from 'lucide-react';
 import PageHeader from './ui/PageHeader';
 import SummaryStrip from './ui/SummaryStrip';
 import SearchInput from './ui/SearchInput';
 import DataCard from './ui/DataCard';
+
+const GRID_COBROS =
+  'grid grid-cols-[80px_minmax(0,1fr)_130px_70px_100px] gap-4 px-5';
+const GRID_GASTOS =
+  'grid grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)_130px_minmax(0,1fr)] gap-4 px-5';
 
 interface CuentaJuanCarlosProps {
   invoices: Invoice[];
@@ -91,33 +95,28 @@ export default function CuentaJuanCarlos({
         ]}
       />
 
-      <DataCard id="jc-mensaje-saldo" className="p-5">
-        {saldoNeto > 0 ? (
-          <p className="text-sm text-ink">
-            <span className="font-semibold">A favor de la empresa:</span> Juan Carlos debe transferir <span className="font-semibold tabular-nums">{formatCurrency(saldoNeto)}</span> a la cuenta de IX.
-          </p>
-        ) : saldoNeto < 0 ? (
-          <p className="text-sm text-ink">
-            <span className="font-semibold">A favor de Juan Carlos:</span> La empresa debe reembolsar <span className="font-semibold tabular-nums">{formatCurrency(Math.abs(saldoNeto))}</span> a Juan Carlos.
-          </p>
-        ) : (
-          <p className="text-sm text-ink-muted text-center">
-            Saldos perfectamente conciliados. No hay cobros ni adeudos pendientes.
-          </p>
-        )}
-      </DataCard>
+      {saldoNeto > 0 ? (
+        <p className="text-sm text-ink">
+          <span className="font-semibold">A favor de la empresa:</span> Juan Carlos debe transferir <span className="font-semibold tabular-nums">{formatCurrency(saldoNeto)}</span> a la cuenta de IX.
+        </p>
+      ) : saldoNeto < 0 ? (
+        <p className="text-sm text-ink">
+          <span className="font-semibold">A favor de Juan Carlos:</span> La empresa debe reembolsar <span className="font-semibold tabular-nums">{formatCurrency(Math.abs(saldoNeto))}</span> a Juan Carlos.
+        </p>
+      ) : (
+        <p className="text-sm text-ink-muted">
+          Saldos perfectamente conciliados. No hay cobros ni adeudos pendientes.
+        </p>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Cobros por transferir */}
         <DataCard id="jc-cobros-table" className="flex flex-col">
           <div className="p-5 border-b border-line space-y-3">
-            <div className="flex items-center gap-2">
-              <Receipt size={16} className="text-ink-muted" />
+            <div>
               <h4 className="text-sm font-semibold text-ink">Cobros por transferir</h4>
+              <p className="mt-0.5 text-[13px] text-ink-muted">Facturado por Juan Carlos pendiente de transferir a la empresa.</p>
             </div>
-            <p className="text-[13px] text-ink-muted">
-              Facturado por Juan Carlos pendiente de transferir a la empresa.
-            </p>
             <SearchInput
               value={invoiceSearch}
               onChange={setInvoiceSearch}
@@ -132,8 +131,8 @@ export default function CuentaJuanCarlos({
                 {invoiceSearch ? 'Sin resultados para la búsqueda' : 'No hay cobros pendientes de Juan Carlos'}
               </div>
             ) : (
-              <div role="table" aria-label="Cobros por transferir" className="min-w-0" style={{ minWidth: '640px' }}>
-                <div role="row" className="grid grid-cols-[120px_1fr_130px_100px_120px] gap-4 px-5 border-b border-line py-3">
+              <div role="table" aria-label="Cobros por transferir">
+                <div role="row" className={`${GRID_COBROS} border-b border-line py-3`}>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Folio</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Proyecto</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted text-right">Monto</div>
@@ -144,7 +143,7 @@ export default function CuentaJuanCarlos({
                   <div
                     key={inv.id}
                     role="row"
-                    className="grid grid-cols-[120px_1fr_130px_100px_120px] gap-4 px-5 items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                    className={`${GRID_COBROS} items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
                   >
                     <div role="cell" className="font-semibold text-ink truncate" title={inv.folio}>{inv.folio}</div>
                     <div role="cell" className="min-w-0">
@@ -152,7 +151,7 @@ export default function CuentaJuanCarlos({
                     </div>
                     <div role="cell" className="text-right font-semibold tabular-nums text-ink">{formatCurrency(inv.total)}</div>
                     <div role="cell" className="text-center text-ink-muted">{inv.metodoPago}</div>
-                    <div role="cell" className="tabular-nums text-[13px] text-ink-muted">{formatDateShort(inv.fechaEmision)}</div>
+                    <div role="cell" className="tabular-nums text-[13px] text-ink-muted whitespace-nowrap">{formatDateShort(inv.fechaEmision)}</div>
                   </div>
                 ))}
               </div>
@@ -167,13 +166,10 @@ export default function CuentaJuanCarlos({
         {/* Gastos por reembolsar */}
         <DataCard id="jc-gastos-table" className="flex flex-col">
           <div className="p-5 border-b border-line space-y-3">
-            <div className="flex items-center gap-2">
-              <TrendingDown size={16} className="text-ink-muted" />
+            <div>
               <h4 className="text-sm font-semibold text-ink">Gastos por reembolsar</h4>
+              <p className="mt-0.5 text-[13px] text-ink-muted">Gastos financiados por Juan Carlos pendientes de reembolso.</p>
             </div>
-            <p className="text-[13px] text-ink-muted">
-              Gastos financiados por Juan Carlos pendientes de reembolso.
-            </p>
             <SearchInput
               value={expenseSearch}
               onChange={setExpenseSearch}
@@ -188,8 +184,8 @@ export default function CuentaJuanCarlos({
                 {expenseSearch ? 'Sin resultados para la búsqueda' : 'No hay gastos pendientes por reembolsar'}
               </div>
             ) : (
-              <div role="table" aria-label="Gastos por reembolsar" className="min-w-0" style={{ minWidth: '640px' }}>
-                <div role="row" className="grid grid-cols-[120px_1fr_1fr_130px_1fr] gap-4 px-5 border-b border-line py-3">
+              <div role="table" aria-label="Gastos por reembolsar">
+                <div role="row" className={`${GRID_GASTOS} border-b border-line py-3`}>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Fecha</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Concepto</div>
                   <div role="columnheader" className="text-[13px] font-medium text-ink-muted">Categoría</div>
@@ -200,7 +196,7 @@ export default function CuentaJuanCarlos({
                   <div
                     key={exp.id}
                     role="row"
-                    className="grid grid-cols-[120px_1fr_1fr_130px_1fr] gap-4 px-5 items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]"
+                    className={`${GRID_GASTOS} items-start border-b border-line py-3.5 text-sm text-ink transition-colors hover:bg-ink/[0.03]`}
                   >
                     <div role="cell" className="tabular-nums text-[13px] text-ink-muted whitespace-nowrap">{formatDateShort(exp.fecha)}</div>
                     <div role="cell" className="min-w-0">
