@@ -162,7 +162,7 @@ export default function Sidebar({
                             <span className={`flex w-8 shrink-0 items-center justify-center transition-colors duration-200 ${isActive ? 'text-light-ivory' : 'text-rose-linen/80'}`}>
                               {getIcon(mod.id)}
                             </span>
-                            <span className="truncate">{mod.label}</span>
+                            <span className="truncate text-[13px] sm:text-[15px]">{mod.label}</span>
                           </div>
 
                           {mod.tag && (
