@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, FolderGit2, Receipt, TrendingDown, TrendingUp, Percent, X, HandCoins, UsersRound, Coins, Repeat, ChartBar as BarChart3, ArrowRightLeft, Vault } from 'lucide-react';
+import { Users, FolderGit2, Receipt, TrendingDown, TrendingUp, Percent, X, WalletCards, UserRound, ChartPie, Repeat, ChartBar as BarChart3, ArrowRightLeft, LockKeyhole } from 'lucide-react';
 import { ModuleId, Module } from '../types';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
@@ -19,20 +19,35 @@ export default function Sidebar({
   isCollapsed
 }: SidebarProps) {
   
-  const modules: Module[] = [
-    { id: 'clientes', label: 'Clientes', disabled: false },
-    { id: 'proyectos', label: 'Proyectos', disabled: false },
-    { id: 'facturacion', label: 'Facturación', disabled: false },
-    { id: 'gastos', label: 'Gastos pagados', disabled: false },
-    { id: 'pagos_proveedores', label: 'Pagos a proveedores', disabled: false },
-    { id: 'por_impactar', label: 'Por impactar', disabled: false },
-    { id: 'pagos_terceros', label: 'Pagos a terceros', disabled: false },
-    { id: 'cuenta_juan_carlos', label: 'Cuenta Juan Carlos', disabled: false },
-    { id: 'reparto_utilidades', label: 'Reparto de utilidades', disabled: false },
-    { id: 'rentabilidad', label: 'Rentabilidad', disabled: false },
-    { id: 'iva', label: 'Panel de IVA', disabled: false },
-    { id: 'boveda_iva', label: 'Bóveda de IVA', disabled: false },
-    { id: 'reportes', label: 'Reportes', disabled: false },
+  const navigationGroups: { label: string; modules: Module[] }[] = [
+    {
+      label: 'Operación',
+      modules: [
+        { id: 'clientes', label: 'Clientes', disabled: false },
+        { id: 'proyectos', label: 'Proyectos', disabled: false },
+        { id: 'facturacion', label: 'Facturación', disabled: false },
+        { id: 'gastos', label: 'Gastos pagados', disabled: false },
+        { id: 'pagos_proveedores', label: 'Pagos a proveedores', disabled: false },
+        { id: 'por_impactar', label: 'Por impactar', disabled: false },
+        { id: 'pagos_terceros', label: 'Pagos a terceros', disabled: false },
+        { id: 'cuenta_juan_carlos', label: 'Cuenta Juan Carlos', disabled: false },
+      ],
+    },
+    {
+      label: 'Análisis',
+      modules: [
+        { id: 'reparto_utilidades', label: 'Reparto de utilidades', disabled: false },
+        { id: 'rentabilidad', label: 'Rentabilidad', disabled: false },
+        { id: 'reportes', label: 'Reportes', disabled: false },
+      ],
+    },
+    {
+      label: 'Fiscal',
+      modules: [
+        { id: 'iva', label: 'Panel de IVA', disabled: false },
+        { id: 'boveda_iva', label: 'Bóveda de IVA', disabled: false },
+      ],
+    },
   ];
 
   const getIcon = (id: ModuleId) => {
@@ -50,11 +65,11 @@ export default function Sidebar({
       case 'cuenta_juan_carlos':
         return <ArrowRightLeft {...iconProps} />;
       case 'pagos_proveedores':
-        return <HandCoins {...iconProps} />;
+        return <WalletCards {...iconProps} />;
       case 'pagos_terceros':
-        return <UsersRound {...iconProps} />;
+        return <UserRound {...iconProps} />;
       case 'reparto_utilidades':
-        return <Coins {...iconProps} />;
+        return <ChartPie {...iconProps} />;
       case 'por_impactar':
         return <Repeat {...iconProps} />;
       case 'rentabilidad':
@@ -64,7 +79,7 @@ export default function Sidebar({
       case 'reportes':
         return <BarChart3 {...iconProps} />;
       case 'boveda_iva':
-        return <Vault {...iconProps} />;
+        return <LockKeyhole {...iconProps} />;
     }
   };
 
@@ -116,41 +131,52 @@ export default function Sidebar({
           </div>
 
           {/* Module Navigation */}
-          <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
-            <p className="px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-rose-linen/60">
-              Navegación Interna
-            </p>
-            {modules.map((mod) => {
-              const isActive = activeModule === mod.id;
-              return (
-                <button
-                  id={`sidebar-link-${mod.id}`}
-                  key={mod.id}
-                  disabled={mod.disabled}
-                  onClick={() => handleModuleClick(mod)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'border-l-2 border-elevated-gold rounded-l-sm bg-elevated-gold/90 text-[#070D0C] font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)]'
-                      : mod.disabled
-                        ? 'border-l-2 border-transparent opacity-40 cursor-not-allowed hover:bg-transparent'
-                        : 'border-l-2 border-transparent hover:border-rose-linen/30 hover:bg-white/[0.07] text-light-ivory/80 hover:text-light-ivory'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`w-5 flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-[#070D0C]' : 'text-rose-linen/80'}`}>
-                      {getIcon(mod.id)}
-                    </span>
-                    <span>{mod.label}</span>
-                  </div>
+          <nav className="flex-1 overflow-y-auto px-4 py-5 sm:py-6">
+            <div className="space-y-7">
+              {navigationGroups.map((group) => (
+                <section key={group.label} aria-labelledby={`sidebar-group-${group.label}`}>
+                  <h2
+                    id={`sidebar-group-${group.label}`}
+                    className="px-3 pb-2 text-[15px] font-semibold leading-6 text-rose-linen/70"
+                  >
+                    {group.label}
+                  </h2>
+                  <div className="space-y-1">
+                    {group.modules.map((mod) => {
+                      const isActive = activeModule === mod.id;
+                      return (
+                        <button
+                          id={`sidebar-link-${mod.id}`}
+                          key={mod.id}
+                          disabled={mod.disabled}
+                          onClick={() => handleModuleClick(mod)}
+                          className={`min-h-11 w-full flex items-center justify-between rounded-md border-l-2 px-3 py-2.5 text-left text-sm font-medium transition-all duration-200 sm:min-h-12 sm:text-[15px] ${
+                            isActive
+                              ? 'border-elevated-gold bg-white/[0.10] text-light-ivory font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)]'
+                              : mod.disabled
+                                ? 'border-transparent opacity-40 cursor-not-allowed hover:bg-transparent'
+                                : 'border-transparent text-light-ivory/80 hover:border-rose-linen/30 hover:bg-white/[0.07] hover:text-light-ivory'
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className={`flex w-8 shrink-0 items-center justify-center transition-colors duration-200 ${isActive ? 'text-light-ivory' : 'text-rose-linen/80'}`}>
+                              {getIcon(mod.id)}
+                            </span>
+                            <span className="truncate">{mod.label}</span>
+                          </div>
 
-                  {mod.tag && (
-                    <span className="text-[9px] px-2 py-0.5 rounded bg-[#091C16] text-rose-linen border border-white/5 font-sans tracking-wide">
-                      {mod.tag}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                          {mod.tag && (
+                            <span className="text-[9px] px-2 py-0.5 rounded bg-[#091C16] text-rose-linen border border-white/5 font-sans tracking-wide">
+                              {mod.tag}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
           </nav>
         </div>
 
