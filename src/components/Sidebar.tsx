@@ -1,5 +1,21 @@
 import React from 'react';
-import { Users, FolderGit2, Receipt, TrendingDown, TrendingUp, Percent, X, HandCoins, UsersRound, Coins, Repeat, ChartBar as BarChart3, ArrowRightLeft, Vault } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  BarChart3,
+  ChartNoAxesColumnIncreasing,
+  Folder,
+  HandCoins,
+  Landmark,
+  Percent,
+  Receipt,
+  Repeat,
+  TrendingDown,
+  TrendingUp,
+  Users,
+  UsersRound,
+  Vault,
+  X,
+} from 'lucide-react';
 import { ModuleId, Module } from '../types';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
@@ -11,74 +27,92 @@ interface SidebarProps {
   isCollapsed: boolean;
 }
 
-export default function Sidebar({ 
-  activeModule, 
-  setActiveModule, 
-  isOpen, 
-  setIsOpen,
-  isCollapsed
-}: SidebarProps) {
-  
-  const modules: Module[] = [
-    { id: 'clientes', label: 'Clientes', disabled: false },
-    { id: 'proyectos', label: 'Proyectos', disabled: false },
-    { id: 'facturacion', label: 'Facturación', disabled: false },
-    { id: 'gastos', label: 'Gastos pagados', disabled: false },
-    { id: 'pagos_proveedores', label: 'Pagos a proveedores', disabled: false },
-    { id: 'por_impactar', label: 'Por impactar', disabled: false },
-    { id: 'pagos_terceros', label: 'Pagos a terceros', disabled: false },
-    { id: 'cuenta_juan_carlos', label: 'Cuenta Juan Carlos', disabled: false },
-    { id: 'reparto_utilidades', label: 'Reparto de utilidades', disabled: false },
-    { id: 'rentabilidad', label: 'Rentabilidad', disabled: false },
-    { id: 'iva', label: 'Panel de IVA', disabled: false },
-    { id: 'boveda_iva', label: 'Bóveda de IVA', disabled: false },
-    { id: 'reportes', label: 'Reportes', disabled: false },
-  ];
+type SidebarSection = {
+  title: string;
+  modules: Module[];
+};
 
+const operationModules: Module[] = [
+  { id: 'clientes', label: 'Clientes', disabled: false },
+  { id: 'proyectos', label: 'Proyectos', disabled: false },
+  { id: 'facturacion', label: 'Facturación', disabled: false },
+  { id: 'gastos', label: 'Gastos pagados', disabled: false },
+  { id: 'pagos_proveedores', label: 'Pagos a proveedores', disabled: false },
+  { id: 'por_impactar', label: 'Por impactar', disabled: false },
+  { id: 'pagos_terceros', label: 'Pagos a terceros', disabled: false },
+  { id: 'cuenta_juan_carlos', label: 'Cuenta Juan Carlos', disabled: false },
+];
+
+const analysisModules: Module[] = [
+  { id: 'reparto_utilidades', label: 'Reparto de utilidades', disabled: false },
+  { id: 'rentabilidad', label: 'Rentabilidad', disabled: false },
+  { id: 'reportes', label: 'Reportes', disabled: false },
+];
+
+const fiscalModules: Module[] = [
+  { id: 'iva', label: 'Panel de IVA', disabled: false },
+  { id: 'boveda_iva', label: 'Bóveda de IVA', disabled: false },
+];
+
+const sections: SidebarSection[] = [
+  { title: 'Operación', modules: operationModules },
+  { title: 'Análisis', modules: analysisModules },
+  { title: 'Fiscal', modules: fiscalModules },
+];
+
+export default function Sidebar({
+  activeModule,
+  setActiveModule,
+  isOpen,
+  setIsOpen,
+  isCollapsed,
+}: SidebarProps) {
   const getIcon = (id: ModuleId) => {
-    const iconProps = { size: 18, strokeWidth: 1.8 };
+    const iconProps = { size: 23, strokeWidth: 1.7 };
 
     switch (id) {
       case 'clientes':
         return <Users {...iconProps} />;
       case 'proyectos':
-        return <FolderGit2 {...iconProps} />;
+        return <Folder {...iconProps} />;
       case 'facturacion':
         return <Receipt {...iconProps} />;
       case 'gastos':
         return <TrendingDown {...iconProps} />;
-      case 'cuenta_juan_carlos':
-        return <ArrowRightLeft {...iconProps} />;
       case 'pagos_proveedores':
         return <HandCoins {...iconProps} />;
-      case 'pagos_terceros':
-        return <UsersRound {...iconProps} />;
-      case 'reparto_utilidades':
-        return <Coins {...iconProps} />;
       case 'por_impactar':
         return <Repeat {...iconProps} />;
+      case 'pagos_terceros':
+        return <UsersRound {...iconProps} />;
+      case 'cuenta_juan_carlos':
+        return <ArrowRightLeft {...iconProps} />;
+      case 'reparto_utilidades':
+        return <ChartNoAxesColumnIncreasing {...iconProps} />;
       case 'rentabilidad':
         return <TrendingUp {...iconProps} />;
-      case 'iva':
-        return <Percent {...iconProps} />;
       case 'reportes':
         return <BarChart3 {...iconProps} />;
+      case 'iva':
+        return <Percent {...iconProps} />;
       case 'boveda_iva':
         return <Vault {...iconProps} />;
+      default:
+        return <Landmark {...iconProps} />;
     }
   };
 
   const handleModuleClick = (mod: Module) => {
     if (mod.disabled) return;
     setActiveModule(mod.id);
-    setIsOpen(false); // Close mobile sidebar on select
+    setIsOpen(false);
   };
 
   const isDesktop = useIsDesktop();
   const collapsedOnDesktop = isDesktop && isCollapsed;
   const sidebarStyle: React.CSSProperties = isDesktop
     ? {
-        width: collapsedOnDesktop ? '0px' : '16rem',
+        width: collapsedOnDesktop ? '0px' : '380px',
         borderWidth: collapsedOnDesktop ? 0 : undefined,
         overflow: collapsedOnDesktop ? 'hidden' : undefined,
         opacity: collapsedOnDesktop ? 0 : 1,
@@ -87,84 +121,71 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* Sidebar container */}
-      <aside 
+      <aside
         style={sidebarStyle}
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-enchanted-green text-light-ivory border-r border-enchanted-green/20 flex flex-col justify-between transform transition-all duration-300 lg:static lg:h-screen lg:translate-x-0 overflow-hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(380px,90vw)] bg-enchanted-green text-light-ivory border-r border-enchanted-green/20 flex flex-col transform transition-all duration-300 lg:static lg:h-screen lg:translate-x-0 overflow-hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Sidebar Header */}
-          <div className="h-16 px-6 border-b border-white/10 flex items-center justify-between shrink-0">
-            <span className="font-serif text-[26px] tracking-wider font-bold flex-1 text-center text-[#bbbcbc]">IX Dashboard.</span>
+        <nav className="flex-1 overflow-y-auto px-2 py-5 sm:px-2.5 sm:py-7">
+          <button
+            onClick={() => setIsOpen(false)}
+            className="absolute right-4 top-4 rounded-full p-1.5 text-light-ivory/70 transition-colors hover:bg-white/10 hover:text-light-ivory lg:hidden"
+            aria-label="Cerrar navegación"
+          >
+            <X size={18} />
+          </button>
 
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="lg:hidden p-1.5 hover:bg-white/10 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
+          {sections.map((section, sectionIndex) => (
+            <section key={section.title} className={sectionIndex > 0 ? 'mt-9' : ''}>
+              <h2 className="px-6 pb-3 text-[18px] font-medium leading-[1.2] text-light-ivory/65">
+                {section.title}
+              </h2>
 
-          {/* Module Navigation */}
-          <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
-            <p className="px-3 py-2 text-[10px] tracking-widest uppercase font-semibold text-rose-linen/60">
-              Navegación Interna
-            </p>
-            {modules.map((mod) => {
-              const isActive = activeModule === mod.id;
-              return (
-                <button
-                  id={`sidebar-link-${mod.id}`}
-                  key={mod.id}
-                  disabled={mod.disabled}
-                  onClick={() => handleModuleClick(mod)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'border-l-2 border-elevated-gold rounded-l-sm bg-elevated-gold/90 text-[#070D0C] font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)]'
-                      : mod.disabled
-                        ? 'border-l-2 border-transparent opacity-40 cursor-not-allowed hover:bg-transparent'
-                        : 'border-l-2 border-transparent hover:border-rose-linen/30 hover:bg-white/[0.07] text-light-ivory/80 hover:text-light-ivory'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className={`w-5 flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-[#070D0C]' : 'text-rose-linen/80'}`}>
-                      {getIcon(mod.id)}
-                    </span>
-                    <span>{mod.label}</span>
-                  </div>
+              <div className="space-y-1">
+                {section.modules.map((mod) => {
+                  const isActive = activeModule === mod.id;
 
-                  {mod.tag && (
-                    <span className="text-[9px] px-2 py-0.5 rounded bg-[#091C16] text-rose-linen border border-white/5 font-sans tracking-wide">
-                      {mod.tag}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Sidebar Footer with Editorial Branding */}
-        <div className="p-4 border-t border-white/10 bg-[#07241B] shrink-0">
-          <div className="flex items-start space-x-3 text-center opacity-60">
-            <div className="w-4 h-4 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-[13px] font-serif font-semibold text-light-ivory">Eleva | Expande | Impacta.</p>
-            </div>
-          </div>
-        </div>
+                  return (
+                    <button
+                      id={`sidebar-link-${mod.id}`}
+                      key={mod.id}
+                      disabled={mod.disabled}
+                      onClick={() => handleModuleClick(mod)}
+                      className={`group relative w-full flex items-center gap-5 rounded-lg px-6 py-3.5 text-left text-[18px] leading-[1.2] transition-all duration-200 ${
+                        isActive
+                          ? 'bg-[#315B4C] font-semibold text-light-ivory shadow-sm'
+                          : mod.disabled
+                            ? 'cursor-not-allowed opacity-40'
+                            : 'font-medium text-light-ivory/85 hover:bg-white/[0.07] hover:text-light-ivory'
+                      }`}
+                    >
+                      {isActive && (
+                        <span className="absolute bottom-3 left-0 top-3 w-[3px] rounded-r-full bg-elevated-gold" />
+                      )}
+                      <span
+                        className={`flex w-6 shrink-0 items-center justify-center transition-colors duration-200 ${
+                          isActive ? 'text-light-ivory' : 'text-light-ivory/80 group-hover:text-light-ivory'
+                        }`}
+                      >
+                        {getIcon(mod.id)}
+                      </span>
+                      <span>{mod.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </nav>
       </aside>
     </>
   );
 }
-
