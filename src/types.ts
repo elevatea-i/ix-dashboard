@@ -96,8 +96,8 @@ export interface ProviderPayment {
   fecha: string; // YYYY-MM-DD
   fechaPago?: string; // YYYY-MM-DD (real date of payment; null when Pendiente or not yet set)
   fecha_vencimiento?: string; // YYYY-MM-DD (optional)
-  metodoPago?: 'PUE' | 'PPD'; // undefined = "Sin especificar" (pagos históricos)
-  complementoEmitido?: boolean; // Solo relevante si metodoPago === 'PPD'
+  metodoPago?: 'PUE' | 'PPD'; // undefined = "Sin especificar" (legacy payments)
+  complementoEmitido?: boolean; // Only relevant when metodoPago === 'PPD'
   conParcialidades: boolean;
 }
 

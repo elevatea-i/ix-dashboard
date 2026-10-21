@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProviderPayment, Project, AbonoProveedor } from '../types';
-import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins } from 'lucide-react';
+import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins, Hourglass } from 'lucide-react';
 import { formatCurrency, getDueDateIndicator } from '../utils';
 import { getAbonosResumen, AbonosResumen, isPagoPorPagar } from '../utils/abonos';
 
@@ -60,6 +60,12 @@ export default function ProviderPaymentsList({
   const totalPendiente =
     normales.filter(p => p.estatus === 'Pendiente').reduce((sum, p) => sum + p.total, 0) +
     parciales.reduce((sum, p) => sum + (resumenes.get(p.id)?.saldo ?? 0), 0);
+
+  // Matches the sum of the "Autorizado por pagar" lines shown under the Pendiente filter.
+  const parcialesPorPagar = parciales.filter(p => (resumenes.get(p.id)?.pendientes ?? 0) > 0);
+  const totalAutorizadoPorPagar = Math.round(
+    parcialesPorPagar.reduce((sum, p) => sum + (resumenes.get(p.id)?.autorizadoPorPagar ?? 0), 0) * 100
+  ) / 100;
 
   const normalesVencidos = normales.filter(p => isOverdue(p.estatus, p.fecha_vencimiento));
   const parcialesVencidos = parciales.filter(p => {
@@ -167,7 +173,7 @@ export default function ProviderPaymentsList({
       </div>
 
       {/* KPI Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Total Pagado */}
         <div id="kpi-pp-total-pagado" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
           <div className="space-y-1">
@@ -193,6 +199,24 @@ export default function ProviderPaymentsList({
           </div>
           <div className="p-3 bg-rose-linen/25 dark:bg-rose-linen/10 rounded-full text-cranberry">
             <Clock size={22} />
+          </div>
+        </div>
+
+        {/* Autorizado por pagar */}
+        <div id="kpi-pp-autorizado-por-pagar" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-elevated-gold/25 dark:border-elevated-gold/20 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-wider font-bold text-[#8C7853] dark:text-elevated-gold">Autorizado por pagar</p>
+            <p className="text-2xl font-mono font-bold text-[#8C7853] dark:text-elevated-gold">
+              {formatCurrency(totalAutorizadoPorPagar)}
+            </p>
+            <p className="text-[10px] text-rocky-gray">
+              {parcialesPorPagar.length === 0
+                ? 'Sin abonos pendientes de pago'
+                : `Abonos pendientes en ${parcialesPorPagar.length} ${parcialesPorPagar.length === 1 ? 'pago' : 'pagos'} con parcialidades`}
+            </p>
+          </div>
+          <div className="p-3 bg-elevated-gold/10 dark:bg-elevated-gold/15 rounded-full text-[#8C7853] dark:text-elevated-gold">
+            <Hourglass size={22} />
           </div>
         </div>
 
