@@ -140,7 +140,7 @@ export default function ClientesList({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-rocky-gray dark:text-rose-linen/70 font-semibold">
-                    Contactos de Enlace
+                    Contactos
                   </p>
                   <h3 className="text-2xl font-serif font-semibold text-enchanted-green dark:text-light-ivory mt-1">
                     {clientsWithContact} <span className="text-xs text-rocky-gray font-sans font-normal">/ {totalClients}</span>
