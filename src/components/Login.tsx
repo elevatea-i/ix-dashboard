@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, ArrowRight, Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -126,9 +126,8 @@ export default function Login({ onLogin, darkMode, setDarkMode }: LoginProps) {
           </form>
 
           <div className="mt-6 pt-6 border-t border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-center text-[11px] text-rocky-gray">
-            <span className="flex items-center space-x-1 justify-center">
-              <ShieldCheck size={12} className="text-elevated-gold" />
-              <span>Ambiente encriptado</span>
+            <span className="flex items-center justify-center">
+              <span style={{ fontWeight: 700 }}>Acceso restringido.</span>
             </span>
           </div>
         </div>
