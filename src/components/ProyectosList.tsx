@@ -181,8 +181,8 @@ export default function ProyectosList({
           <h2 className="text-2xl font-serif font-semibold text-enchanted-green dark:text-light-ivory">
             Proyectos Registrados
           </h2>
-          <p className="text-xs text-rocky-gray dark:text-rose-linen/80">
-            Control de códigos operativos, asignaciones de ejecutivo y estatus de facturación.
+          <p className="text-xs text-[#535555] dark:text-rose-linen/80">
+            Control de códigos , asignaciones de ejecutivo y estatus de facturación.
           </p>
         </div>
 
@@ -1088,7 +1088,6 @@ export default function ProyectosList({
               </div>
             ) : (
               <div className="h-full border border-dashed border-rocky-gray/30 dark:border-white/10 rounded-lg p-8 text-center flex flex-col items-center justify-center space-y-3.5 text-rocky-gray">
-                <FolderGit2 size={24} className="text-rocky-gray/40" />
                 <p className="text-xs italic leading-relaxed">
                   Selecciona un proyecto de la lista para inspeccionar sus especificaciones operativas, códigos y apartados futuros.
                 </p>
