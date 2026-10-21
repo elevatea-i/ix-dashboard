@@ -112,7 +112,7 @@ export default function FacturasList({
             Facturación y CFDIs
           </h2>
           <p className="text-xs text-rocky-gray mt-1">
-            Gestión modular de comprobantes fiscales, retenciones, cobranza y conciliación de cobros.
+            Módulo de facturación, comprobantes fiscales, retenciones, cobranza y conciliación de cobros.
           </p>
         </div>
         <button
