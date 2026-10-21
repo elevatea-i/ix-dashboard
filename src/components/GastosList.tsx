@@ -120,7 +120,7 @@ export default function GastosList({
             Control de gastos pagados
           </h2>
           <p className="text-xs text-rocky-gray mt-1">
-            Gestión de costes operativos, pagos a proveedores por proyecto y control de cuentas de egresos.
+            Gestión de costos operativos, pagos a proveedores por proyecto y control de cuentas de egresos.
           </p>
         </div>
         <button
