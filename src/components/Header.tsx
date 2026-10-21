@@ -67,7 +67,7 @@ export default function Header({
         <button
           onClick={onQuickGastoClick}
           id="header-quick-gasto-btn"
-          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#84344E]/5 dark:bg-[#FC5C7D]/10 text-[#84344E] dark:text-[#FC5C7D] border border-[#84344E]/25 dark:border-[#FC5C7D]/30 hover:bg-[#84344E]/10 dark:hover:bg-[#FC5C7D]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
+          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#eae3d2] dark:bg-[#FC5C7D]/10 text-[#84344E] dark:text-[#FC5C7D] border border-[#84344E]/25 dark:border-[#FC5C7D]/30 hover:bg-[#84344E]/10 dark:hover:bg-[#FC5C7D]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
           title="Registrar Gasto Rápido"
         >
           <ArrowDownCircle size={16} />
@@ -78,7 +78,7 @@ export default function Header({
         <button
           onClick={onQuickFacturaClick}
           id="header-quick-factura-btn"
-          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#047857]/5 dark:bg-[#34D399]/10 text-[#047857] dark:text-[#34D399] border border-[#047857]/25 dark:border-[#34D399]/30 hover:bg-[#047857]/10 dark:hover:bg-[#34D399]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
+          className="h-11 w-11 sm:h-9 sm:w-auto px-0 sm:px-3 flex items-center justify-center gap-1.5 rounded bg-[#e8dcc4] dark:bg-[#34D399]/10 text-[#0c4e3a] dark:text-[#34D399] border border-[#047857]/25 dark:border-[#34D399]/30 hover:bg-[#047857]/10 dark:hover:bg-[#34D399]/18 font-semibold text-xs transition-all shadow-xs cursor-pointer shrink-0"
           title="Registrar Factura Rápida"
         >
           <ArrowUpCircle size={16} />
