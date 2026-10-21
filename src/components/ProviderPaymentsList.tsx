@@ -61,11 +61,15 @@ export default function ProviderPaymentsList({
     normales.filter(p => p.estatus === 'Pendiente').reduce((sum, p) => sum + p.total, 0) +
     parciales.reduce((sum, p) => sum + (resumenes.get(p.id)?.saldo ?? 0), 0);
 
-  // Matches the sum of the "Autorizado por pagar" lines shown under the Pendiente filter.
+  // Matches everything shown under the Pendiente filter: the full total of plain
+  // pending payments plus the pending abonos of installment payments.
+  const normalesPorPagar = normales.filter(p => p.estatus === 'Pendiente');
   const parcialesPorPagar = parciales.filter(p => (resumenes.get(p.id)?.pendientes ?? 0) > 0);
   const totalAutorizadoPorPagar = Math.round(
-    parcialesPorPagar.reduce((sum, p) => sum + (resumenes.get(p.id)?.autorizadoPorPagar ?? 0), 0) * 100
+    (normalesPorPagar.reduce((sum, p) => sum + p.total, 0) +
+      parcialesPorPagar.reduce((sum, p) => sum + (resumenes.get(p.id)?.autorizadoPorPagar ?? 0), 0)) * 100
   ) / 100;
+  const countAutorizadoPorPagar = normalesPorPagar.length + parcialesPorPagar.length;
 
   const normalesVencidos = normales.filter(p => isOverdue(p.estatus, p.fecha_vencimiento));
   const parcialesVencidos = parciales.filter(p => {
@@ -210,9 +214,9 @@ export default function ProviderPaymentsList({
               {formatCurrency(totalAutorizadoPorPagar)}
             </p>
             <p className="text-[10px] text-rocky-gray">
-              {parcialesPorPagar.length === 0
-                ? 'Sin abonos pendientes de pago'
-                : `Abonos pendientes en ${parcialesPorPagar.length} ${parcialesPorPagar.length === 1 ? 'pago' : 'pagos'} con parcialidades`}
+              {countAutorizadoPorPagar === 0
+                ? 'Sin pagos pendientes de pago'
+                : `${countAutorizadoPorPagar} ${countAutorizadoPorPagar === 1 ? 'pago' : 'pagos'} esperando liquidación`}
             </p>
           </div>
           <div className="p-3 bg-elevated-gold/10 dark:bg-elevated-gold/15 rounded-full text-[#8C7853] dark:text-elevated-gold">
