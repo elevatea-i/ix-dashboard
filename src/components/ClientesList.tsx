@@ -48,7 +48,7 @@ export default function ClientesList({
             Catálogo de Clientes
           </h1>
           <p className="text-xs text-[#535555] dark:text-rose-linen/80 mt-1">
-            Gestión interna de expedientes comerciales y fiscales de contratantes.
+            Gestión interna de clientes.
           </p>
         </div>
 
