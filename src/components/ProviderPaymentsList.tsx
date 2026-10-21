@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ProviderPayment, Project, AbonoProveedor } from '../types';
 import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Wallet, CircleCheck as CheckCircle2, Clock, Layers, RefreshCcw, TriangleAlert as AlertTriangle, Loader as Loader2, HandCoins } from 'lucide-react';
 import { formatCurrency, getDueDateIndicator } from '../utils';
-import { getAbonosResumen, AbonosResumen } from '../utils/abonos';
+import { getAbonosResumen, AbonosResumen, isPagoPorPagar } from '../utils/abonos';
 
 interface ProviderPaymentsListProps {
   payments: ProviderPayment[];
@@ -101,6 +101,14 @@ export default function ProviderPaymentsList({
     );
   };
 
+  // "Pendiente" lists what is awaiting payment: plain pending payments plus
+  // installment payments with at least one authorized, unpaid abono.
+  const matchesEstatus = (pay: ProviderPayment) => {
+    if (filterEstatus === 'all') return true;
+    if (filterEstatus === 'Pendiente') return isPagoPorPagar(pay, abonos);
+    return pay.estatus === filterEstatus;
+  };
+
   const handleResetFilters = () => {
     setSearchTerm('');
     setFilterProject('all');
@@ -116,7 +124,7 @@ export default function ProviderPaymentsList({
       return false;
     }
 
-    if (filterEstatus !== 'all' && pay.estatus !== filterEstatus) {
+    if (!matchesEstatus(pay)) {
       return false;
     }
 
@@ -131,7 +139,7 @@ export default function ProviderPaymentsList({
     const matchesSearch = pay.proveedor.toLowerCase().includes(searchTerm.toLowerCase());
     if (!matchesSearch) return false;
     if (filterProject !== 'all' && pay.proyectoId !== filterProject) return false;
-    if (filterEstatus !== 'all' && pay.estatus !== filterEstatus) return false;
+    if (!matchesEstatus(pay)) return false;
     return isPpdSinComplemento(pay);
   }).length;
 
@@ -360,8 +368,14 @@ export default function ProviderPaymentsList({
                           )}
                         </span>
                         {resumen && (
-                          <span className="text-[10px] font-mono mt-0.5 text-[#8C7853] dark:text-elevated-gold font-semibold">
-                            Pagado {formatCurrency(resumen.pagado)} · Saldo {formatCurrency(resumen.saldo)}
+                          <span className="flex flex-col text-[10px] font-mono mt-1 leading-snug">
+                            <span className="text-enchanted-green dark:text-emerald-300 font-semibold">Pagado {formatCurrency(resumen.pagado)}</span>
+                            {resumen.autorizadoPorPagar > 0 && (
+                              <span className="text-[#8C7853] dark:text-elevated-gold font-semibold">Autorizado por pagar {formatCurrency(resumen.autorizadoPorPagar)}</span>
+                            )}
+                            {resumen.sinAutorizar > 0 && (
+                              <span className="text-rocky-gray dark:text-light-ivory/60">Sin autorizar {formatCurrency(resumen.sinAutorizar)}</span>
+                            )}
                           </span>
                         )}
                       </div>
@@ -430,9 +444,20 @@ export default function ProviderPaymentsList({
                           </span>
                         ) : (
                           <div className="flex flex-col gap-1.5 items-start min-w-[96px]">
-                            <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">
-                              Parcial {Math.floor(resumen.porcentaje)} %
-                            </span>
+                            {resumen.pendientes > 0 ? (
+                              <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">
+                                Por pagar
+                              </span>
+                            ) : resumen.abonos.length === 0 ? (
+                              <span className="bg-rocky-gray/10 text-rocky-gray dark:bg-white/5 dark:text-light-ivory/60 px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">
+                                Sin abonos
+                              </span>
+                            ) : null}
+                            {resumen.pagado > 0 && (
+                              <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase whitespace-nowrap">
+                                Pagado {Math.floor(resumen.porcentaje)} %
+                              </span>
+                            )}
                             <div className="h-1 w-full bg-enchanted-green/10 dark:bg-white/10 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-elevated-gold rounded-full transition-all duration-500"

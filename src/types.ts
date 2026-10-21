@@ -107,12 +107,15 @@ export interface AbonoProveedor {
   proyectoId: string;
   tipo: 'Anticipo' | 'Parcialidad' | 'Finiquito';
   monto: number;
-  fechaPago: string; // YYYY-MM-DD
+  estatus: AbonoEstatus;
+  fechaPago: string | null; // YYYY-MM-DD, null while Pendiente
   iva: number;
   complementoEmitido: boolean;
   nota: string | null;
   creadoEn: string;
 }
+
+export type AbonoEstatus = 'Pendiente' | 'Pagado';
 
 export interface ThirdPartyPayment {
   id: string;

@@ -210,11 +210,20 @@ function getFacturadosConParcialidades(providerPayments: ProviderPayment[]): Set
 }
 
 function abonoCountsForIva(ab: AbonoProveedor, facturadosConParcialidades: Set<string>): boolean {
-  return facturadosConParcialidades.has(ab.pagoProveedorId) && ab.complementoEmitido === true;
+  return (
+    ab.estatus === 'Pagado' &&
+    facturadosConParcialidades.has(ab.pagoProveedorId) &&
+    ab.complementoEmitido === true
+  );
 }
 
+// Pending abonos are not paid yet, so they never await a complement.
 function abonoAwaitsComplemento(ab: AbonoProveedor, facturadosConParcialidades: Set<string>): boolean {
-  return facturadosConParcialidades.has(ab.pagoProveedorId) && ab.complementoEmitido !== true;
+  return (
+    ab.estatus === 'Pagado' &&
+    facturadosConParcialidades.has(ab.pagoProveedorId) &&
+    ab.complementoEmitido !== true
+  );
 }
 
 const MESES = [

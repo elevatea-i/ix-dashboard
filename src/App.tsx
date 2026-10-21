@@ -39,7 +39,7 @@ import CuentaJuanCarlos from './components/CuentaJuanCarlos';
 import BovedaIva from './components/BovedaIva';
 import EliminarRetiroIVAModal from './components/EliminarRetiroIVAModal';
 import CerrarProyectoModal from './components/CerrarProyectoModal';
-import { Client, Project, RepartoCierre, ResumenRepartoDestino, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, AbonoProveedor, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
+import { Client, Project, RepartoCierre, ResumenRepartoDestino, Invoice, Expense, ExpenseCategory, ModuleId, ProviderPayment, AbonoProveedor, AbonoEstatus, ThirdPartyPayment, Tercero, DepositoTercero, SaldoTercero, ProfitDistribution, PorImpactar, IvaWithdrawal } from './types';
 import { useToast } from './components/Toast';
 import { useAuth } from './lib/auth';
 import { supabase } from './lib/supabase';
@@ -1160,8 +1160,9 @@ export default function App() {
         p_fecha: paymentData.fecha,
         p_fecha_vencimiento: paymentData.fecha_vencimiento || null,
         p_anticipo_monto: anticipo ? anticipo.monto : null,
-        p_anticipo_fecha: anticipo ? anticipo.fechaPago : null,
-        p_anticipo_complemento: anticipo ? anticipo.complementoEmitido : false,
+        p_anticipo_estatus: anticipo ? anticipo.estatus : 'Pagado',
+        p_anticipo_fecha: anticipo && anticipo.estatus === 'Pagado' ? anticipo.fechaPago : null,
+        p_anticipo_complemento: anticipo && anticipo.estatus === 'Pagado' ? anticipo.complementoEmitido : false,
         p_anticipo_nota: anticipo ? anticipo.nota : null,
       });
       if (error) {
@@ -1251,7 +1252,7 @@ export default function App() {
 
   const handleCreateAbono = async (
     pagoId: string,
-    abonoData: { monto: number; fechaPago: string; complementoEmitido: boolean; nota: string | null }
+    abonoData: { monto: number; estatus: AbonoEstatus; fechaPago: string | null; complementoEmitido: boolean; nota: string | null }
   ): Promise<{ success: boolean; error?: string }> => {
     const payment = providerPayments.find(p => p.id === pagoId);
     if (!payment) return { success: false, error: 'No se encontró el pago a proveedor.' };
@@ -1281,13 +1282,19 @@ export default function App() {
     return { success: true };
   };
 
-  const handleToggleComplementoAbono = async (abonoId: string): Promise<{ success: boolean; error?: string }> => {
+  const updateAbono = async (
+    abonoId: string,
+    changes: Record<string, unknown>,
+    guard?: (abono: AbonoProveedor) => string | null
+  ): Promise<{ success: boolean; error?: string }> => {
     const abono = abonos.find(a => a.id === abonoId);
     if (!abono) return { success: false, error: 'No se encontró el abono.' };
     if (isProjectClosed(abono.proyectoId)) return { success: false, error: 'Este proyecto está cerrado y no se puede modificar.' };
+    const guardError = guard?.(abono);
+    if (guardError) return { success: false, error: guardError };
     const { error } = await supabase
       .from('abonos_proveedores')
-      .update({ complemento_emitido: !abono.complementoEmitido })
+      .update(changes)
       .eq('id', abonoId);
     if (error) return { success: false, error: error.message };
     const refreshError = await refreshPagoYAbonos(abono.pagoProveedorId);
@@ -1295,6 +1302,34 @@ export default function App() {
     showToast('Cambios guardados');
     return { success: true };
   };
+
+  const handleToggleComplementoAbono = (abonoId: string) =>
+    updateAbono(
+      abonoId,
+      { complemento_emitido: !abonos.find(a => a.id === abonoId)?.complementoEmitido },
+      a => (a.estatus === 'Pagado' ? null : 'El complemento solo se puede marcar en abonos pagados.')
+    );
+
+  const handleMarcarAbonoPagado = (abonoId: string, fechaPago: string) =>
+    updateAbono(
+      abonoId,
+      { estatus: 'Pagado', fecha_pago: fechaPago },
+      a => {
+        if (a.estatus !== 'Pendiente') return 'Este abono ya está pagado.';
+        return fechaPago ? null : 'Para marcar el abono como pagado captura su fecha de pago.';
+      }
+    );
+
+  // The database clears fecha_pago and the complement when reverting.
+  const handleRevertirAbonoPendiente = (abonoId: string) =>
+    updateAbono(
+      abonoId,
+      { estatus: 'Pendiente' },
+      a => (a.estatus === 'Pagado' ? null : 'Este abono ya está pendiente.')
+    );
+
+  const handleEditarNotaAbono = (abonoId: string, nota: string | null) =>
+    updateAbono(abonoId, { nota });
 
   const handleOpenAddProviderPaymentModal = () => {
     setSelectedProviderPayment(null);
@@ -1837,6 +1872,9 @@ export default function App() {
         onCreate={handleCreateAbono}
         onDelete={handleDeleteAbono}
         onToggleComplemento={handleToggleComplementoAbono}
+        onMarcarPagado={handleMarcarAbonoPagado}
+        onRevertirPendiente={handleRevertirAbonoPendiente}
+        onEditarNota={handleEditarNotaAbono}
       />
 
       <ConceptoTerceroFormModal

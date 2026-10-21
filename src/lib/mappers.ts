@@ -7,6 +7,7 @@ import {
   Expense,
   ProviderPayment,
   AbonoProveedor,
+  AbonoEstatus,
   ThirdPartyPayment,
   Tercero,
   DepositoTercero,
@@ -217,7 +218,8 @@ export function abonoFromDb(row: Record<string, any>): AbonoProveedor {
     proyectoId: row.proyecto_id,
     tipo: row.tipo,
     monto: Number(row.monto),
-    fechaPago: row.fecha_pago,
+    estatus: row.estatus === 'Pendiente' ? 'Pendiente' : 'Pagado',
+    fechaPago: row.fecha_pago ?? null,
     iva: Number(row.iva),
     complementoEmitido: row.complemento_emitido === true,
     nota: row.nota ?? null,
@@ -229,15 +231,18 @@ export function abonoFromDb(row: Record<string, any>): AbonoProveedor {
 export function abonoToDb(obj: {
   pagoProveedorId: string;
   monto: number;
-  fechaPago: string;
+  estatus: AbonoEstatus;
+  fechaPago: string | null;
   complementoEmitido: boolean;
   nota: string | null;
 }): Record<string, any> {
+  const pagado = obj.estatus === 'Pagado';
   return {
     pago_proveedor_id: obj.pagoProveedorId,
     monto: obj.monto,
-    fecha_pago: obj.fechaPago,
-    complemento_emitido: obj.complementoEmitido,
+    estatus: obj.estatus,
+    fecha_pago: pagado ? obj.fechaPago : null,
+    complemento_emitido: pagado ? obj.complementoEmitido : false,
     nota: obj.nota,
   };
 }

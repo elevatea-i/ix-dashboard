@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, AlertTriangle, Calendar, Layers, CreditCard, Calculator, Lock, SplitSquareHorizontal } from 'lucide-react';
-import { Project, ProviderPayment } from '../types';
+import { AbonoEstatus, Project, ProviderPayment } from '../types';
 import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput } from '../utils';
 
 interface ProviderPaymentFormModalProps {
@@ -31,7 +31,8 @@ interface ProviderPaymentFormModalProps {
 
 export interface AnticipoFormData {
   monto: number;
-  fechaPago: string;
+  estatus: AbonoEstatus;
+  fechaPago: string | null;
   complementoEmitido: boolean;
   nota: string | null;
 }
@@ -66,6 +67,7 @@ export default function ProviderPaymentFormModal({
 
   const [conParcialidades, setConParcialidades] = useState<boolean>(false);
   const [anticipoMonto, setAnticipoMonto] = useState<string>('');
+  const [anticipoEstatus, setAnticipoEstatus] = useState<AbonoEstatus>('Pendiente');
   const [anticipoFecha, setAnticipoFecha] = useState<string>('');
   const [anticipoComplemento, setAnticipoComplemento] = useState<boolean>(false);
   const [anticipoNota, setAnticipoNota] = useState<string>('');
@@ -107,6 +109,7 @@ export default function ProviderPaymentFormModal({
         setConParcialidades(false);
       }
       setAnticipoMonto('');
+      setAnticipoEstatus('Pendiente');
       setAnticipoFecha(getMexicoCityDate());
       setAnticipoComplemento(false);
       setAnticipoNota('');
@@ -176,13 +179,15 @@ export default function ProviderPaymentFormModal({
       } else if (montoAnticipo > totalRedondeado) {
         newErrors.anticipoMonto = 'El anticipo no puede superar el total del pago';
       }
-      if (!anticipoFecha) {
+      const anticipoPagado = anticipoEstatus === 'Pagado';
+      if (anticipoPagado && !anticipoFecha) {
         newErrors.anticipoFecha = 'Indique la fecha de pago del anticipo';
       }
       anticipo = {
         monto: montoAnticipo,
-        fechaPago: anticipoFecha,
-        complementoEmitido: anticipoComplemento,
+        estatus: anticipoEstatus,
+        fechaPago: anticipoPagado ? anticipoFecha : null,
+        complementoEmitido: anticipoPagado ? anticipoComplemento : false,
         nota: anticipoNota.trim() || null,
       };
     }
@@ -534,10 +539,31 @@ export default function ProviderPaymentFormModal({
                   Anticipo (opcional)
                 </h4>
                 <p className="text-[10px] text-rocky-gray mt-0.5">
-                  El estatus y la fecha de pago los calcula el sistema a partir de los abonos.
+                  El estatus y la fecha de pago los calcula el sistema a partir de los abonos pagados. Un anticipo pendiente queda autorizado hasta que se marque como pagado.
                 </p>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <span className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">Estatus del anticipo</span>
+                <div role="radiogroup" className="inline-flex rounded border border-enchanted-green/30 dark:border-light-ivory/20 overflow-hidden">
+                  {(['Pendiente', 'Pagado'] as AbonoEstatus[]).map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      role="radio"
+                      aria-checked={anticipoEstatus === opt}
+                      onClick={() => setAnticipoEstatus(opt)}
+                      className={`px-4 py-1.5 text-xs font-bold transition-colors ${
+                        anticipoEstatus === opt
+                          ? 'bg-enchanted-green text-light-ivory dark:bg-elevated-gold dark:text-[#070D0C]'
+                          : 'bg-white text-enchanted-green hover:bg-enchanted-green/5 dark:bg-[#070D0C] dark:text-light-ivory/80 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={`grid grid-cols-1 gap-4 ${anticipoEstatus === 'Pagado' ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
                 <div>
                   <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                     Monto del anticipo
@@ -555,6 +581,7 @@ export default function ProviderPaymentFormModal({
                     <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.anticipoMonto}</p>
                   )}
                 </div>
+                {anticipoEstatus === 'Pagado' && (<>
                 <div>
                   <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                     Fecha de pago {anticipoMonto.trim() !== '' && <span className="text-cranberry font-bold">*</span>}
@@ -584,6 +611,7 @@ export default function ProviderPaymentFormModal({
                     <option value="si" className="bg-white dark:bg-[#051A14]">Sí</option>
                   </select>
                 </div>
+                </>)}
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">

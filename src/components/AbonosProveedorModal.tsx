@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Wallet, AlertCircle, Lock, Trash2, Calendar } from 'lucide-react';
-import { AbonoProveedor, ProviderPayment, Project } from '../types';
+import { X, Wallet, AlertCircle, Lock, Calendar } from 'lucide-react';
+import { AbonoProveedor, AbonoEstatus, ProviderPayment, Project } from '../types';
 import { getMexicoCityDate, formatLiveCurrency, parseCurrencyInput, formatCurrency } from '../utils';
 import { getAbonosResumen } from '../utils/abonos';
+import AbonoProveedorRow from './AbonoProveedorRow';
 
 function formatDbErrorMessage(message: string): string {
   return message.replace(
@@ -24,17 +25,14 @@ interface AbonosProveedorModalProps {
   readOnly: boolean;
   onCreate: (
     pagoId: string,
-    data: { monto: number; fechaPago: string; complementoEmitido: boolean; nota: string | null }
+    data: { monto: number; estatus: AbonoEstatus; fechaPago: string | null; complementoEmitido: boolean; nota: string | null }
   ) => ActionResult;
   onDelete: (abonoId: string) => ActionResult;
   onToggleComplemento: (abonoId: string) => ActionResult;
+  onMarcarPagado: (abonoId: string, fechaPago: string) => ActionResult;
+  onRevertirPendiente: (abonoId: string) => ActionResult;
+  onEditarNota: (abonoId: string, nota: string | null) => ActionResult;
 }
-
-const TIPO_STYLES: Record<AbonoProveedor['tipo'], string> = {
-  Anticipo: 'bg-elevated-gold/15 text-[#8C7853] dark:text-elevated-gold border-elevated-gold/30',
-  Parcialidad: 'bg-enchanted-green/10 text-enchanted-green dark:bg-white/10 dark:text-light-ivory border-enchanted-green/20 dark:border-white/15',
-  Finiquito: 'bg-[#0B3D2E] text-light-ivory border-[#0B3D2E] dark:bg-elevated-gold dark:text-[#070D0C] dark:border-elevated-gold',
-};
 
 export default function AbonosProveedorModal({
   isOpen,
@@ -46,8 +44,12 @@ export default function AbonosProveedorModal({
   onCreate,
   onDelete,
   onToggleComplemento,
+  onMarcarPagado,
+  onRevertirPendiente,
+  onEditarNota,
 }: AbonosProveedorModalProps) {
   const [monto, setMonto] = useState('');
+  const [estatus, setEstatus] = useState<AbonoEstatus>('Pendiente');
   const [fechaPago, setFechaPago] = useState('');
   const [complementoEmitido, setComplementoEmitido] = useState(false);
   const [nota, setNota] = useState('');
@@ -55,10 +57,10 @@ export default function AbonosProveedorModal({
   const [dbError, setDbError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const resetForm = () => {
     setMonto('');
+    setEstatus('Pendiente');
     setFechaPago(getMexicoCityDate());
     setComplementoEmitido(false);
     setNota('');
@@ -71,7 +73,6 @@ export default function AbonosProveedorModal({
       setDbError(null);
       setSubmitting(false);
       setBusyId(null);
-      setConfirmDeleteId(null);
     }
   }, [isOpen, payment?.id]);
 
@@ -85,10 +86,10 @@ export default function AbonosProveedorModal({
     const parsedMonto = Number((parseFloat(parseCurrencyInput(monto)) || 0).toFixed(2));
     if (parsedMonto <= 0) {
       newErrors.monto = 'Ingrese un monto mayor a 0';
-    } else if (parsedMonto > resumen.saldo) {
-      newErrors.monto = `El monto no puede superar el saldo (${formatCurrency(resumen.saldo)})`;
+    } else if (parsedMonto > resumen.sinAutorizar) {
+      newErrors.monto = `El monto no puede superar lo que falta por autorizar (${formatCurrency(resumen.sinAutorizar)})`;
     }
-    if (!fechaPago) {
+    if (estatus === 'Pagado' && !fechaPago) {
       newErrors.fechaPago = 'La fecha de pago es requerida';
     }
 
@@ -100,10 +101,12 @@ export default function AbonosProveedorModal({
     setErrors({});
     setDbError(null);
     setSubmitting(true);
+    const pagado = estatus === 'Pagado';
     const result = await onCreate(payment.id, {
       monto: parsedMonto,
-      fechaPago,
-      complementoEmitido,
+      estatus,
+      fechaPago: pagado ? fechaPago : null,
+      complementoEmitido: pagado ? complementoEmitido : false,
       nota: nota.trim() || null,
     });
     setSubmitting(false);
@@ -115,13 +118,13 @@ export default function AbonosProveedorModal({
     }
   };
 
-  const runRowAction = async (abonoId: string, action: (id: string) => ActionResult) => {
+  const runRowAction = async (abonoId: string, action: () => ActionResult): Promise<boolean> => {
     setBusyId(abonoId);
     setDbError(null);
-    const result = await action(abonoId);
+    const result = await action();
     setBusyId(null);
-    setConfirmDeleteId(null);
     if (!result.success && result.error) setDbError(result.error);
+    return result.success;
   };
 
   return (
@@ -164,11 +167,12 @@ export default function AbonosProveedorModal({
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-5 font-sans">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Total', value: payment.total, accent: false },
-                  { label: 'Pagado', value: resumen.pagado, accent: false },
-                  { label: 'Saldo', value: resumen.saldo, accent: true },
+                  { label: 'Total', value: payment.total, tone: 'text-[#0B3D2E] dark:text-light-ivory' },
+                  { label: 'Pagado', value: resumen.pagado, tone: 'text-enchanted-green dark:text-emerald-300' },
+                  { label: 'Autorizado por pagar', value: resumen.autorizadoPorPagar, tone: 'text-[#8C7853] dark:text-elevated-gold' },
+                  { label: 'Sin autorizar', value: resumen.sinAutorizar, tone: 'text-rocky-gray dark:text-light-ivory/70' },
                 ].map(item => (
                   <div
                     key={item.label}
@@ -177,21 +181,22 @@ export default function AbonosProveedorModal({
                     <span className="text-[10px] font-bold uppercase tracking-wider text-rocky-gray dark:text-light-ivory/60 block">
                       {item.label}
                     </span>
-                    <span
-                      className={`text-base font-mono font-bold block mt-0.5 ${
-                        item.accent ? 'text-[#8C7853] dark:text-elevated-gold' : 'text-[#0B3D2E] dark:text-light-ivory'
-                      }`}
-                    >
+                    <span className={`text-base font-mono font-bold block mt-0.5 ${item.tone}`}>
                       {formatCurrency(item.value)}
                     </span>
                   </div>
                 ))}
               </div>
-              <div className="h-1.5 w-full bg-enchanted-green/10 dark:bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-elevated-gold rounded-full transition-all duration-500"
-                  style={{ width: `${resumen.porcentaje}%` }}
-                />
+              <div>
+                <div className="h-1.5 w-full bg-enchanted-green/10 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-elevated-gold rounded-full transition-all duration-500"
+                    style={{ width: `${resumen.porcentaje}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-rocky-gray dark:text-light-ivory/60 text-right font-mono">
+                  {resumen.porcentaje.toFixed(0)}% pagado
+                </p>
               </div>
 
               {readOnly && (
@@ -222,6 +227,7 @@ export default function AbonosProveedorModal({
                       <thead className="bg-enchanted-green/5 dark:bg-white/5 text-[10px] uppercase tracking-wider text-rocky-gray dark:text-light-ivory/60">
                         <tr>
                           <th className="px-3 py-2 font-bold">Tipo</th>
+                          <th className="px-3 py-2 font-bold">Estatus</th>
                           <th className="px-3 py-2 font-bold">Fecha de pago</th>
                           <th className="px-3 py-2 font-bold text-right">Monto</th>
                           <th className="px-3 py-2 font-bold text-right">IVA</th>
@@ -231,103 +237,60 @@ export default function AbonosProveedorModal({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-enchanted-green/10 dark:divide-white/10">
-                        {resumen.abonos.map(abono => {
-                          const busy = busyId === abono.id;
-                          return (
-                            <tr key={abono.id} className="text-enchanted-green dark:text-light-ivory">
-                              <td className="px-3 py-2">
-                                <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-bold ${TIPO_STYLES[abono.tipo]}`}>
-                                  {abono.tipo}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 font-mono whitespace-nowrap">{abono.fechaPago}</td>
-                              <td className="px-3 py-2 font-mono text-right whitespace-nowrap font-bold">{formatCurrency(abono.monto)}</td>
-                              <td className="px-3 py-2 font-mono text-right whitespace-nowrap">{formatCurrency(abono.iva)}</td>
-                              <td className="px-3 py-2">
-                                <button
-                                  type="button"
-                                  role="switch"
-                                  aria-checked={abono.complementoEmitido}
-                                  disabled={readOnly || busy}
-                                  onClick={() => runRowAction(abono.id, onToggleComplemento)}
-                                  className="flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                  <span
-                                    className={`relative inline-flex h-4 w-7 rounded-full transition-colors ${
-                                      abono.complementoEmitido ? 'bg-enchanted-green dark:bg-elevated-gold' : 'bg-rocky-gray/40'
-                                    }`}
-                                  >
-                                    <span
-                                      className={`absolute top-0.5 h-3 w-3 rounded-full bg-white shadow transition-transform ${
-                                        abono.complementoEmitido ? 'translate-x-3.5' : 'translate-x-0.5'
-                                      }`}
-                                    />
-                                  </span>
-                                  <span className="text-[10px] font-bold">{abono.complementoEmitido ? 'Sí' : 'No'}</span>
-                                </button>
-                                {payment?.tieneFactura && !abono.complementoEmitido && (
-                                  <p className="mt-1 text-[9px] leading-snug text-rocky-gray dark:text-light-ivory/70 max-w-[140px]">
-                                    Su IVA cuenta hasta marcar el complemento.
-                                  </p>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 max-w-[160px] truncate text-rocky-gray dark:text-light-ivory/70" title={abono.nota ?? ''}>
-                                {abono.nota || '—'}
-                              </td>
-                              {!readOnly && (
-                                <td className="px-3 py-2 text-right whitespace-nowrap">
-                                  {confirmDeleteId === abono.id ? (
-                                    <span className="inline-flex items-center gap-1.5">
-                                      <span className="text-[10px] font-bold text-cranberry">¿Borrar?</span>
-                                      <button
-                                        type="button"
-                                        disabled={busy}
-                                        onClick={() => runRowAction(abono.id, onDelete)}
-                                        className="px-2 py-0.5 rounded bg-cranberry text-white text-[10px] font-bold hover:bg-cranberry/90 disabled:opacity-50"
-                                      >
-                                        {busy ? '…' : 'Sí'}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        disabled={busy}
-                                        onClick={() => setConfirmDeleteId(null)}
-                                        className="px-2 py-0.5 rounded border border-rocky-gray/40 text-[10px] font-bold hover:bg-black/5 dark:hover:bg-white/5"
-                                      >
-                                        No
-                                      </button>
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteId(abono.id)}
-                                      title="Borrar abono"
-                                      className="p-1 text-cranberry/80 hover:text-cranberry hover:bg-cranberry/10 rounded transition-colors"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  )}
-                                </td>
-                              )}
-                            </tr>
-                          );
-                        })}
+                        {resumen.abonos.map(abono => (
+                          <React.Fragment key={abono.id}>
+                          <AbonoProveedorRow
+                            abono={abono}
+                            readOnly={readOnly}
+                            busy={busyId === abono.id}
+                            tieneFactura={payment.tieneFactura}
+                            run={runRowAction}
+                            onDelete={onDelete}
+                            onToggleComplemento={onToggleComplemento}
+                            onMarcarPagado={onMarcarPagado}
+                            onRevertirPendiente={onRevertirPendiente}
+                            onEditarNota={onEditarNota}
+                          />
+                          </React.Fragment>
+                        ))}
                       </tbody>
                     </table>
                   </div>
                 )}
               </div>
 
-              {!readOnly && resumen.saldo > 0 && (
+              {!readOnly && resumen.sinAutorizar > 0 && (
                 <form onSubmit={handleSubmit} className="p-4 rounded-lg border border-elevated-gold/30 bg-elevated-gold/5 space-y-4">
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold">
                       Registrar abono
                     </h3>
                     <p className="text-[10px] text-rocky-gray dark:text-light-ivory/60 mt-0.5">
-                      El tipo y el IVA de cada abono los calcula el sistema.
+                      El tipo y el IVA de cada abono los calcula el sistema. Un abono pendiente queda autorizado y se marca como pagado cuando se realice el pago.
                     </p>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <span className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">Estatus</span>
+                    <div role="radiogroup" className="inline-flex rounded border border-enchanted-green/30 dark:border-light-ivory/20 overflow-hidden">
+                      {(['Pendiente', 'Pagado'] as AbonoEstatus[]).map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          role="radio"
+                          aria-checked={estatus === opt}
+                          onClick={() => setEstatus(opt)}
+                          className={`px-4 py-1.5 text-xs font-bold transition-colors ${
+                            estatus === opt
+                              ? 'bg-enchanted-green text-light-ivory dark:bg-elevated-gold dark:text-[#070D0C]'
+                              : 'bg-white text-enchanted-green hover:bg-enchanted-green/5 dark:bg-[#070D0C] dark:text-light-ivory/80 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={`grid grid-cols-1 gap-4 ${estatus === 'Pagado' ? 'md:grid-cols-3' : 'md:grid-cols-1'}`}>
                     <div>
                       <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
                         Monto <span className="text-cranberry font-bold">*</span>
@@ -344,45 +307,49 @@ export default function AbonosProveedorModal({
                       />
                       <button
                         type="button"
-                        onClick={() => setMonto(formatLiveCurrency(resumen.saldo.toFixed(2)))}
+                        onClick={() => setMonto(formatLiveCurrency(resumen.sinAutorizar.toFixed(2)))}
                         className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold hover:underline"
                       >
-                        Liquidar saldo
+                        Autorizar resto
                       </button>
                       {errors.monto && (
                         <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.monto}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1 flex items-center gap-1">
-                        <Calendar size={12} className="text-[#8C7853] dark:text-elevated-gold" />
-                        <span>Fecha de pago <span className="text-cranberry font-bold">*</span></span>
-                      </label>
-                      <input
-                        type="date"
-                        value={fechaPago}
-                        onChange={(e) => setFechaPago(e.target.value)}
-                        className={`w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border rounded text-sm text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark] ${
-                          errors.fechaPago ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
-                        }`}
-                      />
-                      {errors.fechaPago && (
-                        <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.fechaPago}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
-                        Complemento emitido
-                      </label>
-                      <select
-                        value={complementoEmitido ? 'si' : 'no'}
-                        onChange={(e) => setComplementoEmitido(e.target.value === 'si')}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs"
-                      >
-                        <option value="no" className="bg-white dark:bg-[#051A14]">No</option>
-                        <option value="si" className="bg-white dark:bg-[#051A14]">Sí</option>
-                      </select>
-                    </div>
+                    {estatus === 'Pagado' && (
+                      <>
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1 flex items-center gap-1">
+                            <Calendar size={12} className="text-[#8C7853] dark:text-elevated-gold" />
+                            <span>Fecha de pago <span className="text-cranberry font-bold">*</span></span>
+                          </label>
+                          <input
+                            type="date"
+                            value={fechaPago}
+                            onChange={(e) => setFechaPago(e.target.value)}
+                            className={`w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border rounded text-sm text-enchanted-green dark:text-light-ivory font-mono focus:outline-none focus:border-elevated-gold transition-colors shadow-xs [color-scheme:light] dark:[color-scheme:dark] ${
+                              errors.fechaPago ? 'border-cranberry' : 'border-enchanted-green/40 dark:border-light-ivory/30'
+                            }`}
+                          />
+                          {errors.fechaPago && (
+                            <p className="text-[10px] text-cranberry mt-1 font-semibold">{errors.fechaPago}</p>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
+                            Complemento emitido
+                          </label>
+                          <select
+                            value={complementoEmitido ? 'si' : 'no'}
+                            onChange={(e) => setComplementoEmitido(e.target.value === 'si')}
+                            className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold shadow-xs"
+                          >
+                            <option value="no" className="bg-white dark:bg-[#051A14]">No</option>
+                            <option value="si" className="bg-white dark:bg-[#051A14]">Sí</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[#082019] dark:text-light-ivory/90 mb-1">
