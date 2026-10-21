@@ -123,7 +123,6 @@ export default function BovedaIva({
         <div>
           {disponible <= 0 ? (
             <div className="flex items-center gap-2 p-2.5 bg-cranberry/10 border border-cranberry/20 rounded text-xs text-cranberry font-medium">
-              <AlertTriangle size={15} />
               <span>No hay saldo a favor disponible actualmente, no se pueden registrar retiros.</span>
             </div>
           ) : (
