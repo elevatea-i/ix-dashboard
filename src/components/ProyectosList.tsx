@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useIsDesktop } from '../hooks/useIsDesktop';
-import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, TriangleAlert as AlertTriangle, FileCheck, Award, Zap, UsersRound, Lock, Ban } from 'lucide-react';
+import { FolderGit2, Search, Plus, CreditCard as Edit, Trash2, Eye, Sparkles, User, Calendar, ArrowRight, X, FileSpreadsheet, Receipt, TrendingUp, FileCheck, Award, Zap, UsersRound, Lock, Ban } from 'lucide-react';
 import { Client, Project, Invoice, Expense, ProviderPayment, ProfitDistribution, PorImpactar, ThirdPartyPayment, RepartoCierre } from '../types';
 import { calculateProjectBillingStatus, formatCurrency, getDueDateIndicator } from '../utils';
 import { calculateProjectProfitability } from '../utils/profitability';
@@ -1012,7 +1012,6 @@ export default function ProyectosList({
                         </div>
                         {hayFacturasSinCobrar && (
                           <div className="flex items-start gap-1.5 mt-1">
-                            <AlertTriangle size={12} className="text-[#8C7853] dark:text-elevated-gold mt-0.5 shrink-0" />
                             <p className="text-[10px] text-[#8C7853] dark:text-elevated-gold leading-relaxed">
                               Cifra parcial: hay facturas sin cobrar que no se han sumado.
                             </p>
