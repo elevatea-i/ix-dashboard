@@ -190,7 +190,7 @@ export default function GastoFormModal({
               {initialData ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}
             </h3>
             <p className="text-xs text-[#3c3b3b] dark:text-[#3c3b3b] mt-0.5">
-              Control de egresos, egresos operativos y facturación de proveedores.
+              Control de egresos y facturación de proveedores.
             </p>
           </div>
           <button 
