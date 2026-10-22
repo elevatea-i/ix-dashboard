@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Project, Invoice } from '../types';
-import { X, CircleAlert as AlertCircle, RotateCcw, TriangleAlert as AlertTriangle } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { formatLiveCurrency, parseCurrencyInput, formatCurrency } from '../utils';
 import { supabase } from '../lib/supabase';
+import Modal, { ModalFooter, Notice, fieldLabel, fieldInput, fieldHint, fieldError, buttonPrimary, buttonSecondary, buttonDanger } from './ui/Modal';
 
 interface FacturaFormModalProps {
   isOpen: boolean;
@@ -187,359 +188,239 @@ export default function FacturaFormModal({
 
   const isEditingPagada = initialData && initialData.estado === 'pagada';
 
-  return (
-    <div id="invoice-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="invoice-form-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-3xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
-        
-        {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
-          <h3 className="font-serif text-lg font-bold text-enchanted-green dark:text-light-ivory">
-            {initialData ? 'Editar Factura / CFDI' : 'Registrar Nueva Factura CFDI'}
-          </h3>
-          <button
-            id="close-invoice-modal-btn"
-            onClick={onClose}
-            className="text-enchanted-green/80 dark:text-light-ivory/80 hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+  const moneyInput = `${fieldInput} num pl-7`;
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-          {projects.length === 0 ? (
-            <div id="no-projects-warning" className="p-5 border border-cranberry/20 bg-rose-linen/20 rounded-lg flex flex-col items-center text-center space-y-3">
-              <AlertCircle size={32} className="text-cranberry" />
-              <div>
-                <p className="text-sm font-semibold text-cranberry">No hay proyectos registrados</p>
-                <p className="text-xs text-enchanted-green/80 dark:text-light-ivory/80 mt-1">
-                  Debe registrar al menos un proyecto en el catálogo para poder emitir o registrar facturas vinculadas.
+  return (
+    <Modal
+      id="invoice-form-modal-container"
+      cardId="invoice-form-modal-card"
+      closeButtonId="close-invoice-modal-btn"
+      eyebrow={initialData ? `Folio ${initialData.folio}` : 'Nuevo CFDI'}
+      title={initialData ? 'Editar factura' : 'Registrar factura'}
+      onClose={onClose}
+      size="lg"
+    >
+      {projects.length === 0 ? (
+        <div id="no-projects-warning" className="px-6 sm:px-8 py-14 text-center">
+          <span aria-hidden className="block mx-auto h-px w-10 bg-elevated-gold mb-6" />
+          <p className="font-serif text-[22px] font-medium text-enchanted-green dark:text-light-ivory">Aún no hay proyectos</p>
+          <p className="text-[14px] text-ink-soft dark:text-light-ivory/60 mt-2 max-w-sm mx-auto">
+            Registra al menos un proyecto en el catálogo para poder vincular facturas.
+          </p>
+          <button type="button" onClick={onClose} className={`${buttonSecondary} mt-6`}>Entendido</button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0">
+          <div className="px-6 sm:px-8 py-6 space-y-8 overflow-y-auto">
+            {isEditingPagada && !showRevertConfirm && (
+              <Notice tone="gold" title="Factura marcada como pagada">
+                <p>Si se marcó por error, puedes regresarla a “por cobrar”. Esto elimina el reparto de utilidades que generó.</p>
+                <button
+                  type="button"
+                  onClick={handleRevertClick}
+                  disabled={revertChecking}
+                  className={`${buttonSecondary} disabled:cursor-wait`}
+                >
+                  <RotateCcw size={14} strokeWidth={1.75} className={revertChecking ? 'animate-spin' : ''} />
+                  {revertChecking ? 'Consultando reparto…' : 'Revertir a por cobrar'}
+                </button>
+              </Notice>
+            )}
+
+            {isEditingPagada && showRevertConfirm && (
+              <Notice tone="alert" title="Confirmar reversión">
+                <p>
+                  La factura regresará a “por cobrar” y se eliminará el reparto de utilidades de{' '}
+                  <span className="num font-semibold text-cranberry dark:text-cranberry-300">{formatCurrency(revertAmount)}</span>. Esta acción no se puede deshacer.
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 bg-cranberry text-white text-xs font-semibold rounded hover:bg-cranberry/90 transition-colors"
-              >
-                Entendido
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Revertir a Facturada — solo visible cuando se edita una factura pagada */}
-              {isEditingPagada && !showRevertConfirm && (
-                <div className="p-4 border border-elevated-gold/30 bg-elevated-gold/5 rounded-lg space-y-3">
-                  <div className="flex items-start space-x-3">
-                    <RotateCcw size={18} className="text-elevated-gold shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-xs font-bold text-elevated-gold uppercase tracking-wide">
-                        Revertir estado de Pago
-                      </p>
-                      <p className="text-xs text-enchanted-green/80 dark:text-light-ivory/80 mt-1 leading-relaxed">
-                        Esta factura está marcada como <strong>Pagada</strong>. Si se marcó por error, puedes revertirla a <strong>Facturada</strong>. Esto eliminará el reparto de utilidades que generó.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRevertClick}
-                    disabled={revertChecking}
-                    className="w-full px-4 py-2 bg-elevated-gold/90 text-enchanted-green font-bold text-xs rounded hover:bg-elevated-gold transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center justify-center space-x-2"
-                  >
-                    <RotateCcw size={14} />
-                    <span>{revertChecking ? 'Consultando reparto...' : 'Revertir a Facturada'}</span>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setShowRevertConfirm(false)} disabled={revertLoading} className={buttonSecondary}>
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={handleConfirmRevert} disabled={revertLoading} className={`${buttonDanger} disabled:cursor-wait`}>
+                    {revertLoading && <RotateCcw size={14} className="animate-spin" />}
+                    {revertLoading ? 'Revirtiendo…' : 'Confirmar reversión'}
                   </button>
                 </div>
-              )}
+              </Notice>
+            )}
 
-              {/* Confirmación de reversión */}
-              {isEditingPagada && showRevertConfirm && (
-                <div className="p-4 border border-cranberry/30 bg-cranberry/5 rounded-lg space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertTriangle size={18} className="text-cranberry shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-2">
-                      <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                        Confirmar Reversión
-                      </p>
-                      <p className="text-sm text-[#082019] dark:text-light-ivory leading-relaxed">
-                        Esto revertirá la factura a <strong>Facturada</strong> y eliminará el reparto de utilidades de <strong className="text-cranberry">{formatCurrency(revertAmount)}</strong> que generó. Esta acción no se puede deshacer. ¿Confirmar?
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowRevertConfirm(false)}
-                      disabled={revertLoading}
-                      className="px-3.5 py-2 bg-transparent text-xs font-semibold text-enchanted-green dark:text-light-ivory border border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-colors disabled:opacity-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleConfirmRevert}
-                      disabled={revertLoading}
-                      className="px-4 py-2 bg-cranberry text-white font-bold text-xs rounded hover:bg-cranberry/90 transition-colors shadow disabled:opacity-50 disabled:cursor-wait flex items-center space-x-2"
-                    >
-                      {revertLoading ? (
-                        <>
-                          <RotateCcw size={14} className="animate-spin" />
-                          <span>Revirtiendo...</span>
-                        </>
-                      ) : (
-                        <span>Confirmar Reversión</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Folio y Proyecto */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <section className="space-y-5">
+              <p className="eyebrow text-ink-mute dark:text-light-ivory/45">Datos del comprobante</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                    Folio CFDI <span className="text-cranberry font-bold">*</span>
-                  </label>
+                  <label className={fieldLabel}>Folio CFDI</label>
                   <input
                     type="text"
                     required
                     value={folio}
                     onChange={(e) => setFolio(e.target.value)}
                     placeholder="Ej. IX01, B-452"
-                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory placeholder-rocky-gray/80 focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
+                    className={`${fieldInput} num`}
                   />
-                  {errors.folio && (
-                    <p className="text-xs text-cranberry mt-1 font-medium">{errors.folio}</p>
-                  )}
+                  {errors.folio && <p className={fieldError}>{errors.folio}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                    Proyecto Asociado <span className="text-cranberry font-bold">*</span>
-                  </label>
-                  <select
-                    value={proyectoId}
-                    onChange={(e) => setProyectoId(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
-                  >
+                  <label className={fieldLabel}>Proyecto</label>
+                  <select value={proyectoId} onChange={(e) => setProyectoId(e.target.value)} className={fieldInput}>
                     {projects.filter(p => !p.cerrado || p.id === initialData?.proyectoId).map((proj) => (
-                      <option key={proj.id} value={proj.id} className="bg-light-ivory dark:bg-[#051A14]">
-                        [{proj.codigo}] {proj.nombre}
-                      </option>
+                      <option key={proj.id} value={proj.id}>[{proj.codigo}] {proj.nombre}</option>
                     ))}
                   </select>
-                  {errors.proyectoId && (
-                    <p className="text-xs text-cranberry mt-1 font-medium">{errors.proyectoId}</p>
-                  )}
+                  {errors.proyectoId && <p className={fieldError}>{errors.proyectoId}</p>}
                 </div>
               </div>
 
-              {/* Fecha Emisión, Método Pago y Facturado Por */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                    Fecha de Emisión <span className="text-cranberry font-bold">*</span>
-                  </label>
+                  <label className={fieldLabel}>Fecha de emisión</label>
                   <input
                     type="date"
                     required
                     value={fechaEmision}
                     onChange={(e) => setFechaEmision(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
+                    className={`${fieldInput} num`}
                   />
-                  {errors.fechaEmision && (
-                    <p className="text-xs text-cranberry mt-1 font-medium">{errors.fechaEmision}</p>
-                  )}
+                  {errors.fechaEmision && <p className={fieldError}>{errors.fechaEmision}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                    Método de Pago <span className="text-cranberry font-bold">*</span>
-                  </label>
-                  <select
-                    value={metodoPago}
-                    onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD')}
-                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono font-bold shadow-xs"
-                  >
-                    <option value="PUE" className="bg-light-ivory dark:bg-[#051A14]">PUE</option>
-                    <option value="PPD" className="bg-light-ivory dark:bg-[#051A14]">PPD</option>
+                  <label className={fieldLabel}>Método de pago</label>
+                  <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD')} className={fieldInput}>
+                    <option value="PUE">PUE · Una sola exhibición</option>
+                    <option value="PPD">PPD · Parcialidades o diferido</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                    Facturado Por <span className="text-cranberry font-bold">*</span>
+                  <label className={fieldLabel}>Facturado por</label>
+                  <select value={facturadoPor} onChange={(e) => setFacturadoPor(e.target.value as 'IX' | 'Juan Carlos')} className={fieldInput}>
+                    <option value="IX">IX</option>
+                    <option value="Juan Carlos">Juan Carlos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="rounded-xl ring-1 ring-enchanted-green/[0.08] dark:ring-white/[0.07] divide-y divide-enchanted-green/[0.06] dark:divide-white/[0.05]">
+                {metodoPago === 'PPD' && (
+                  <label className="flex items-center justify-between gap-4 px-4 py-3.5 cursor-pointer">
+                    <span>
+                      <span className="block text-[14px] font-medium text-enchanted-green dark:text-light-ivory">Complemento de pago emitido</span>
+                      <span className="block text-[12px] text-ink-mute dark:text-light-ivory/45 mt-0.5">El complemento ya fue emitido y timbrado</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={complementoEmitido}
+                      onChange={(e) => setComplementoEmitido(e.target.checked)}
+                      className="h-4 w-4 shrink-0 accent-enchanted-green dark:accent-gold-300 cursor-pointer"
+                    />
                   </label>
-                  <select
-                    value={facturadoPor}
-                    onChange={(e) => setFacturadoPor(e.target.value as 'IX' | 'Juan Carlos')}
-                    className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-medium shadow-xs"
-                  >
-                    <option value="IX" className="bg-light-ivory dark:bg-[#051A14]">IX</option>
-                    <option value="Juan Carlos" className="bg-light-ivory dark:bg-[#051A14]">Juan Carlos</option>
-                  </select>
+                )}
+                <label className="flex items-center justify-between gap-4 px-4 py-3.5 cursor-pointer">
+                  <span>
+                    <span className="block text-[14px] font-medium text-enchanted-green dark:text-light-ivory">Tiene XML / PDF</span>
+                    <span className="block text-[12px] text-ink-mute dark:text-light-ivory/45 mt-0.5">Comprobante fiscal recibido</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={tieneFactura}
+                    onChange={(e) => setTieneFactura(e.target.checked)}
+                    className="h-4 w-4 shrink-0 accent-enchanted-green dark:accent-gold-300 cursor-pointer"
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="space-y-5">
+              <p className="eyebrow text-ink-mute dark:text-light-ivory/45">Importes</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <label className={fieldLabel}>Subtotal</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={subtotal}
+                    onChange={(e) => handleSubtotalChange(e.target.value)}
+                    placeholder="$0.00"
+                    className={`${fieldInput} num`}
+                  />
+                  {errors.subtotal && <p className={fieldError}>{errors.subtotal}</p>}
+                </div>
+
+                <div>
+                  <label className={fieldLabel}>IVA</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] text-ink-mute pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={iva || ''}
+                      onChange={(e) => setIva(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className={moneyInput}
+                    />
+                  </div>
+                  <p className={fieldHint}>Se calcula al 16% del subtotal; puedes ajustarlo.</p>
+                  {errors.iva && <p className={fieldError}>{errors.iva}</p>}
+                </div>
+
+                <div>
+                  <label className={fieldLabel}>Retención ISR <span className="text-ink-mute dark:text-light-ivory/40 font-normal">· opcional</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] text-ink-mute pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={retencionIsr || ''}
+                      onChange={(e) => setRetencionIsr(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className={moneyInput}
+                    />
+                  </div>
+                  {errors.retencionIsr && <p className={fieldError}>{errors.retencionIsr}</p>}
+                </div>
+
+                <div>
+                  <label className={fieldLabel}>Retención IVA <span className="text-ink-mute dark:text-light-ivory/40 font-normal">· opcional</span></label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[14px] text-ink-mute pointer-events-none">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={retencionIva || ''}
+                      onChange={(e) => setRetencionIva(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className={moneyInput}
+                    />
+                  </div>
+                  {errors.retencionIva && <p className={fieldError}>{errors.retencionIva}</p>}
                 </div>
               </div>
 
-              {/* Condicional: Complemento Emitido si es PPD */}
-              {metodoPago === 'PPD' && (
-                <div className="p-3 border border-elevated-gold/20 bg-elevated-gold/5 rounded flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Complemento de Pago Emitido</p>
-                    <p className="text-[10px] text-rocky-gray">¿Se ha emitido y timbrado el complemento de pago correspondiente?</p>
-                  </div>
-                  <select
-                    value={complementoEmitido ? 'si' : 'no'}
-                    onChange={(e) => setComplementoEmitido(e.target.value === 'si')}
-                    className="px-3 py-1.5 bg-light-ivory dark:bg-[#070D0C] border border-enchanted-green/20 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold"
-                  >
-                    <option value="no">No</option>
-                    <option value="si">Sí</option>
-                  </select>
+              <div className="flex items-end justify-between gap-4 rounded-xl bg-enchanted-green/[0.035] dark:bg-white/[0.035] px-5 py-4">
+                <div>
+                  <p className="eyebrow text-ink-mute dark:text-light-ivory/45">Total del CFDI</p>
+                  <p className="text-[12px] text-ink-mute dark:text-light-ivory/45 mt-1">Subtotal + IVA − retenciones</p>
                 </div>
-              )}
-
-              {/* ¿Tiene Factura XML/PDF? */}
-              <div className="flex items-center justify-between p-2.5 bg-white/30 dark:bg-black/10 rounded border border-enchanted-green/5">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-enchanted-green dark:text-light-ivory">¿Tiene Factura XML/PDF?</span>
-                  <span className="text-[10px] text-rocky-gray">Comprobante fiscal recibido</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={tieneFactura}
-                  onChange={(e) => setTieneFactura(e.target.checked)}
-                  className="h-4 w-4 rounded border-enchanted-green/20 dark:border-light-ivory/20 text-enchanted-green focus:ring-elevated-gold cursor-pointer"
-                />
+                <p className="num font-serif text-[30px] leading-none font-medium text-enchanted-green dark:text-light-ivory">
+                  {formatCurrency(calculatedTotal)}
+                </p>
               </div>
+            </section>
+          </div>
 
-              {/* Cifras Financieras */}
-              <div className="pt-3 border-t border-enchanted-green/10 dark:border-white/10 space-y-4">
-                <p className="text-xs uppercase font-bold tracking-wider text-elevated-gold">Valores del CFDI</p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                      Subtotal <span className="text-cranberry font-bold">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        value={subtotal}
-                        onChange={(e) => handleSubtotalChange(e.target.value)}
-                        placeholder="$0.00"
-                        className="w-full px-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors font-mono shadow-xs"
-                      />
-                    </div>
-                    {errors.subtotal && (
-                      <p className="text-xs text-cranberry mt-1 font-medium">{errors.subtotal}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                      IVA (16% pre-calculado, editable)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2 text-sm text-rocky-gray">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        required
-                        value={iva || ''}
-                        onChange={(e) => setIva(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
-                      />
-                    </div>
-                    {errors.iva && (
-                      <p className="text-xs text-cranberry mt-1 font-medium">{errors.iva}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                      Retención ISR (opcional)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2 text-sm text-rocky-gray">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={retencionIsr || ''}
-                        onChange={(e) => setRetencionIsr(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
-                      />
-                    </div>
-                    {errors.retencionIsr && (
-                      <p className="text-xs text-cranberry mt-1 font-medium">{errors.retencionIsr}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-bold text-[#082019] dark:text-light-ivory/90 mb-1.5">
-                      Retención IVA (opcional)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-2 text-sm text-rocky-gray">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={retencionIva || ''}
-                        onChange={(e) => setRetencionIva(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                        className="w-full pl-7 pr-3.5 py-2 bg-white dark:bg-[#070D0C] border border-enchanted-green/40 dark:border-light-ivory/30 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors shadow-xs"
-                      />
-                    </div>
-                    {errors.retencionIva && (
-                      <p className="text-xs text-cranberry mt-1 font-medium">{errors.retencionIva}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Total Visualizer Display Box */}
-                <div className="p-3.5 bg-enchanted-green/5 dark:bg-[#071310] border border-enchanted-green/15 dark:border-light-ivory/10 rounded-lg flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-enchanted-green/80 dark:text-light-ivory/80">Total del CFDI</p>
-                    <p className="text-[10px] text-rocky-gray">Calculado como: subtotal + iva - retenciones</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                      ${calculatedTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                    <p className="text-[10px] text-elevated-gold tracking-wider uppercase font-semibold">Solo lectura</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Buttons Footer */}
-              <div className="mt-6 pt-5 border-t border-rocky-gray/20 dark:border-white/10 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 bg-transparent text-sm font-medium text-enchanted-green dark:text-light-ivory border border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-enchanted-green dark:bg-elevated-gold text-white dark:text-enchanted-green font-semibold text-sm hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 rounded shadow transition-colors"
-                >
-                  {initialData ? 'Guardar Cambios' : 'Registrar Factura'}
-                </button>
-              </div>
-            </>
-          )}
+          <ModalFooter>
+            <button type="button" onClick={onClose} className={buttonSecondary}>Cancelar</button>
+            <button type="submit" className={buttonPrimary}>{initialData ? 'Guardar cambios' : 'Registrar factura'}</button>
+          </ModalFooter>
         </form>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }
-

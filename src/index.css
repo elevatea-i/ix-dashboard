@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @variant dark (.dark &);
@@ -18,11 +18,72 @@
   --color-rose-linen: #DFBDB5;
   --color-rocky-gray: #BBBCBC;
 
+  /* Brand green ramp */
+  --color-green-50: #EEF3F0;
+  --color-green-100: #D5E2DB;
+  --color-green-300: #7FA595;
+  --color-green-500: #2C6450;
+  --color-green-700: #0B3D2E;
+  --color-green-900: #051A14;
+
+  /* Gold ramp */
+  --color-gold-100: #EFE8DA;
+  --color-gold-300: #C9B48A;
+  --color-gold-500: #8C7853;
+  --color-gold-700: #5F5038;
+
+  /* Cranberry ramp (alerts / errors) */
+  --color-cranberry-100: #F3E3E6;
+  --color-cranberry-300: #D49AAB;
+  --color-cranberry-500: #84344E;
+  --color-cranberry-700: #5C2236;
+
+  /* Status ramps */
+  --color-success-500: #3E7A5F;
+  --color-success-300: #8DC2A8;
+  --color-warning-500: #A87A2A;
+  --color-warning-300: #E0C07F;
+
+  /* Warm neutrals */
+  --color-paper: #FBF8F3;
+  --color-ink: #0B3D2E;
+  --color-ink-soft: #4F6A60;
+  --color-ink-mute: #7E8E87;
+  --color-paper-dark: #0A221B;
+  --color-paper-dark-raised: #0E2A22;
+
   --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+
+  --animate-fade-in: fade-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0.45; }
+    50% { opacity: 0.9; }
+    100% { opacity: 0.45; }
+  }
 }
 
-/* Custom Scrollbar styled elegantly to match the aesthetic */
+@utility num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  letter-spacing: -0.01em;
+}
+
+@utility eyebrow {
+  font-size: 10.5px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -33,7 +94,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-rocky-gray);
+  background: rgba(11, 61, 46, 0.15);
   border-radius: 3px;
 }
 
@@ -41,7 +102,10 @@
   background: var(--color-elevated-gold);
 }
 
-/* Base reset to handle general fonts and rendering */
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(242, 233, 223, 0.12);
+}
+
 html, body {
   height: 100vh;
   margin: 0;
@@ -49,6 +113,7 @@ html, body {
   background-color: #F2E9DF;
   transition: background-color 0.3s ease;
   font-family: var(--font-sans);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -67,5 +132,12 @@ html.dark, html.dark body {
 
 h1, h2, h3, h4, h5, h6, .font-serif-editorial {
   font-family: var(--font-serif);
+  line-height: 1.2;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

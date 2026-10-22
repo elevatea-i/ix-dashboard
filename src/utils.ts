@@ -65,6 +65,15 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+/** Formats a YYYY-MM-DD string as a short Spanish date, e.g. "22 oct 2026". */
+export function formatShortDate(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(y, m - 1, d)))
+    .replace('.', '');
+}
+
 /**
  * Formats a raw numeric string to a currency string with a dollar sign and thousands separators,
  * preserving decimals as they are typed.

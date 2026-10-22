@@ -1,7 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Invoice, Project, Client } from '../types';
-import { Plus, Search, CircleCheck as CheckCircle2, CreditCard as Edit3, Trash2, DollarSign, TrendingUp, Clock, ListFilter as Filter, Receipt, FileCheck2, CalendarCheck2 } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { Plus, Search, PencilLine, Trash2, Check, X } from 'lucide-react';
+import { formatCurrency, formatShortDate } from '../utils';
+import PageHeader from './ui/PageHeader';
+import StatCard from './ui/StatCard';
+import StatusPill from './ui/StatusPill';
+import { StatCardsSkeleton, TableSkeleton } from './ui/Skeleton';
 
 interface FacturasListProps {
   invoices: Invoice[];
@@ -102,311 +106,286 @@ export default function FacturasList({
 
   const hasActiveFilters = searchTerm || filterPpdNoComplement || filterClienteId !== 'todos' || filterEstado !== 'todas';
 
+  const pendingCount = invoices.filter(inv => inv.estado !== 'pagada').length;
+  const cobradoPct = totalFacturado > 0 ? Math.round((totalPagado / totalFacturado) * 100) : 0;
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterPpdNoComplement(false);
+    setFilterClienteId('todos');
+    setFilterEstado('todas');
+  };
+
+  const selectClass =
+    'h-10 pl-3 pr-8 rounded-lg bg-transparent border border-enchanted-green/[0.12] dark:border-white/10 text-[13px] font-medium text-enchanted-green dark:text-light-ivory hover:border-enchanted-green/25 dark:hover:border-white/20 focus:outline-none focus:border-elevated-gold transition-colors cursor-pointer dark:[&>option]:bg-paper-dark';
+
+  const actionButton =
+    'h-8 w-8 inline-flex items-center justify-center rounded-md text-ink-mute dark:text-light-ivory/50 transition-colors';
+
   return (
-    <div id="facturas-module-container" className="space-y-6 animate-fade-in">
-      
-      {/* Module Title & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-            Facturación y CFDIs
-          </h2>
-          <p className="text-xs text-rocky-gray mt-1">
-            Módulo de facturación, comprobantes fiscales, retenciones, cobranza y conciliación de cobros.
-          </p>
-        </div>
-        <button
-          id="btn-add-invoice"
-          onClick={onAddClick}
-          className="inline-flex items-center justify-center space-x-2 bg-enchanted-green dark:bg-elevated-gold hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 text-white dark:text-enchanted-green font-semibold text-sm px-4 py-2.5 rounded shadow transition-all duration-200"
-        >
-          <Plus size={16} />
-          <span>Registrar Factura</span>
-        </button>
-      </div>
+    <div id="facturas-module-container" className="space-y-8 animate-fade-in">
+      <PageHeader
+        eyebrow="Cuentas por cobrar"
+        title="Facturación"
+        description="Comprobantes fiscales emitidos, cobranza y complementos de pago."
+        action={
+          <button
+            id="btn-add-invoice"
+            onClick={onAddClick}
+            className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-enchanted-green dark:bg-light-ivory text-light-ivory dark:text-enchanted-green text-[14px] font-medium shadow-[0_1px_2px_rgba(11,61,46,0.2)] hover:bg-green-500 dark:hover:bg-white transition-colors"
+          >
+            <Plus size={16} strokeWidth={1.75} />
+            Registrar factura
+          </button>
+        }
+      />
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <div className="animate-pulse text-enchanted-green dark:text-light-ivory text-sm tracking-wide">
-            Cargando facturas…
-          </div>
+        <div className="space-y-6">
+          <StatCardsSkeleton />
+          <TableSkeleton />
         </div>
       ) : (
       <>
-      {/* KPI Cards (Cuentas por Cobrar) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Facturado */}
-        <div id="kpi-total-facturado" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-rocky-gray">Total Facturado</p>
-            <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-              {formatCurrency(totalFacturado)}
-            </p>
-            <p className="text-[10px] text-rocky-gray">Suma de todos los CFDIs emitidos</p>
-          </div>
-          <div className="p-3 bg-enchanted-green/5 dark:bg-white/5 rounded-full text-enchanted-green dark:text-elevated-gold">
-            <Receipt size={22} />
-          </div>
-        </div>
-
-        {/* Total Pagado */}
-        <div id="kpi-total-pagado" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-[#0B3D2E] dark:text-elevated-gold">Total Pagado / Cobrado</p>
-            <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-              {formatCurrency(totalPagado)}
-            </p>
-            <p className="text-[10px] text-[#0B3D2E]/70 dark:text-light-ivory/70 font-medium">Conciliación bancaria exitosa</p>
-          </div>
-          <div className="p-3 bg-enchanted-green/5 dark:bg-white/5 rounded-full text-enchanted-green dark:text-elevated-gold">
-            <CalendarCheck2 size={22} />
-          </div>
-        </div>
-
-        {/* Por Cobrar / Pendiente */}
-        <div id="kpi-total-pendiente" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-cranberry/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-cranberry">Pendiente de Cobro</p>
-            <p className="text-2xl font-mono font-bold text-cranberry">
-              {formatCurrency(totalPendiente)}
-            </p>
-            <p className="text-[10px] text-rocky-gray">Cartera de cuentas por cobrar activa</p>
-          </div>
-          <div className="p-3 bg-rose-linen/25 dark:bg-rose-linen/10 rounded-full text-cranberry">
-            <Clock size={22} />
-          </div>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10">
-        <div className="relative flex-1 max-w-md">
-          <span className="absolute left-3 top-2.5 text-rocky-gray">
-            <Search size={18} />
-          </span>
-          <input
-            type="text"
-            placeholder="Buscar por folio o proyecto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-sm text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr] gap-4">
+        <div className="md:col-span-2 lg:col-span-1">
+          <StatCard
+            id="kpi-total-pendiente"
+            featured
+            label="Pendiente de cobro"
+            value={formatCurrency(totalPendiente)}
+            context={
+              pendingCount === 0
+                ? 'Toda la cartera está cobrada'
+                : `${pendingCount} ${pendingCount === 1 ? 'factura por cobrar' : 'facturas por cobrar'}`
+            }
           />
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Client filter */}
-          <select
-            id="filter-cliente"
-            value={filterClienteId}
-            onChange={(e) => setFilterClienteId(e.target.value)}
-            className="px-3 py-2 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs font-semibold text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors cursor-pointer"
-          >
-            <option value="todos">Todos los clientes</option>
-            {clients.map(c => (
-              <option key={c.id} value={c.id}>{c.nombre}</option>
-            ))}
-          </select>
-
-          {/* Status filter */}
-          <select
-            id="filter-estado"
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value as 'todas' | 'facturada' | 'pagada')}
-            className="px-3 py-2 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs font-semibold text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors cursor-pointer"
-          >
-            <option value="todas">Todas</option>
-            <option value="facturada">Facturada</option>
-            <option value="pagada">Pagada</option>
-          </select>
-
-          {/* PPD sin complemento toggle */}
-          <button
-            id="filter-ppd-no-comp-btn"
-            onClick={() => setFilterPpdNoComplement(prev => !prev)}
-            className={`inline-flex items-center space-x-2 px-4 py-2 rounded text-xs font-semibold border transition-all duration-200 ${
-              filterPpdNoComplement
-                ? 'bg-cranberry text-white border-cranberry shadow-sm'
-                : 'bg-transparent text-enchanted-green dark:text-light-ivory border-enchanted-green/20 dark:border-light-ivory/20 hover:bg-enchanted-green/5 dark:hover:bg-white/5'
-            }`}
-          >
-            <Filter size={14} />
-            <span>PPD sin complemento</span>
-            {filterPpdNoComplement && (
-              <span className="ml-1 bg-white text-cranberry px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                {ppdCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <StatCard
+          id="kpi-total-facturado"
+          label="Total facturado"
+          value={formatCurrency(totalFacturado)}
+          context={`${invoices.length} ${invoices.length === 1 ? 'CFDI emitido' : 'CFDIs emitidos'}`}
+        />
+        <StatCard
+          id="kpi-total-pagado"
+          label="Cobrado"
+          value={formatCurrency(totalPagado)}
+          tone="positive"
+          context={
+            <div className="space-y-2">
+              <span>{cobradoPct}% de lo facturado</span>
+              <div className="h-[3px] w-full rounded-full bg-enchanted-green/[0.08] dark:bg-white/[0.08] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-elevated-gold transition-[width] duration-700 ease-out"
+                  style={{ width: `${cobradoPct}%` }}
+                />
+              </div>
+            </div>
+          }
+        />
       </div>
 
-      {/* Invoices List Table */}
-      {filteredInvoices.length === 0 ? (
-        <div id="empty-invoices-state" className="bg-white dark:bg-[#051A14]/20 border border-dashed border-enchanted-green/15 dark:border-light-ivory/10 rounded-lg p-12 text-center">
-          <div className="max-w-md mx-auto space-y-4">
-            <div className="inline-flex p-4 rounded-full bg-enchanted-green/5 dark:bg-white/5 text-enchanted-green/60 dark:text-light-ivory/60">
-              <Receipt size={36} />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-serif text-lg font-semibold text-enchanted-green dark:text-light-ivory">
-                {hasActiveFilters ? 'Sin facturas encontradas' : 'No hay facturas registradas'}
-              </h3>
-              <p className="text-xs text-rocky-gray max-w-sm mx-auto">
-                {hasActiveFilters 
-                  ? 'Intente modificar los criterios de búsqueda o desactivar los filtros.' 
-                  : 'Aquí se concentrarán los comprobantes fiscales y el control de cuentas por cobrar. Registre su primera factura vinculándola a un proyecto.'}
-              </p>
-            </div>
-            {!hasActiveFilters && (
+      <div className="space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="relative flex-1 lg:max-w-sm">
+            <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute dark:text-light-ivory/40 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar por folio o proyecto"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 rounded-lg bg-paper dark:bg-paper-dark border border-enchanted-green/[0.12] dark:border-white/10 text-[14px] text-enchanted-green dark:text-light-ivory placeholder:text-ink-mute dark:placeholder:text-light-ivory/35 focus:outline-none focus:border-elevated-gold transition-colors"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              id="filter-cliente"
+              value={filterClienteId}
+              onChange={(e) => setFilterClienteId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="todos">Todos los clientes</option>
+              {clients.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+
+            <select
+              id="filter-estado"
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as 'todas' | 'facturada' | 'pagada')}
+              className={selectClass}
+            >
+              <option value="todas">Todos los estados</option>
+              <option value="facturada">Por cobrar</option>
+              <option value="pagada">Pagadas</option>
+            </select>
+
+            <button
+              id="filter-ppd-no-comp-btn"
+              onClick={() => setFilterPpdNoComplement(prev => !prev)}
+              aria-pressed={filterPpdNoComplement}
+              className={`h-10 inline-flex items-center gap-2 px-3.5 rounded-lg border text-[13px] font-medium transition-colors ${
+                filterPpdNoComplement
+                  ? 'border-cranberry/40 bg-cranberry-100 text-cranberry dark:bg-cranberry/15 dark:border-cranberry-300/40 dark:text-cranberry-300'
+                  : 'border-enchanted-green/[0.12] dark:border-white/10 text-enchanted-green dark:text-light-ivory hover:border-enchanted-green/25 dark:hover:border-white/20'
+              }`}
+            >
+              PPD sin complemento
+              <span className={`num min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full text-[11px] font-semibold ${
+                filterPpdNoComplement
+                  ? 'bg-cranberry text-white dark:bg-cranberry-300 dark:text-[#051A14]'
+                  : 'bg-enchanted-green/[0.07] text-ink-soft dark:bg-white/[0.08] dark:text-light-ivory/70'
+              }`}>
+                {ppdCount}
+              </span>
+            </button>
+
+            {hasActiveFilters && (
               <button
-                onClick={onAddClick}
-                className="inline-flex items-center space-x-2 text-xs font-semibold bg-enchanted-green dark:bg-elevated-gold text-white dark:text-enchanted-green px-4 py-2 rounded shadow hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 transition-colors"
+                onClick={clearFilters}
+                className="h-10 inline-flex items-center gap-1.5 px-2.5 text-[13px] text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory transition-colors"
               >
-                <Plus size={14} />
-                <span>Registrar Primer CFDI</span>
+                <X size={14} strokeWidth={1.5} />
+                Limpiar
               </button>
             )}
           </div>
+
+          <p className="lg:ml-auto text-[13px] text-ink-mute dark:text-light-ivory/45 num">
+            {filteredInvoices.length} de {invoices.length}
+          </p>
         </div>
-      ) : (
-        <div className="bg-white dark:bg-[#051A14]/30 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-enchanted-green/10 dark:border-light-ivory/10 bg-enchanted-green/[0.02] dark:bg-white/[0.02]">
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70">Folio CFDI</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70">Proyecto</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70 text-right">Monto Total</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70 text-center">Método</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70 text-center">Estado</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70">Emisión</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70">Fecha Pago</th>
-                  <th className="px-5 py-4 text-xs font-bold uppercase tracking-wider text-enchanted-green/70 dark:text-light-ivory/70 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-enchanted-green/5 dark:divide-white/5">
-                {filteredInvoices.map((inv) => {
-                  const isPaid = inv.estado === 'pagada';
-                  return (
-                    <tr key={inv.id} className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-colors">
-                      {/* Folio */}
-                      <td className="px-5 py-3.5 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-mono text-sm font-bold text-enchanted-green dark:text-light-ivory">
-                            {inv.folio}
-                          </span>
-                          <span className="text-[10px] text-rocky-gray">
-                            Por: {inv.facturado_por || 'IX'}
-                          </span>
-                        </div>
-                      </td>
 
-                      {/* Proyecto */}
-                      <td className="px-5 py-3.5">
-                        <div className="text-sm font-medium text-enchanted-green dark:text-light-ivory max-w-[200px] truncate">
-                          {getProjectName(inv.proyectoId)}
-                        </div>
-                      </td>
-
-                      {/* Total */}
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <div className="font-mono text-sm font-bold text-enchanted-green dark:text-light-ivory">
-                          {formatCurrency(inv.total)}
-                        </div>
-                        <div className="text-[10px] text-rocky-gray">
-                          Subtotal: {formatCurrency(inv.subtotal)}
-                        </div>
-                      </td>
-
-                      {/* Método de Pago */}
-                      <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                        <div className="inline-flex flex-col items-center">
-                          <span className="px-2 py-0.5 rounded text-xs font-bold bg-enchanted-green/5 dark:bg-white/5 text-enchanted-green dark:text-light-ivory">
-                            {inv.metodoPago}
-                          </span>
-                          {inv.metodoPago === 'PPD' && (
-                            <span className={`text-[9px] mt-1 px-1.5 py-0.5 rounded ${
-                              inv.complementoEmitido 
-                                ? 'bg-enchanted-green/10 text-enchanted-green dark:text-light-ivory' 
-                                : 'bg-rose-linen/30 text-cranberry font-semibold'
-                            }`}>
-                              {inv.complementoEmitido ? 'Con Compl.' : 'Sin Compl.'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Estado */}
-                      <td className="px-5 py-3.5 text-center whitespace-nowrap">
-                        {isPaid ? (
-                          <span className="inline-flex items-center space-x-1 bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-1 rounded-full text-xs font-bold tracking-tight uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#0B3D2E] dark:bg-elevated-gold animate-pulse"></span>
-                            <span>Pagada</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center space-x-1 bg-rose-linen/40 dark:bg-rose-linen/10 text-cranberry dark:text-rose-linen px-2.5 py-1 rounded-full text-xs font-bold tracking-tight uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-cranberry"></span>
-                            <span>Facturada</span>
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Emisión */}
-                      <td className="px-5 py-3.5 whitespace-nowrap text-xs text-enchanted-green dark:text-light-ivory font-mono">
-                        {inv.fechaEmision}
-                      </td>
-
-                      {/* Fecha de Pago */}
-                      <td className="px-5 py-3.5 whitespace-nowrap text-xs font-mono">
-                        {inv.fechaPago ? (
-                          <span className="text-[#0B3D2E] dark:text-elevated-gold font-semibold">{inv.fechaPago}</span>
-                        ) : (
-                          <span className="text-rocky-gray italic">Pendiente</span>
-                        )}
-                      </td>
-
-                      {/* Acciones */}
-                      <td className="px-5 py-3.5 whitespace-nowrap text-right text-xs">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {/* Mark as paid */}
-                          {!isPaid && (
-                            <button
-                              title="Marcar como pagada"
-                              onClick={() => onMarkAsPaidClick(inv)}
-                              className="p-1.5 text-enchanted-green dark:text-light-ivory hover:text-[#0B3D2E] dark:hover:text-elevated-gold hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-all font-bold"
-                            >
-                              <DollarSign size={15} />
-                            </button>
-                          )}
-                          {/* Edit */}
-                          <button
-                            title="Editar factura"
-                            onClick={() => onEditClick(inv)}
-                            className="p-1.5 text-enchanted-green/70 dark:text-light-ivory/70 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-all"
-                          >
-                            <Edit3 size={15} />
-                          </button>
-                          {/* Delete */}
-                          <button
-                            title="Eliminar factura"
-                            onClick={() => onDeleteClick(inv.id)}
-                            className="p-1.5 text-cranberry hover:text-cranberry/85 hover:bg-cranberry/5 rounded transition-all"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {filteredInvoices.length === 0 ? (
+          <div id="empty-invoices-state" className="rounded-xl ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] bg-paper dark:bg-paper-dark px-6 py-20 text-center">
+            <div className="max-w-sm mx-auto">
+              <span aria-hidden className="block mx-auto h-px w-10 bg-elevated-gold mb-6" />
+              <h3 className="font-serif text-[26px] font-medium text-enchanted-green dark:text-light-ivory">
+                {hasActiveFilters ? 'Sin resultados' : 'Aún no hay facturas'}
+              </h3>
+              <p className="text-[14px] text-ink-soft dark:text-light-ivory/55 mt-2">
+                {hasActiveFilters
+                  ? 'Ninguna factura coincide con la búsqueda o los filtros seleccionados.'
+                  : 'Registra el primer comprobante y vincúlalo a un proyecto para comenzar el control de cobranza.'}
+              </p>
+              <button
+                onClick={hasActiveFilters ? clearFilters : onAddClick}
+                className="mt-6 h-10 inline-flex items-center gap-2 px-4 rounded-lg border border-enchanted-green/20 dark:border-white/15 text-[14px] font-medium text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/[0.04] dark:hover:bg-white/[0.05] transition-colors"
+              >
+                {hasActiveFilters ? 'Limpiar filtros' : (<><Plus size={15} strokeWidth={1.75} /> Registrar factura</>)}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-xl bg-paper dark:bg-paper-dark ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[860px]">
+                <thead>
+                  <tr className="border-b border-enchanted-green/[0.08] dark:border-white/[0.07]">
+                    <th className="eyebrow px-6 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Folio</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Proyecto</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45 text-right">Total</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Método</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Estado</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Emisión</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Pago</th>
+                    <th className="px-6 py-4"><span className="sr-only">Acciones</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((inv) => {
+                    const isPaid = inv.estado === 'pagada';
+                    const sinComplemento = inv.metodoPago === 'PPD' && !inv.complementoEmitido;
+                    return (
+                      <tr
+                        key={inv.id}
+                        className="group border-b last:border-b-0 border-enchanted-green/[0.05] dark:border-white/[0.04] hover:bg-enchanted-green/[0.025] dark:hover:bg-white/[0.025] transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <p className="num text-[14px] font-semibold text-enchanted-green dark:text-light-ivory">{inv.folio}</p>
+                          <p className={`text-[12px] mt-0.5 ${inv.facturado_por === 'Juan Carlos' ? 'text-elevated-gold dark:text-gold-300' : 'text-ink-mute dark:text-light-ivory/45'}`}>
+                            {inv.facturado_por || 'IX'}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <p className="text-[14px] text-enchanted-green dark:text-light-ivory max-w-[240px] truncate" title={getProjectName(inv.proyectoId)}>
+                            {getProjectName(inv.proyectoId)}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-4 text-right whitespace-nowrap">
+                          <p className="num text-[14px] font-semibold text-enchanted-green dark:text-light-ivory">{formatCurrency(inv.total)}</p>
+                          <p className="num text-[12px] text-ink-mute dark:text-light-ivory/45 mt-0.5">Subtotal {formatCurrency(inv.subtotal)}</p>
+                        </td>
+
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <p className="text-[13px] font-medium text-enchanted-green dark:text-light-ivory tracking-wide">{inv.metodoPago}</p>
+                          {inv.metodoPago === 'PPD' && (
+                            <p className={`text-[12px] mt-0.5 ${sinComplemento ? 'text-cranberry dark:text-cranberry-300' : 'text-ink-mute dark:text-light-ivory/45'}`}>
+                              {sinComplemento ? 'Sin complemento' : 'Con complemento'}
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {isPaid
+                            ? <StatusPill tone="positive">Pagada</StatusPill>
+                            : <StatusPill tone="pending">Por cobrar</StatusPill>}
+                        </td>
+
+                        <td className="num px-4 py-4 whitespace-nowrap text-[13px] text-ink-soft dark:text-light-ivory/65">
+                          {formatShortDate(inv.fechaEmision)}
+                        </td>
+
+                        <td className="num px-4 py-4 whitespace-nowrap text-[13px]">
+                          {inv.fechaPago
+                            ? <span className="text-ink-soft dark:text-light-ivory/65">{formatShortDate(inv.fechaPago)}</span>
+                            : <span className="text-ink-mute/70 dark:text-light-ivory/30">—</span>}
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 transition-opacity duration-200">
+                            {!isPaid && (
+                              <button
+                                title="Marcar como pagada"
+                                onClick={() => onMarkAsPaidClick(inv)}
+                                className="h-8 inline-flex items-center gap-1.5 px-2.5 mr-1 rounded-md border border-enchanted-green/15 dark:border-white/12 text-[12px] font-medium text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green hover:text-light-ivory hover:border-enchanted-green dark:hover:bg-light-ivory dark:hover:text-enchanted-green transition-colors"
+                              >
+                                <Check size={13} strokeWidth={2} />
+                                Cobrada
+                              </button>
+                            )}
+                            <button
+                              title="Editar factura"
+                              onClick={() => onEditClick(inv)}
+                              className={`${actionButton} hover:text-enchanted-green hover:bg-enchanted-green/[0.06] dark:hover:text-light-ivory dark:hover:bg-white/[0.06]`}
+                            >
+                              <PencilLine size={15} strokeWidth={1.5} />
+                            </button>
+                            <button
+                              title="Eliminar factura"
+                              onClick={() => onDeleteClick(inv.id)}
+                              className={`${actionButton} hover:text-cranberry hover:bg-cranberry/[0.07] dark:hover:text-cranberry-300 dark:hover:bg-cranberry/15`}
+                            >
+                              <Trash2 size={15} strokeWidth={1.5} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
       </>
       )}
     </div>
   );
 }
-
