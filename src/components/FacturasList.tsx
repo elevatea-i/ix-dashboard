@@ -334,8 +334,8 @@ export default function FacturasList({
 
                         <td className="px-4 py-4 whitespace-nowrap">
                           {isPaid
-                            ? <StatusPill tone="positive">Pagada</StatusPill>
-                            : <StatusPill tone="pending">Por cobrar</StatusPill>}
+                            ? <StatusPill tone="positive">PAGADA</StatusPill>
+                            : <StatusPill tone="pending">POR COBRAR</StatusPill>}
                         </td>
 
                         <td className="num px-4 py-4 whitespace-nowrap text-[13px] text-ink-soft dark:text-light-ivory/65">
