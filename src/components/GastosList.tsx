@@ -159,79 +159,88 @@ export default function GastosList({
       </div>
 
       <div className="space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="relative flex-1 lg:max-w-sm">
-            <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute dark:text-light-ivory/40 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar por concepto o categoría"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-10 pl-9 pr-3 rounded-lg bg-paper dark:bg-paper-dark border border-enchanted-green/[0.12] dark:border-white/10 text-[14px] text-enchanted-green dark:text-light-ivory placeholder:text-ink-mute dark:placeholder:text-light-ivory/35 focus:outline-none focus:border-elevated-gold transition-colors"
-            />
+      <div className="rounded-xl bg-paper dark:bg-paper-dark ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <p className="eyebrow text-ink-mute dark:text-light-ivory/45">Filtrar gastos</p>
+            <p className="text-[13px] text-ink-soft dark:text-light-ivory/55 mt-1">
+              Busca por concepto o combina los filtros para encontrar un egreso.
+            </p>
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className={selectClass}
-            >
-              <option value="all">Todas las categorías</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-
-            <select
-              value={filterOrigen}
-              onChange={(e) => setFilterOrigen(e.target.value)}
-              className={selectClass}
-            >
-              <option value="all">Todas las cuentas</option>
-              <option value="San">San</option>
-              <option value="Ale">Ale</option>
-              <option value="Empresa">Empresa</option>
-              <option value="Juan Carlos">Juan Carlos</option>
-            </select>
-
-            <select
-              value={filterProyecto}
-              onChange={(e) => setFilterProyecto(e.target.value)}
-              className={selectClass}
-            >
-              <option value="all">Todos los proyectos</option>
-              <option value="operativo">Solo operativos</option>
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>[{p.codigo}] {p.nombre}</option>
-              ))}
-            </select>
-
-            <select
-              value={filterEstatus}
-              onChange={(e) => setFilterEstatus(e.target.value)}
-              className={selectClass}
-            >
-              <option value="all">Todos los estatus</option>
-              <option value="Pagado">Pagados</option>
-              <option value="Pendiente">Pendientes</option>
-            </select>
-
+          <div className="flex items-center gap-3">
+            <p className="text-[13px] text-ink-mute dark:text-light-ivory/45 num whitespace-nowrap">
+              {filteredExpenses.length} de {expenses.length}
+            </p>
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="h-10 inline-flex items-center gap-1.5 px-2.5 text-[13px] text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory transition-colors whitespace-nowrap"
               >
                 <X size={14} strokeWidth={1.5} />
-                Limpiar
+                Limpiar filtros
               </button>
             )}
           </div>
-
-          <p className="lg:ml-auto text-[13px] text-ink-mute dark:text-light-ivory/45 num">
-            {filteredExpenses.length} de {expenses.length}
-          </p>
         </div>
+
+        <div className="relative">
+          <Search size={17} strokeWidth={1.5} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-mute dark:text-light-ivory/40 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Buscar por concepto o categoría"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-11 pl-10 pr-3 rounded-lg bg-transparent border border-enchanted-green/[0.12] dark:border-white/10 text-[14px] text-enchanted-green dark:text-light-ivory placeholder:text-ink-mute dark:placeholder:text-light-ivory/35 focus:outline-none focus:border-elevated-gold transition-colors"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(190px,1fr)_minmax(170px,0.8fr)_minmax(260px,1.35fr)_minmax(170px,0.8fr)] gap-3">
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className={`${selectClass} w-full`}
+          >
+            <option value="all">Todas las categorías</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterOrigen}
+            onChange={(e) => setFilterOrigen(e.target.value)}
+            className={`${selectClass} w-full`}
+          >
+            <option value="all">Todas las cuentas</option>
+            <option value="San">San</option>
+            <option value="Ale">Ale</option>
+            <option value="Empresa">Empresa</option>
+            <option value="Juan Carlos">Juan Carlos</option>
+          </select>
+
+          <select
+            value={filterProyecto}
+            onChange={(e) => setFilterProyecto(e.target.value)}
+            className={`${selectClass} w-full`}
+          >
+            <option value="all">Todos los proyectos</option>
+            <option value="operativo">Solo operativos</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>[{p.codigo}] {p.nombre}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterEstatus}
+            onChange={(e) => setFilterEstatus(e.target.value)}
+            className={`${selectClass} w-full`}
+          >
+            <option value="all">Todos los estatus</option>
+            <option value="Pagado">Pagados</option>
+            <option value="Pendiente">Pendientes</option>
+          </select>
+        </div>
+      </div>
 
         {filteredExpenses.length === 0 ? (
           <div id="empty-gastos-state" className="rounded-xl ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] bg-paper dark:bg-paper-dark px-6 py-20 text-center">
