@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Expense, Project, ExpenseCategory } from '../types';
-import { Plus, Search, CreditCard as Edit3, Trash2, ListFilter as Filter, Coins, TrendingDown, Clock, Tag, Layers, ArrowUpRight, RefreshCcw, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from 'lucide-react';
-import { formatCurrency } from '../utils';
+import { Plus, Search, PencilLine, Trash2, Coins, Tag, RefreshCcw, X } from 'lucide-react';
+import { formatCurrency, formatShortDate } from '../utils';
+import PageHeader from './ui/PageHeader';
+import StatCard from './ui/StatCard';
+import StatusPill from './ui/StatusPill';
+import { StatCardsSkeleton, TableSkeleton } from './ui/Skeleton';
 
 interface GastosListProps {
   expenses: Expense[];
@@ -27,10 +31,6 @@ const CATEGORIES: ExpenseCategory[] = [
   'Otros / sin clasificar'
 ];
 
-/**
- * GastosList is the primary operational dashboard for managing business expenses.
- * It features dynamic KPIs, advanced multi-dimensional filters, and a clear tabular layout.
- */
 export default function GastosList({
   expenses,
   projects,
@@ -39,33 +39,24 @@ export default function GastosList({
   onEditClick,
   onDeleteClick
 }: GastosListProps) {
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-enchanted-green border-t-transparent" />
-      </div>
-    );
-  }
-
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterOrigen, setFilterOrigen] = useState<string>('all');
   const [filterProyecto, setFilterProyecto] = useState<string>('all');
   const [filterEstatus, setFilterEstatus] = useState<string>('all');
 
-  // Helper to obtain project code and name by ID
   const getProjectDisplay = (projId: string | null) => {
     if (!projId) return null;
     const proj = projects.find(p => p.id === projId);
     return proj ? `[${proj.codigo}] ${proj.nombre}` : 'Proyecto desconocido';
   };
 
-  // KPIs
   const totalGastos = expenses.reduce((sum, exp) => sum + exp.total, 0);
   const totalPagado = expenses.filter(exp => exp.estatusPago === 'Pagado').reduce((sum, exp) => sum + exp.total, 0);
   const totalPendiente = totalGastos - totalPagado;
+  const pendienteCount = expenses.filter(exp => exp.estatusPago !== 'Pagado').length;
+  const pagadoPct = totalGastos > 0 ? Math.round((totalPagado / totalGastos) * 100) : 0;
 
-  // Reset Filters helper
   const handleResetFilters = () => {
     setSearchTerm('');
     setFilterCategory('all');
@@ -74,344 +65,311 @@ export default function GastosList({
     setFilterEstatus('all');
   };
 
-  // Filtered expenses list
-  const filteredExpenses = expenses.filter(exp => {
-    // 1. Search term match (concepts or category names)
-    const matchesSearch = 
-      exp.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      exp.categoriaId.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!matchesSearch) return false;
-
-    // 2. Filter Category
-    if (filterCategory !== 'all' && exp.categoriaId !== filterCategory) {
-      return false;
-    }
-
-    // 3. Filter Origen Cuenta
-    if (filterOrigen !== 'all' && exp.cuentaOrigen !== filterOrigen) {
-      return false;
-    }
-
-    // 4. Filter Proyecto
-    if (filterProyecto !== 'all') {
-      if (filterProyecto === 'operativo') {
-        if (exp.tipo !== 'Operativo') return false;
-      } else {
-        if (exp.proyectoId !== filterProyecto) return false;
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(exp => {
+      const matchesSearch =
+        exp.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        exp.categoriaId.toLowerCase().includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
+      if (filterCategory !== 'all' && exp.categoriaId !== filterCategory) return false;
+      if (filterOrigen !== 'all' && exp.cuentaOrigen !== filterOrigen) return false;
+      if (filterProyecto !== 'all') {
+        if (filterProyecto === 'operativo') {
+          if (exp.tipo !== 'Operativo') return false;
+        } else {
+          if (exp.proyectoId !== filterProyecto) return false;
+        }
       }
-    }
+      if (filterEstatus !== 'all' && exp.estatusPago !== filterEstatus) return false;
+      return true;
+    });
+  }, [expenses, searchTerm, filterCategory, filterOrigen, filterProyecto, filterEstatus]);
 
-    // 5. Filter Estatus de Pago
-    if (filterEstatus !== 'all' && exp.estatusPago !== filterEstatus) {
-      return false;
-    }
+  const hasActiveFilters = searchTerm || filterCategory !== 'all' || filterOrigen !== 'all' || filterProyecto !== 'all' || filterEstatus !== 'all';
 
-    return true;
-  });
+  const selectClass =
+    'h-10 pl-3 pr-8 rounded-lg bg-transparent border border-enchanted-green/[0.12] dark:border-white/10 text-[13px] font-medium text-enchanted-green dark:text-light-ivory hover:border-enchanted-green/25 dark:hover:border-white/20 focus:outline-none focus:border-elevated-gold transition-colors cursor-pointer dark:[&>option]:bg-paper-dark';
+
+  const actionButton =
+    'h-8 w-8 inline-flex items-center justify-center rounded-md text-ink-mute dark:text-light-ivory/50 transition-colors';
 
   return (
-    <div id="gastos-module-container" className="space-y-6 animate-fade-in">
-      
-      {/* Title & Add Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="font-serif text-2xl font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-            Control de gastos pagados
-          </h2>
-          <p className="text-xs text-rocky-gray mt-1">
-            Gestión de costos operativos, pagos a proveedores por proyecto y control de cuentas de egresos.
-          </p>
+    <div id="gastos-module-container" className="space-y-8 animate-fade-in">
+      <PageHeader
+        eyebrow="Cuentas por pagar"
+        title="Gastos pagados"
+        description="Costos operativos, pagos a proveedores por proyecto y control de cuentas de egresos."
+        action={
+          <button
+            id="btn-add-expense"
+            onClick={onAddClick}
+            className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-enchanted-green dark:bg-light-ivory text-light-ivory dark:text-enchanted-green text-[14px] font-medium shadow-[0_1px_2px_rgba(11,61,46,0.2)] hover:bg-green-500 dark:hover:bg-white transition-colors"
+          >
+            <Plus size={16} strokeWidth={1.75} />
+            Registrar gasto
+          </button>
+        }
+      />
+
+      {loading ? (
+        <div className="space-y-6">
+          <StatCardsSkeleton />
+          <TableSkeleton />
         </div>
-        <button
-          id="btn-add-expense"
-          onClick={onAddClick}
-          className="inline-flex items-center justify-center space-x-2 bg-enchanted-green dark:bg-elevated-gold hover:bg-enchanted-green/90 dark:hover:bg-elevated-gold/90 text-white dark:text-enchanted-green font-semibold text-sm px-4 py-2.5 rounded shadow transition-all duration-200"
-        >
-          <Plus size={16} />
-          <span>Registrar Gasto</span>
-        </button>
+      ) : (
+      <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr] gap-4">
+        <div className="md:col-span-2 lg:col-span-1">
+          <StatCard
+            id="kpi-total-gastos"
+            featured
+            label="Total acumulado"
+            value={formatCurrency(totalGastos)}
+            context={`${expenses.length} ${expenses.length === 1 ? 'egreso registrado' : 'egresos registrados'}`}
+          />
+        </div>
+        <StatCard
+          id="kpi-gastos-pendiente"
+          tone="alert"
+          label="Pendientes de pago"
+          value={formatCurrency(totalPendiente)}
+          context={
+            pendienteCount === 0
+              ? 'Todos los egresos están pagados'
+              : `${pendienteCount} ${pendienteCount === 1 ? 'egreso por pagar' : 'egresos por pagar'}`
+          }
+        />
+        <StatCard
+          id="kpi-gastos-pagado"
+          label="Pagado"
+          value={formatCurrency(totalPagado)}
+          tone="positive"
+          context={
+            <div className="space-y-2">
+              <span>{pagadoPct}% del total</span>
+              <div className="h-[3px] w-full rounded-full bg-enchanted-green/[0.08] dark:bg-white/[0.08] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-elevated-gold transition-[width] duration-700 ease-out"
+                  style={{ width: `${pagadoPct}%` }}
+                />
+              </div>
+            </div>
+          }
+        />
       </div>
 
-      {/* KPI Stats Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Total Egresos */}
-        <div id="kpi-total-gastos" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-rocky-gray">Total Acumulado</p>
-            <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-              {formatCurrency(totalGastos)}
-            </p>
-            <p className="text-[10px] text-rocky-gray">Suma absoluta de egresos capturados</p>
-          </div>
-          <div className="p-3 bg-enchanted-green/5 dark:bg-white/5 rounded-full text-enchanted-green dark:text-elevated-gold">
-            <Coins size={22} />
-          </div>
-        </div>
-
-        {/* Egresos Liquidados */}
-        <div id="kpi-gastos-pagado" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-[#0B3D2E] dark:text-elevated-gold">Egresos Liquidados</p>
-            <p className="text-2xl font-mono font-bold text-enchanted-green dark:text-light-ivory">
-              {formatCurrency(totalPagado)}
-            </p>
-            <p className="text-[10px] text-[#0B3D2E]/70 dark:text-light-ivory/70 font-medium">Cargos debitados exitosamente</p>
-          </div>
-          <div className="p-3 bg-[#0B3D2E]/5 dark:bg-[#8C7853]/15 rounded-full text-[#0B3D2E] dark:text-elevated-gold">
-            <CheckCircle2 size={22} />
-          </div>
-        </div>
-
-        {/* Egresos Pendientes */}
-        <div id="kpi-gastos-pendiente" className="bg-white dark:bg-[#051A14]/60 p-5 rounded-lg border border-cranberry/10 dark:border-light-ivory/10 shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-cranberry">Pendientes de Pago</p>
-            <p className="text-2xl font-mono font-bold text-cranberry">
-              {formatCurrency(totalPendiente)}
-            </p>
-            <p className="text-[10px] text-rocky-gray">Egresos pendientes de fondear o pagar</p>
-          </div>
-          <div className="p-3 bg-rose-linen/25 dark:bg-rose-linen/10 rounded-full text-cranberry">
-            <Clock size={22} />
-          </div>
-        </div>
-      </div>
-
-      {/* Advanced Filter Bar */}
-      <div className="p-4 bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 space-y-4">
-        <div className="flex items-center justify-between border-b border-enchanted-green/5 pb-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-enchanted-green dark:text-light-ivory uppercase tracking-wider">
-            <Filter size={14} className="text-[#8C7853] dark:text-elevated-gold" />
-            <span>Filtros de Búsqueda</span>
-          </div>
-          {(searchTerm || filterCategory !== 'all' || filterOrigen !== 'all' || filterProyecto !== 'all' || filterEstatus !== 'all') && (
-            <button
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1 text-[10px] font-bold text-cranberry dark:text-rose-linen uppercase hover:underline"
-            >
-              <RefreshCcw size={10} />
-              <span>Limpiar filtros</span>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search Term */}
-          <div className="relative">
-            <span className="absolute left-3 top-2.5 text-rocky-gray">
-              <Search size={16} />
-            </span>
+      <div className="space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="relative flex-1 lg:max-w-sm">
+            <Search size={16} strokeWidth={1.5} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-mute dark:text-light-ivory/40 pointer-events-none" />
             <input
               type="text"
-              placeholder="Buscar concepto..."
+              placeholder="Buscar por concepto o categoría"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className="w-full h-10 pl-9 pr-3 rounded-lg bg-paper dark:bg-paper-dark border border-enchanted-green/[0.12] dark:border-white/10 text-[14px] text-enchanted-green dark:text-light-ivory placeholder:text-ink-mute dark:placeholder:text-light-ivory/35 focus:outline-none focus:border-elevated-gold transition-colors"
             />
           </div>
 
-          {/* Category Filter */}
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-1.5 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className={selectClass}
             >
               <option value="all">Todas las categorías</option>
               {CATEGORIES.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
-          </div>
 
-          {/* Account Source Filter */}
-          <div>
             <select
               value={filterOrigen}
               onChange={(e) => setFilterOrigen(e.target.value)}
-              className="w-full px-3 py-1.5 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className={selectClass}
             >
-              <option value="all">Todas las cuentas origen</option>
+              <option value="all">Todas las cuentas</option>
               <option value="San">San</option>
               <option value="Ale">Ale</option>
               <option value="Empresa">Empresa</option>
+              <option value="Juan Carlos">Juan Carlos</option>
             </select>
-          </div>
 
-          {/* Project Link Filter */}
-          <div>
             <select
               value={filterProyecto}
               onChange={(e) => setFilterProyecto(e.target.value)}
-              className="w-full px-3 py-1.5 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className={selectClass}
             >
-              <option value="all">Todos los proyectos / Operativo</option>
-              <option value="operativo">Solo Gastos Operativos</option>
+              <option value="all">Todos los proyectos</option>
+              <option value="operativo">Solo operativos</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>[{p.codigo}] {p.nombre}</option>
               ))}
             </select>
-          </div>
 
-          {/* Payment Status Filter */}
-          <div>
             <select
               value={filterEstatus}
               onChange={(e) => setFilterEstatus(e.target.value)}
-              className="w-full px-3 py-1.5 bg-light-ivory/30 dark:bg-[#070D0C]/40 border border-enchanted-green/15 dark:border-light-ivory/15 rounded text-xs text-enchanted-green dark:text-light-ivory focus:outline-none focus:border-elevated-gold dark:focus:border-elevated-gold transition-colors"
+              className={selectClass}
             >
               <option value="all">Todos los estatus</option>
-              <option value="Pagado">Pagado</option>
-              <option value="Pendiente">Pendiente</option>
+              <option value="Pagado">Pagados</option>
+              <option value="Pendiente">Pendientes</option>
             </select>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Expenses Table */}
-      <div id="gastos-table-wrapper" className="bg-white dark:bg-[#051A14]/40 rounded-lg border border-enchanted-green/10 dark:border-light-ivory/10 shadow-sm overflow-hidden">
-        {filteredExpenses.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-enchanted-green/5 dark:bg-white/5 flex items-center justify-center text-rocky-gray mb-3.5">
-              <Coins size={22} />
-            </div>
-            <h3 className="font-serif text-base font-bold text-enchanted-green dark:text-light-ivory">Sin gastos registrados</h3>
-            <p className="text-xs text-rocky-gray mt-1 max-w-md">
-              {expenses.length === 0 
-                ? 'El catálogo de gastos está vacío. Comience registrando egresos operativos o pagos a proveedores.'
-                : 'Ningún gasto coincide con los filtros aplicados en este momento.'}
-            </p>
-            {expenses.length > 0 && (
+            {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
-                className="mt-4 px-3.5 py-1.5 border border-[#8C7853] dark:border-elevated-gold/40 hover:bg-[#8C7853]/10 text-[#8C7853] dark:text-elevated-gold text-xs font-bold rounded transition-all"
+                className="h-10 inline-flex items-center gap-1.5 px-2.5 text-[13px] text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory transition-colors"
               >
-                Limpiar Filtros
+                <X size={14} strokeWidth={1.5} />
+                Limpiar
               </button>
             )}
           </div>
+
+          <p className="lg:ml-auto text-[13px] text-ink-mute dark:text-light-ivory/45 num">
+            {filteredExpenses.length} de {expenses.length}
+          </p>
+        </div>
+
+        {filteredExpenses.length === 0 ? (
+          <div id="empty-gastos-state" className="rounded-xl ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] bg-paper dark:bg-paper-dark px-6 py-20 text-center">
+            <div className="max-w-sm mx-auto">
+              <span aria-hidden className="block mx-auto h-px w-10 bg-elevated-gold mb-6" />
+              <h3 className="font-serif text-[26px] font-medium text-enchanted-green dark:text-light-ivory">
+                {hasActiveFilters ? 'Sin resultados' : 'Aún no hay gastos'}
+              </h3>
+              <p className="text-[14px] text-ink-soft dark:text-light-ivory/55 mt-2">
+                {hasActiveFilters
+                  ? 'Ningún gasto coincide con la búsqueda o los filtros seleccionados.'
+                  : 'Registra el primer egreso operativo o pago a proveedor para comenzar el control de cuentas.'}
+              </p>
+              <button
+                onClick={hasActiveFilters ? handleResetFilters : onAddClick}
+                className="mt-6 h-10 inline-flex items-center gap-2 px-4 rounded-lg border border-enchanted-green/20 dark:border-white/15 text-[14px] font-medium text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/[0.04] dark:hover:bg-white/[0.05] transition-colors"
+              >
+                {hasActiveFilters ? 'Limpiar filtros' : (<><Plus size={15} strokeWidth={1.75} /> Registrar gasto</>)}
+              </button>
+            </div>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-enchanted-green/10 dark:border-light-ivory/10 bg-enchanted-green/[0.02] dark:bg-black/10">
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Concepto</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Categoría</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Clasificación</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Origen</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Total</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Fecha</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray">Pago</th>
-                  <th className="px-6 py-4 text-[10px] uppercase tracking-wider font-bold text-rocky-gray text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-enchanted-green/5 dark:divide-light-ivory/5">
-                {filteredExpenses.map((exp) => (
-                  <tr 
-                    key={exp.id} 
-                    className="hover:bg-enchanted-green/[0.01] dark:hover:bg-white/[0.01] transition-all text-xs"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
-                        <span>{exp.concepto}</span>
-                        {exp.esReembolsable && (
-                          <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-[#DFBDB5] text-[9px] px-1 py-0.2 rounded font-bold" title="Este gasto es reembolsable">
-                            REEMBOLSABLE
-                          </span>
-                        )}
-                      </div>
-                      {exp.tieneFactura && (
-                        <span className="text-[10px] text-rocky-gray font-semibold flex items-center gap-1 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0B3D2E]"></span>
-                          <span>Factura XML/PDF vinculada</span>
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center gap-1.5 text-rocky-gray dark:text-rose-linen/70">
-                        <Tag size={12} className="text-[#8C7853]" />
-                        <span>{exp.categoriaId}</span>
-                      </span>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      {exp.tipo === 'Operativo' ? (
-                        <span className="bg-rocky-gray/10 text-rocky-gray dark:bg-white/5 dark:text-rose-linen/70 px-2 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-                          Operativo
-                        </span>
-                      ) : (
-                        <div className="space-y-1">
-                          <span className="bg-enchanted-green/10 text-enchanted-green dark:bg-white/10 dark:text-light-ivory px-2 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-                            Proveedor por Proyecto
-                          </span>
-                          <span className="block text-[10px] font-medium font-mono text-rocky-gray">
-                            {getProjectDisplay(exp.proyectoId)}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 font-medium text-enchanted-green dark:text-light-ivory">
-                      {exp.cuentaOrigen}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <span className="font-mono font-bold text-enchanted-green dark:text-light-ivory">
-                        {formatCurrency(exp.total)}
-                      </span>
-                      {(exp.isrRetenido > 0 || exp.ivaRetenido > 0) && (
-                        <span className="block text-[9px] text-rocky-gray" title="Incluye retenciones aplicadas">
-                          Con retenciones
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 font-mono text-rocky-gray">
-                      {exp.fecha}
-                    </td>
-
-                    <td className="px-6 py-4">
-                      {exp.estatusPago === 'Pagado' ? (
-                        <span className="bg-[#0B3D2E]/10 dark:bg-[#8C7853]/20 text-[#0B3D2E] dark:text-elevated-gold px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-                          Pagado
-                        </span>
-                      ) : (
-                        <span className="bg-rose-linen/40 dark:bg-rose-linen/15 text-cranberry dark:text-rose-linen px-2.5 py-0.5 rounded text-[10px] font-bold tracking-tight uppercase">
-                          Pendiente
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        {/* Edit */}
-                        <button
-                          title="Editar gasto"
-                          onClick={() => onEditClick(exp)}
-                          className="p-1.5 text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/5 dark:hover:bg-white/5 rounded transition-all"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        {/* Delete */}
-                        <button
-                          title="Eliminar gasto"
-                          onClick={() => onDeleteClick(exp.id)}
-                          className="p-1.5 text-rocky-gray hover:text-cranberry hover:bg-rose-linen/20 rounded transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+          <div className="rounded-xl bg-paper dark:bg-paper-dark ring-1 ring-enchanted-green/[0.07] dark:ring-white/[0.06] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-enchanted-green/[0.08] dark:border-white/[0.07]">
+                    <th className="eyebrow px-6 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Concepto</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Categoría</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Clasificación</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Origen</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45 text-right">Total</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Fecha</th>
+                    <th className="eyebrow px-4 py-4 font-semibold text-ink-mute dark:text-light-ivory/45">Estado</th>
+                    <th className="px-6 py-4"><span className="sr-only">Acciones</span></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredExpenses.map((exp) => {
+                    const isPaid = exp.estatusPago === 'Pagado';
+                    return (
+                      <tr
+                        key={exp.id}
+                        className="group border-b last:border-b-0 border-enchanted-green/[0.05] dark:border-white/[0.04] hover:bg-enchanted-green/[0.025] dark:hover:bg-white/[0.025] transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <p className="text-[14px] font-semibold text-enchanted-green dark:text-light-ivory flex items-center gap-1.5">
+                            {exp.concepto}
+                            {exp.esReembolsable && (
+                              <span className="bg-elevated-gold/15 text-[#8C7853] dark:text-[#DFBDB5] text-[9px] px-1 py-0.2 rounded font-bold" title="Este gasto es reembolsable">
+                                REEMBOLSABLE
+                              </span>
+                            )}
+                          </p>
+                          {exp.tieneFactura && (
+                            <p className="text-[12px] text-ink-mute dark:text-light-ivory/45 mt-0.5 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-enchanted-green dark:bg-elevated-gold" />
+                              Factura XML/PDF vinculada
+                            </p>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4">
+                          <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-soft dark:text-light-ivory/60">
+                            <Tag size={12} className="text-elevated-gold" strokeWidth={1.5} />
+                            {exp.categoriaId}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4">
+                          {exp.tipo === 'Operativo' ? (
+                            <span className="text-[11px] font-semibold tracking-tight uppercase text-ink-mute dark:text-light-ivory/50">
+                              Operativo
+                            </span>
+                          ) : (
+                            <div className="space-y-0.5">
+                              <p className="text-[11px] font-semibold tracking-tight uppercase text-enchanted-green dark:text-light-ivory">
+                                Por proyecto
+                              </p>
+                              <p className="text-[11px] font-mono text-ink-mute dark:text-light-ivory/45">
+                                {getProjectDisplay(exp.proyectoId)}
+                              </p>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className="text-[13px] font-medium text-enchanted-green dark:text-light-ivory">
+                            {exp.cuentaOrigen}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-4 text-right whitespace-nowrap">
+                          <p className="num text-[14px] font-semibold text-enchanted-green dark:text-light-ivory">{formatCurrency(exp.total)}</p>
+                          {(exp.isrRetenido > 0 || exp.ivaRetenido > 0) && (
+                            <p className="num text-[12px] text-ink-mute dark:text-light-ivory/45 mt-0.5">Con retenciones</p>
+                          )}
+                        </td>
+
+                        <td className="num px-4 py-4 whitespace-nowrap text-[13px] text-ink-soft dark:text-light-ivory/65">
+                          {formatShortDate(exp.fecha)}
+                        </td>
+
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {isPaid
+                            ? <StatusPill tone="positive">PAGADO</StatusPill>
+                            : <StatusPill tone="alert">PENDIENTE</StatusPill>}
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              title="Editar gasto"
+                              onClick={() => onEditClick(exp)}
+                              className={`${actionButton} hover:text-enchanted-green hover:bg-enchanted-green/[0.06] dark:hover:text-light-ivory dark:hover:bg-white/[0.06]`}
+                            >
+                              <PencilLine size={15} strokeWidth={1.5} />
+                            </button>
+                            <button
+                              title="Eliminar gasto"
+                              onClick={() => onDeleteClick(exp.id)}
+                              className={`${actionButton} hover:text-cranberry hover:bg-cranberry/[0.07] dark:hover:text-cranberry-300 dark:hover:bg-cranberry/15`}
+                            >
+                              <Trash2 size={15} strokeWidth={1.5} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
-
