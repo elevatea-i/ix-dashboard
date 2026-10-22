@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Invoice, Project, Client } from '../types';
-import { Plus, Search, PencilLine, Trash2, Check, X } from 'lucide-react';
+import { Plus, Search, PencilLine, Trash2, DollarSign, X } from 'lucide-react';
 import { formatCurrency, formatShortDate } from '../utils';
 import PageHeader from './ui/PageHeader';
 import StatCard from './ui/StatCard';
@@ -150,22 +150,23 @@ export default function FacturasList({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.35fr_1fr_1fr] gap-4">
         <div className="md:col-span-2 lg:col-span-1">
           <StatCard
-            id="kpi-total-pendiente"
+            id="kpi-total-facturado"
             featured
-            label="Pendiente de cobro"
-            value={formatCurrency(totalPendiente)}
-            context={
-              pendingCount === 0
-                ? 'Toda la cartera está cobrada'
-                : `${pendingCount} ${pendingCount === 1 ? 'factura por cobrar' : 'facturas por cobrar'}`
-            }
+            label="Total facturado"
+            value={formatCurrency(totalFacturado)}
+            context={`${invoices.length} ${invoices.length === 1 ? 'CFDI emitido' : 'CFDIs emitidos'}`}
           />
         </div>
         <StatCard
-          id="kpi-total-facturado"
-          label="Total facturado"
-          value={formatCurrency(totalFacturado)}
-          context={`${invoices.length} ${invoices.length === 1 ? 'CFDI emitido' : 'CFDIs emitidos'}`}
+          id="kpi-total-pendiente"
+          tone="alert"
+          label="Pendiente de cobro"
+          value={formatCurrency(totalPendiente)}
+          context={
+            pendingCount === 0
+              ? 'Toda la cartera está cobrada'
+              : `${pendingCount} ${pendingCount === 1 ? 'factura por cobrar' : 'facturas por cobrar'}`
+          }
         />
         <StatCard
           id="kpi-total-pagado"
@@ -348,15 +349,14 @@ export default function FacturasList({
                         </td>
 
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 transition-opacity duration-200">
+                          <div className="flex items-center justify-end gap-1">
                             {!isPaid && (
                               <button
                                 title="Marcar como pagada"
                                 onClick={() => onMarkAsPaidClick(inv)}
-                                className="h-8 inline-flex items-center gap-1.5 px-2.5 mr-1 rounded-md border border-enchanted-green/15 dark:border-white/12 text-[12px] font-medium text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green hover:text-light-ivory hover:border-enchanted-green dark:hover:bg-light-ivory dark:hover:text-enchanted-green transition-colors"
+                                className="h-8 w-8 inline-flex items-center justify-center mr-1 rounded-md border border-enchanted-green/15 dark:border-white/12 text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green hover:text-light-ivory hover:border-enchanted-green dark:hover:bg-light-ivory dark:hover:text-enchanted-green transition-colors"
                               >
-                                <Check size={13} strokeWidth={2} />
-                                Cobrada
+                                <DollarSign size={15} strokeWidth={1.75} />
                               </button>
                             )}
                             <button

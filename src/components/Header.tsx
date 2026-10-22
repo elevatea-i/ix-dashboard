@@ -3,7 +3,6 @@ import { Menu, Sun, Moon, LogOut, ArrowDownRight, ArrowUpRight, PanelLeftClose, 
 
 import type { UserProfile } from '../lib/auth';
 import type { ModuleId } from '../types';
-import { findModuleLocation } from '../lib/navigation';
 import { useIsDesktop } from '../hooks/useIsDesktop';
 
 interface HeaderProps {
@@ -45,8 +44,6 @@ export default function Header({
   const displayName = profile?.nombre || 'Usuario';
   const displayInitial = displayName.charAt(0).toUpperCase();
   const isDesktop = useIsDesktop();
-  const location = findModuleLocation(activeModule);
-
   return (
     <header className="h-16 px-4 sm:px-6 bg-light-ivory dark:bg-[#051A14] border-b border-enchanted-green/[0.08] dark:border-white/[0.06] flex items-center justify-between gap-3 transition-colors duration-300">
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
@@ -70,14 +67,11 @@ export default function Header({
           <Menu size={19} strokeWidth={1.5} />
         </button>
 
-        {location && (
-          <div className="hidden sm:flex flex-col min-w-0 leading-tight">
-            <span className="eyebrow text-elevated-gold">{location.group}</span>
-            <span className="text-[13px] text-ink-mute dark:text-light-ivory/50 capitalize truncate mt-1">
-              {todayLabel()}
-            </span>
-          </div>
-        )}
+        <div className="hidden sm:flex flex-col min-w-0 leading-tight">
+          <span className="text-[13px] text-ink-mute dark:text-light-ivory/50 capitalize truncate">
+            {todayLabel()}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
