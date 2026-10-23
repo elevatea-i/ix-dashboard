@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Trash2, X } from 'lucide-react';
 import { Expense, PorImpactar } from '../types';
 import { formatCurrency } from '../utils';
 
@@ -26,77 +26,70 @@ export default function EliminarGastoModal({
   };
 
   return (
-    <div id="eliminar-gasto-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="eliminar-gasto-modal-card" className="bg-white dark:bg-[#051A14] w-full max-w-md rounded-lg shadow-2xl border border-cranberry/30 overflow-hidden animate-fade-in">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
-          <h3 className="font-serif text-base font-semibold text-cranberry flex items-center space-x-2">
-            <Trash2 size={18} className="text-cranberry animate-pulse" />
-            <span>Eliminar Gasto Vinculado</span>
-          </h3>
+    <div
+      id="eliminar-gasto-modal-container"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-[#051A14]/45 dark:bg-black/60 backdrop-blur-sm animate-fade-in"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        id="eliminar-gasto-modal-card"
+        role="dialog"
+        aria-modal="true"
+        className="bg-paper dark:bg-paper-dark w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl ring-1 ring-cranberry/20 dark:ring-cranberry-300/20 shadow-[0_24px_64px_-16px_rgba(5,26,20,0.35)] overflow-hidden"
+      >
+        <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-enchanted-green/[0.07] dark:border-white/[0.06] flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow text-cranberry dark:text-cranberry-300">Acción irreversible</p>
+            <h3 className="font-serif text-[24px] leading-tight font-medium text-enchanted-green dark:text-light-ivory mt-1.5">
+              Eliminar gasto
+            </h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-enchanted-green/60 dark:text-light-ivory/60 hover:text-enchanted-green dark:hover:text-light-ivory p-1 rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-colors"
+            aria-label="Cerrar"
+            className="h-9 w-9 -mr-2 inline-flex items-center justify-center rounded-lg text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/[0.05] dark:hover:bg-white/[0.06] transition-colors"
           >
-            <X size={18} />
+            <X size={18} strokeWidth={1.5} />
           </button>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {linkedPorImpactar ? (
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
-                <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
-                <div className="space-y-2 w-full">
-                  <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                    Advertencia de Reversión
-                  </p>
-                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                    Este gasto se generó al resolver un registro de Por Impactar (<strong>'{linkedPorImpactar.descripcion}'</strong>, {formatCurrency(linkedPorImpactar.monto)}).
-                  </p>
-                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                    Al eliminarlo, ese registro volverá a estado Pendiente. ¿Confirmar?
-                  </p>
-                </div>
-              </div>
+        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+          <div className="flex items-start gap-3.5 border-l-2 border-cranberry dark:border-cranberry-300 pl-4 py-1">
+            <AlertTriangle className="text-cranberry dark:text-cranberry-300 shrink-0 mt-0.5" size={19} strokeWidth={1.7} />
+            <div className="space-y-2">
+              <p className="eyebrow text-cranberry dark:text-cranberry-300">
+                {linkedPorImpactar ? 'Advertencia de reversión' : 'Confirmación de eliminación'}
+              </p>
+              <p className="text-[15px] font-medium text-enchanted-green dark:text-light-ivory">
+                {expense.concepto} <span className="num text-ink-mute dark:text-light-ivory/60">{formatCurrency(expense.total)}</span>
+              </p>
+              {linkedPorImpactar ? (
+                <p className="text-[14px] leading-relaxed text-ink-soft dark:text-light-ivory/75">
+                  Este gasto se generó al resolver “{linkedPorImpactar.descripcion}”. Al eliminarlo, ese registro volverá a estado pendiente.
+                </p>
+              ) : (
+                <p className="text-[14px] leading-relaxed text-ink-soft dark:text-light-ivory/75">
+                  Esta acción afectará los cálculos de Rentabilidad e IVA del proyecto y no se puede deshacer.
+                </p>
+              )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3 bg-cranberry/5 p-3.5 rounded border border-cranberry/25">
-                <AlertTriangle className="text-cranberry shrink-0 mt-0.5" size={18} />
-                <div className="space-y-2 w-full">
-                  <p className="text-xs font-bold text-cranberry uppercase tracking-wide">
-                    Advertencia de Eliminación
-                  </p>
-                  <p className="text-sm text-[#082019] dark:text-light-ivory font-semibold">
-                    {expense.concepto} ({formatCurrency(expense.total)})
-                  </p>
-                  <p className="text-xs text-[#082019] dark:text-light-ivory/90 leading-relaxed font-semibold">
-                    ¿Eliminar este gasto? Esto afectará los cálculos de Rentabilidad e IVA del proyecto. No se puede deshacer.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end space-x-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-enchanted-green/[0.07] dark:border-white/[0.06]">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory border border-rocky-gray/20 rounded hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-all"
+              className="h-10 inline-flex items-center justify-center px-4 rounded-lg border border-enchanted-green/[0.15] dark:border-white/[0.12] text-[14px] font-medium text-enchanted-green dark:text-light-ivory hover:bg-enchanted-green/[0.04] dark:hover:bg-white/[0.05] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold bg-cranberry hover:bg-cranberry/90 text-white rounded shadow-sm transition-all flex items-center space-x-1.5"
+              className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-cranberry text-white text-[14px] font-medium hover:bg-cranberry-700 transition-colors"
             >
-              <Trash2 size={14} />
-              <span>Confirmar</span>
+              <Trash2 size={15} strokeWidth={1.7} />
+              Eliminar gasto
             </button>
           </div>
         </form>
@@ -104,4 +97,3 @@ export default function EliminarGastoModal({
     </div>
   );
 }
-

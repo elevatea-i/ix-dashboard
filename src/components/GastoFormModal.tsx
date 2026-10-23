@@ -181,29 +181,32 @@ export default function GastoFormModal({
   if (!isOpen) return null;
 
   return (
-    <div id="gasto-form-modal-container" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div id="gasto-form-modal-card" className="bg-light-ivory dark:bg-[#051A14] w-full max-w-3xl rounded-lg shadow-2xl border border-elevated-gold/30 overflow-hidden flex flex-col max-h-[95vh]">
+    <div id="gasto-form-modal-container" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-[#051A14]/45 dark:bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div id="gasto-form-modal-card" className="bg-paper dark:bg-paper-dark w-full max-w-4xl rounded-t-2xl sm:rounded-2xl ring-1 ring-enchanted-green/[0.08] dark:ring-white/[0.08] shadow-[0_24px_64px_-16px_rgba(5,26,20,0.35)] overflow-hidden flex flex-col max-h-[94vh]">
         
-        <div className="px-6 py-4 border-b border-enchanted-green/10 dark:border-light-ivory/10 flex items-center justify-between">
+        <div className="px-6 sm:px-8 pt-6 pb-5 border-b border-enchanted-green/[0.07] dark:border-white/[0.06] flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-enchanted-green dark:text-light-ivory tracking-tight">
-              {initialData ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}
+            <p className="eyebrow text-elevated-gold dark:text-gold-300">Control financiero</p>
+            <h3 className="font-serif text-[24px] leading-tight font-medium text-enchanted-green dark:text-light-ivory mt-1.5">
+              {initialData ? 'Editar gasto' : 'Registrar gasto'}
             </h3>
-            <p className="text-xs text-[#3c3b3b] dark:text-[#3c3b3b] mt-0.5">
-              Control de egresos y facturación de proveedores.
+            <p className="text-[13px] text-ink-mute dark:text-light-ivory/50 mt-2">
+              Captura el egreso, sus importes y la información de pago.
             </p>
           </div>
           <button 
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory rounded-full hover:bg-enchanted-green/5 dark:hover:bg-white/5 transition-all"
+            aria-label="Cerrar"
+            className="h-9 w-9 -mr-2 inline-flex items-center justify-center rounded-lg text-ink-mute dark:text-light-ivory/50 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/[0.05] dark:hover:bg-white/[0.06] transition-colors"
           >
-            <X size={18} />
+            <X size={18} strokeWidth={1.5} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-7">
           
-          <div className="bg-white/90 dark:bg-black/20 rounded-lg p-4 border border-enchanted-green/20 dark:border-light-ivory/10 space-y-4 shadow-xs">
+          <div className="bg-white/55 dark:bg-white/[0.02] rounded-xl p-5 border border-enchanted-green/[0.10] dark:border-white/[0.07] space-y-5">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
               <Layers size={14} />
               <span>Clasificación del Gasto</span>
@@ -300,7 +303,7 @@ export default function GastoFormModal({
             </div>
           </div>
 
-          <div className="bg-white/95 dark:bg-black/20 rounded-lg p-4 border border-enchanted-green/20 dark:border-light-ivory/10 space-y-4 shadow-xs">
+          <div className="bg-white/55 dark:bg-white/[0.02] rounded-xl p-5 border border-enchanted-green/[0.10] dark:border-white/[0.07] space-y-5">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[#8C7853] dark:text-elevated-gold flex items-center gap-1.5">
               <Calculator size={14} />
               <span>Importes & Retenciones (MXN)</span>
@@ -389,8 +392,8 @@ export default function GastoFormModal({
 
             <div className="flex items-center justify-between p-3.5 bg-enchanted-green/5 dark:bg-white/5 rounded-lg border border-enchanted-green/10 dark:border-white/5">
               <div>
-                <p className="text-xs font-semibold text-[#111111] dark:text-[#111111]">Total Recalculado en Tiempo Real</p>
-                <p className="text-[10px] text-[#626060] dark:text-[#626060] mt-0.5">Subtotal + IVA - Retención ISR - Retención IVA</p>
+                <p className="text-xs font-semibold text-enchanted-green dark:text-light-ivory">Total Recalculado en Tiempo Real</p>
+                <p className="text-[10px] text-ink-mute dark:text-light-ivory/50 mt-0.5">Subtotal + IVA - Retención ISR - Retención IVA</p>
               </div>
               <div className="text-right">
                 <span className="text-lg font-mono font-bold text-[#0B3D2E] dark:text-elevated-gold">
@@ -529,14 +532,14 @@ export default function GastoFormModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-rocky-gray hover:text-enchanted-green dark:hover:text-light-ivory transition-colors"
+              className="h-10 inline-flex items-center justify-center px-4 rounded-lg text-[14px] font-medium text-ink-mute dark:text-light-ivory/60 hover:text-enchanted-green dark:hover:text-light-ivory hover:bg-enchanted-green/[0.04] dark:hover:bg-white/[0.05] transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={tipo === 'Proveedor por Proyecto' && projects.length === 0}
-              className="px-5 py-2 bg-enchanted-green dark:bg-elevated-gold text-light-ivory dark:text-enchanted-green text-sm font-bold rounded shadow hover:bg-[#0B3D2E] dark:hover:bg-elevated-gold/80 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-10 inline-flex items-center justify-center px-5 rounded-lg bg-enchanted-green dark:bg-light-ivory text-light-ivory dark:text-enchanted-green text-[14px] font-medium hover:bg-green-500 dark:hover:bg-white transition-colors disabled:opacity-45 disabled:cursor-not-allowed"
             >
               {initialData ? 'Guardar Cambios' : 'Registrar Gasto'}
             </button>
